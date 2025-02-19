@@ -34,14 +34,14 @@ export default function Footer() {
                         <h3 className="text-xl font-medium mb-6">Follow Us</h3>
                         <div className="flex">
                             <a
-                                href="#"
-                                target="_blank"
+                                href="https://www.facebook.com/evergreenrealtyph/"
+                                target="blank"
                                 rel="noopener noreferrer"
                                 className="hover:text-gray-300 transition-colors"
                             >
                                 <Facebook className="w-6 h-6 mr-2" />
                             </a>
-                            <a href="">Evergreen Realty Philippines</a>
+                            <a target="blank" href="https://www.facebook.com/evergreenrealtyph/">Evergreen Realty Philippines</a>
                         </div>
                     </div>
                 </div>

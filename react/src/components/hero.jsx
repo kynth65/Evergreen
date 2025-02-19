@@ -22,10 +22,10 @@ export default function Hero() {
                     {/* Email Input and Button */}
                     <div className="space-y-4 max-w-md mt-30">
                         <button className="w-full bg-[#278336] text-white py-3 px-6 rounded-lg hover:bg-green-500 transition-colors">
-                            Book an Appointment
+                            Book a Free Tour Trip
                         </button>
                         <p className="text-sm text-gray-600">
-                            By clicking 'Book an Appointment' you acknowledge
+                            By clicking 'Book a Free Tour Trip' you acknowledge
                             that you have read and agree to the{" "}
                             <a
                                 href="#"
