@@ -1,56 +1,75 @@
-import React, { useState } from "react";
-import Header from "../components/Header"; // Adjust the import path as needed
+import React, { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import axiosClient from "../axios.client";
+import { useStateContext } from "../context/ContextProvider";
+import Header from "../components/header";
+import {
+    User,
+    Mail,
+    Lock,
+    CheckCircle,
+    AlertCircle,
+    ArrowLeft,
+    UserPlus,
+} from "lucide-react";
 
 export default function Signup() {
-    const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-    });
+    const nameRef = useRef();
+    const emailRef = useRef();
+    const passwordRef = useRef();
+    const confirmPasswordRef = useRef();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
-    };
+    const { setUser, setToken } = useStateContext();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
         setError("");
+        setIsLoading(true);
+
+        // Basic validation
+        if (passwordRef.current.value !== confirmPasswordRef.current.value) {
+            setError("Passwords do not match");
+            setIsLoading(false);
+            return;
+        }
+
+        if (passwordRef.current.value.length < 8) {
+            setError("Password must be at least 8 characters long");
+            setIsLoading(false);
+            return;
+        }
+
+        const payload = {
+            username: nameRef.current.value, // This matches your SignupRequest validation rules
+            email: emailRef.current.value,
+            password: passwordRef.current.value,
+            password_confirmation: confirmPasswordRef.current.value,
+        };
 
         try {
-            // Validate password match
-            if (formData.password !== formData.confirmPassword) {
-                throw new Error("Passwords do not match");
-            }
+            const { data } = await axiosClient.post("/signup", payload);
+            setUser(data.user);
+            setToken(data.token);
 
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            console.log("Signup attempt with:", formData);
+            // Redirect to dashboard
+            navigate("/agent");
+        } catch (error) {
+            console.error("Signup error:", error);
+            const message =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                "An error occurred during signup";
+            setError(message);
 
-            // This would be replaced with actual registration logic
-            if (
-                formData.firstName &&
-                formData.lastName &&
-                formData.email &&
-                formData.password
-            ) {
-                // Successful signup simulation
-                console.log("Signup successful");
-                // Redirect would happen here
-            } else {
-                setError("Please fill in all fields");
+            // If there are validation errors, show the first one
+            if (error.response?.data?.errors) {
+                const firstError = Object.values(error.response.data.errors)[0];
+                setError(
+                    Array.isArray(firstError) ? firstError[0] : firstError
+                );
             }
-        } catch (err) {
-            setError(err.message || "An error occurred. Please try again.");
-            console.error(err);
         } finally {
             setIsLoading(false);
         }
@@ -59,206 +78,243 @@ export default function Signup() {
     return (
         <>
             <Header />
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-md w-full space-y-8">
-                    <div>
-                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                            Create your account
-                        </h2>
-                        <p className="mt-2 text-center text-sm text-gray-600">
-                            Already have an account?{" "}
-                            <a
-                                href="/login"
-                                className="font-medium text-green-600 hover:text-green-500"
-                            >
-                                Sign in
-                            </a>
-                        </p>
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-md w-full relative">
+                    {/* Decorative element - top leaf */}
+                    <div className="hidden lg:block absolute -top-8 -right-8 opacity-60">
+                        <svg
+                            width="120"
+                            height="120"
+                            viewBox="0 0 120 120"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M60 0C60 33.1371 33.1371 60 0 60C33.1371 60 60 86.8629 60 120C60 86.8629 86.8629 60 120 60C86.8629 60 60 33.1371 60 0Z"
+                                fill="#A7F3D0"
+                            />
+                        </svg>
                     </div>
 
-                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                        <div className="rounded-md shadow-sm space-y-3">
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                <div>
-                                    <label
-                                        htmlFor="firstName"
-                                        className="sr-only"
-                                    >
-                                        First Name
-                                    </label>
-                                    <input
-                                        id="firstName"
-                                        name="firstName"
-                                        type="text"
-                                        required
-                                        className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                                        placeholder="First Name"
-                                        value={formData.firstName}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                <div>
-                                    <label
-                                        htmlFor="lastName"
-                                        className="sr-only"
-                                    >
-                                        Last Name
-                                    </label>
-                                    <input
-                                        id="lastName"
-                                        name="lastName"
-                                        type="text"
-                                        required
-                                        className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                                        placeholder="Last Name"
-                                        value={formData.lastName}
-                                        onChange={handleChange}
-                                    />
+                    {/* Signup Card */}
+                    <div className="bg-white shadow-lg rounded-2xl overflow-hidden">
+                        {/* Card header */}
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8">
+                            <div className="flex justify-center mb-4">
+                                <div className="bg-white bg-opacity-20 rounded-full p-3">
+                                    <UserPlus className="h-8 w-8 text-white" />
                                 </div>
                             </div>
-                            <div>
-                                <label htmlFor="email" className="sr-only">
-                                    Email address
-                                </label>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    required
-                                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                                    placeholder="Email address"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="password" className="sr-only">
-                                    Password
-                                </label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    required
-                                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                                    placeholder="Password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                />
-                            </div>
-                            <div>
-                                <label
-                                    htmlFor="confirmPassword"
-                                    className="sr-only"
-                                >
-                                    Confirm Password
-                                </label>
-                                <input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    required
-                                    className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                                    placeholder="Confirm Password"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                            <h2 className="text-2xl font-bold text-white text-center">
+                                Create Your Evergreen Account
+                            </h2>
+                            <p className="mt-2 text-green-50 text-center">
+                                Join our community for exclusive properties
+                            </p>
                         </div>
 
-                        <div>
-                            <div className="flex items-center">
-                                <input
-                                    id="terms"
-                                    name="terms"
-                                    type="checkbox"
-                                    required
-                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                />
-                                <label
-                                    htmlFor="terms"
-                                    className="ml-2 block text-sm text-gray-900"
+                        {/* Form section */}
+                        <div className="px-6 py-8 md:px-8">
+                            {error && (
+                                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
+                                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                                    <p className="text-sm text-red-600">
+                                        {error}
+                                    </p>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label
+                                        htmlFor="name"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Full Name
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <User className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            ref={nameRef}
+                                            type="text"
+                                            id="name"
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                            placeholder="Enter your full name"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="email"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Email Address
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Mail className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            ref={emailRef}
+                                            type="email"
+                                            id="email"
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                            placeholder="you@example.com"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="password"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Password
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Lock className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            ref={passwordRef}
+                                            type="password"
+                                            id="password"
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                            placeholder="Minimum 8 characters"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Password must be at least 8 characters
+                                        long
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="confirmPassword"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Confirm Password
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <CheckCircle className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            ref={confirmPasswordRef}
+                                            type="password"
+                                            id="confirmPassword"
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                            placeholder="Re-enter password"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center bg-green-50 p-3 rounded-lg">
+                                    <input
+                                        id="terms"
+                                        name="terms"
+                                        type="checkbox"
+                                        required
+                                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                    />
+                                    <label
+                                        htmlFor="terms"
+                                        className="ml-2 block text-sm text-gray-700"
+                                    >
+                                        I agree to the{" "}
+                                        <a
+                                            href="#"
+                                            className="font-medium text-green-600 hover:text-green-500"
+                                        >
+                                            Terms of Service
+                                        </a>{" "}
+                                        and{" "}
+                                        <a
+                                            href="#"
+                                            className="font-medium text-green-600 hover:text-green-500"
+                                        >
+                                            Privacy Policy
+                                        </a>
+                                    </label>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${
+                                        isLoading
+                                            ? "bg-green-400 cursor-not-allowed"
+                                            : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                    } transition duration-150 ease-in-out`}
                                 >
-                                    I agree to the{" "}
-                                    <a
-                                        href="#"
+                                    {isLoading ? (
+                                        <>
+                                            <svg
+                                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                ></path>
+                                            </svg>
+                                            Creating Account...
+                                        </>
+                                    ) : (
+                                        "Create Account"
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="mt-8 flex items-center justify-center">
+                                <ArrowLeft className="h-4 w-4 text-gray-500 mr-2" />
+                                <p className="text-center text-sm text-gray-600">
+                                    Already have an account?{" "}
+                                    <Link
+                                        to="/login"
                                         className="font-medium text-green-600 hover:text-green-500"
                                     >
-                                        Terms of Service
-                                    </a>{" "}
-                                    and{" "}
-                                    <a
-                                        href="#"
-                                        className="font-medium text-green-600 hover:text-green-500"
-                                    >
-                                        Privacy Policy
-                                    </a>
-                                </label>
+                                        Sign in
+                                    </Link>
+                                </p>
                             </div>
                         </div>
+                    </div>
 
-                        {error && (
-                            <div className="text-red-500 text-sm text-center">
-                                {error}
-                            </div>
-                        )}
-
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                            >
-                                {isLoading ? (
-                                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                                        <svg
-                                            className="animate-spin h-5 w-5 text-white"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            ></circle>
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            ></path>
-                                        </svg>
-                                    </span>
-                                ) : (
-                                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-5 w-5 text-green-100 group-hover:text-white"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                                            />
-                                        </svg>
-                                    </span>
-                                )}
-                                {isLoading
-                                    ? "Creating account..."
-                                    : "Create account"}
-                            </button>
-                        </div>
-                    </form>
+                    {/* Decorative element - bottom leaf */}
+                    <div className="hidden lg:block absolute -bottom-8 -left-8 opacity-60">
+                        <svg
+                            width="120"
+                            height="120"
+                            viewBox="0 0 120 120"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M60 0C60 33.1371 33.1371 60 0 60C33.1371 60 60 86.8629 60 120C60 86.8629 86.8629 60 120 60C86.8629 60 60 33.1371 60 0Z"
+                                fill="#A7F3D0"
+                            />
+                        </svg>
+                    </div>
                 </div>
             </div>
         </>

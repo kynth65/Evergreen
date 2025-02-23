@@ -1,0 +1,196 @@
+import { Navigate, Outlet } from "react-router-dom";
+import { useStateContext } from "../context/ContextProvider";
+import { Link, useLocation } from "react-router-dom";
+import {
+    Headset,
+    MessageSquare,
+    Users,
+    Settings,
+    BarChart2,
+    ChevronLeft,
+    ChevronRight,
+    LayoutDashboard,
+    Clock,
+    FileText,
+    User,
+    Home,
+} from "lucide-react";
+import { useState } from "react";
+
+export default function AgentLayout() {
+    const { user, token } = useStateContext();
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const location = useLocation();
+
+    if (!token) {
+        return <Navigate to="/login" />;
+    }
+
+    const menuItems = [
+        {
+            path: "/agent/dashboard",
+            name: "Dashboard",
+            icon: <LayoutDashboard className="w-6 h-6" />,
+            description: "Performance overview",
+        },
+        {
+            path: "/agent/tickets",
+            name: "Tickets",
+            icon: <MessageSquare className="w-6 h-6" />,
+            description: "Manage support tickets",
+        },
+        {
+            path: "/agent/customers",
+            name: "Customers",
+            icon: <Users className="w-6 h-6" />,
+            description: "Customer information",
+        },
+        {
+            path: "/agent/calls",
+            name: "Call Center",
+            icon: <Headset className="w-6 h-6" />,
+            description: "Call management",
+        },
+        {
+            path: "/agent/schedule",
+            name: "Schedule",
+            icon: <Clock className="w-6 h-6" />,
+            description: "Your work schedule",
+        },
+        {
+            path: "/agent/reports",
+            name: "Reports",
+            icon: <FileText className="w-6 h-6" />,
+            description: "Generate reports",
+        },
+        {
+            path: "/agent/analytics",
+            name: "Analytics",
+            icon: <BarChart2 className="w-6 h-6" />,
+            description: "Performance metrics",
+        },
+    ];
+
+    return (
+        <div className="flex h-screen bg-gray-50">
+            {/* Sidebar */}
+            <div
+                className={`bg-white shadow-lg transition-all duration-300 ${
+                    isCollapsed ? "w-20" : "w-64"
+                }`}
+            >
+                <div className="flex flex-col h-full">
+                    {/* Sidebar Header */}
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
+                        <div className="flex items-center justify-between">
+                            {!isCollapsed && (
+                                <h2 className="text-xl font-bold text-white">
+                                    Evergreen Agent
+                                </h2>
+                            )}
+                            <button
+                                onClick={() => setIsCollapsed(!isCollapsed)}
+                                className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+                            >
+                                {isCollapsed ? (
+                                    <ChevronRight className="w-5 h-5" />
+                                ) : (
+                                    <ChevronLeft className="w-5 h-5" />
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <nav className="flex-1 overflow-y-auto py-4">
+                        {menuItems.map((item) => {
+                            const isActive = location.pathname === item.path;
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
+                                        ${
+                                            isActive
+                                                ? "bg-green-50 text-green-600"
+                                                : "text-gray-600 hover:bg-gray-50"
+                                        }
+                                    `}
+                                >
+                                    <div
+                                        className={`${
+                                            isActive
+                                                ? "text-green-600"
+                                                : "text-gray-500"
+                                        }`}
+                                    >
+                                        {item.icon}
+                                    </div>
+                                    {!isCollapsed && (
+                                        <div className="ml-3">
+                                            <p className="font-medium">
+                                                {item.name}
+                                            </p>
+                                            <p className="text-xs text-gray-500">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    )}
+                                </Link>
+                            );
+                        })}
+                    </nav>
+
+                    {/* User Info */}
+                    <div className="p-4 border-t border-gray-200">
+                        <Link to="/agent/profile">
+                            <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
+                                    {user?.name?.[0]?.toUpperCase() || "A"}
+                                </div>
+                                {!isCollapsed && (
+                                    <div className="ml-3">
+                                        <p className="font-medium text-sm">
+                                            {user?.name || "Agent"}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            Real Estate Agent
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 overflow-x-hidden overflow-y-auto">
+                <div className="p-6">
+                    <Outlet />
+                </div>
+            </div>
+
+            {/* Decorative element - clover */}
+            <div className="hidden lg:block fixed bottom-0 left-0 opacity-10 z-0 pointer-events-none">
+                <svg
+                    width="180"
+                    height="180"
+                    viewBox="0 0 120 120"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <g fill="#047857">
+                        {/* Four-leaf clover design */}
+                        <path d="M60 30C60 13.4315 46.5685 0 30 0C13.4315 0 0 13.4315 0 30C0 46.5685 13.4315 60 30 60C46.5685 60 60 46.5685 60 30Z" />
+                        <path d="M60 90C60 73.4315 46.5685 60 30 60C13.4315 60 0 73.4315 0 90C0 106.569 13.4315 120 30 120C46.5685 120 60 106.569 60 90Z" />
+                        <path d="M90 60C73.4315 60 60 73.4315 60 90C60 106.569 73.4315 120 90 120C106.569 120 120 106.569 120 90C120 73.4315 106.569 60 90 60Z" />
+                        <path d="M90 0C73.4315 0 60 13.4315 60 30C60 46.5685 73.4315 60 90 60C106.569 60 120 46.5685 120 30C120 13.4315 106.569 0 90 0Z" />
+                        {/* Small circle in center */}
+                        <circle cx="60" cy="60" r="5" />
+                    </g>
+                </svg>
+            </div>
+        </div>
+    );
+}

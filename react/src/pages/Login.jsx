@@ -1,43 +1,42 @@
-import React, { useState } from "react";
-import Header from "../components/Header"; // Adjust the import path as needed
+import React, { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axiosClient from "../axios.client";
+import { useStateContext } from "../context/ContextProvider";
+import Header from "../components/header";
+import { Mail, Lock, LogIn, AlertCircle } from "lucide-react";
 
 export default function Login() {
-    const [formData, setFormData] = useState({
-        email: "",
-        password: "",
-    });
+    const emailRef = useRef();
+    const passwordRef = useRef();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
-    };
+    const navigate = useNavigate();
+    const { setUser, setToken } = useStateContext();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError("");
 
-        try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            console.log("Login attempt with:", formData);
+        const payload = {
+            email: emailRef.current.value,
+            password: passwordRef.current.value,
+        };
 
-            // This would be replaced with actual authentication logic
-            if (formData.email && formData.password) {
-                // Successful login simulation
-                console.log("Login successful");
-                // Redirect would happen here
-            } else {
-                setError("Please fill in all fields");
-            }
+        try {
+            const { data } = await axiosClient.post("/login", payload);
+
+            // Store token and user info
+            setUser(data.user);
+            setToken(data.token);
+
+            // Redirect to agent dashboard
+            navigate("/agent");
         } catch (err) {
-            setError("An error occurred. Please try again.");
-            console.error(err);
+            console.error("Login error:", err);
+            const message =
+                err.response?.data?.message || "Invalid credentials";
+            setError(message);
         } finally {
             setIsLoading(false);
         }
@@ -46,147 +45,191 @@ export default function Login() {
     return (
         <>
             <Header />
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-md w-full space-y-8">
-                    <div>
-                        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                            Sign in to your account
-                        </h2>
-                        <p className="mt-2 text-center text-sm text-gray-600">
-                            Or{" "}
-                            <a
-                                href="#"
-                                className="font-medium text-green-600 hover:text-green-500"
-                            >
-                                create a new account
-                            </a>
-                        </p>
+            <div className="min-h-screen flex items-center justify-center mt-[-110pxd] bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-md w-full relative">
+                    {/* Decorative element - top leaf */}
+                    <div className="hidden lg:block absolute -top-8 -right-8 opacity-60">
+                        <svg
+                            width="120"
+                            height="120"
+                            viewBox="0 0 120 120"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M60 0C60 33.1371 33.1371 60 0 60C33.1371 60 60 86.8629 60 120C60 86.8629 86.8629 60 120 60C86.8629 60 60 33.1371 60 0Z"
+                                fill="#A7F3D0"
+                            />
+                        </svg>
                     </div>
 
-                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                        <input
-                            type="hidden"
-                            name="remember"
-                            defaultValue="true"
-                        />
-                        <div className="rounded-md shadow-sm -space-y-px">
-                            <div>
-                                <label htmlFor="email" className="sr-only">
-                                    Email address
-                                </label>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    required
-                                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                                    placeholder="Email address"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                />
+                    {/* Login Card */}
+                    <div className="bg-white shadow-lg rounded-2xl overflow-hidden">
+                        {/* Card header */}
+                        <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8">
+                            <div className="flex justify-center mb-4">
+                                <div className="bg-white bg-opacity-20 rounded-full p-3">
+                                    <LogIn className="h-8 w-8 text-white" />
+                                </div>
                             </div>
-                            <div>
-                                <label htmlFor="password" className="sr-only">
-                                    Password
-                                </label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    required
-                                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                                    placeholder="Password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                            <h2 className="text-2xl font-bold text-white text-center">
+                                Sign in to your account
+                            </h2>
+                            <p className="mt-2 text-green-50 text-center">
+                                Access your Evergreen properties dashboard
+                            </p>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <input
-                                    id="remember-me"
-                                    name="remember-me"
-                                    type="checkbox"
-                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                />
-                                <label
-                                    htmlFor="remember-me"
-                                    className="ml-2 block text-sm text-gray-900"
-                                >
-                                    Remember me
-                                </label>
-                            </div>
+                        {/* Form section */}
+                        <div className="px-6 py-8 md:px-8">
+                            {error && (
+                                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
+                                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                                    <p className="text-sm text-red-600">
+                                        {error}
+                                    </p>
+                                </div>
+                            )}
 
-                            <div className="text-sm">
-                                <a
-                                    href="#"
-                                    className="font-medium text-green-600 hover:text-green-500"
-                                >
-                                    Forgot your password?
-                                </a>
-                            </div>
-                        </div>
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div>
+                                    <label
+                                        htmlFor="email"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Email Address
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Mail className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            ref={emailRef}
+                                            type="email"
+                                            id="email"
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                            placeholder="you@example.com"
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                        {error && (
-                            <div className="text-red-500 text-sm text-center">
-                                {error}
-                            </div>
-                        )}
+                                <div>
+                                    <label
+                                        htmlFor="password"
+                                        className="block text-sm font-medium text-gray-700 mb-1"
+                                    >
+                                        Password
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Lock className="h-5 w-5 text-gray-400" />
+                                        </div>
+                                        <input
+                                            ref={passwordRef}
+                                            type="password"
+                                            id="password"
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                            placeholder="Enter your password"
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                            >
-                                {isLoading ? (
-                                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                                        <svg
-                                            className="animate-spin h-5 w-5 text-white"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <input
+                                            id="remember-me"
+                                            name="remember-me"
+                                            type="checkbox"
+                                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                        />
+                                        <label
+                                            htmlFor="remember-me"
+                                            className="ml-2 block text-sm text-gray-700"
                                         >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
-                                            ></circle>
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            ></path>
-                                        </svg>
-                                    </span>
-                                ) : (
-                                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-5 w-5 text-green-100 group-hover:text-white"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
+                                            Remember me
+                                        </label>
+                                    </div>
+
+                                    <div className="text-sm">
+                                        <a
+                                            href="#"
+                                            className="font-medium text-green-600 hover:text-green-500"
                                         >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                                            />
-                                        </svg>
-                                    </span>
-                                )}
-                                {isLoading ? "Signing in..." : "Sign in"}
-                            </button>
+                                            Forgot password?
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${
+                                        isLoading
+                                            ? "bg-green-400 cursor-not-allowed"
+                                            : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                    } transition duration-150 ease-in-out`}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <svg
+                                                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                ></path>
+                                            </svg>
+                                            Signing in...
+                                        </>
+                                    ) : (
+                                        "Sign in"
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="mt-8 text-center">
+                                <p className="text-sm text-gray-600">
+                                    Don't have an account?{" "}
+                                    <Link
+                                        to="/signup"
+                                        className="font-medium text-green-600 hover:text-green-500"
+                                    >
+                                        Create an account
+                                    </Link>
+                                </p>
+                            </div>
                         </div>
-                    </form>
+                    </div>
+
+                    {/* Decorative element - bottom leaf */}
+                    <div className="hidden lg:block absolute -bottom-8 -left-8 opacity-60">
+                        <svg
+                            width="120"
+                            height="120"
+                            viewBox="0 0 120 120"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M60 0C60 33.1371 33.1371 60 0 60C33.1371 60 60 86.8629 60 120C60 86.8629 86.8629 60 120 60C86.8629 60 60 33.1371 60 0Z"
+                                fill="#A7F3D0"
+                            />
+                        </svg>
+                    </div>
                 </div>
             </div>
         </>

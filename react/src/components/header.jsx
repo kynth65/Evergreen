@@ -49,7 +49,7 @@ export default function Header() {
                             <ul className="flex flex-col gap-8 font-grotesk font-medium text-center">
                                 <li>
                                     <Link
-                                        to="/"
+                                        to="/about"
                                         className="hover:text-gray-600 text-2xl"
                                         onClick={() => setIsMenuOpen(false)}
                                     >
@@ -57,13 +57,13 @@ export default function Header() {
                                     </Link>
                                 </li>
                                 <li>
-                                    <a
-                                        href="#"
+                                    <Link
+                                        to="/services"
                                         className="hover:text-gray-600 text-2xl"
                                         onClick={() => setIsMenuOpen(false)}
                                     >
                                         Services
-                                    </a>
+                                    </Link>
                                 </li>
                                 <li>
                                     <Link
@@ -92,14 +92,20 @@ export default function Header() {
                 <div className="hidden lg:flex items-center gap-8">
                     <ul className="flex gap-8 font-grotesk font-medium">
                         <li>
-                            <a href="#" className="hover:text-gray-600 text-lg">
+                            <Link
+                                to="/about"
+                                className="hover:text-gray-600 text-lg"
+                            >
                                 About
-                            </a>
+                            </Link>
                         </li>
                         <li>
-                            <a href="#" className="hover:text-gray-600 text-lg">
+                            <Link
+                                to="/land"
+                                className="hover:text-gray-600 text-lg"
+                            >
                                 Land
-                            </a>
+                            </Link>
                         </li>
                         <li>
                             <Link
@@ -110,12 +116,14 @@ export default function Header() {
                             </Link>
                         </li>
                     </ul>
-                    <Link
-                        to="/login"
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors font-medium"
-                    >
-                        Login
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            to="/login"
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors font-medium"
+                        >
+                            Login
+                        </Link>
+                    </div>
                 </div>
             </nav>
         </header>
