@@ -8,6 +8,7 @@ import About from "./pages/About";
 import AgentLayout from "./layouts/AgentLayout";
 import AgentDashboard from "./pages/Agent/AgentDashboard";
 import Profile from "./pages/Profile";
+import Land from "./pages/Land";
 
 const router = createBrowserRouter([
     {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
                 element: <About />,
             },
             {
+                path: "/land",
+                element: <Land />,
+            },
+            {
                 path: "contact",
                 element: <ContactUs />,
             },
@@ -42,7 +47,7 @@ const router = createBrowserRouter([
         element: <AgentLayout />,
         children: [
             {
-                path: "dashboard",
+                path: "",
                 element: <AgentDashboard />,
             },
             {

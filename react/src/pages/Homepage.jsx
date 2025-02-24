@@ -68,9 +68,7 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-[#f7fdf7]">
-            <AnimatedSection delay={0}>
-                <Header />
-            </AnimatedSection>
+            <Header />
 
             <div className="mb-40">
                 <AnimatedSection delay={200}>

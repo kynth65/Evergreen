@@ -28,7 +28,7 @@ export default function AgentLayout() {
 
     const menuItems = [
         {
-            path: "/agent/dashboard",
+            path: "/agent",
             name: "Dashboard",
             icon: <LayoutDashboard className="w-6 h-6" />,
             description: "Performance overview",

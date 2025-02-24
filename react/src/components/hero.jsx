@@ -70,7 +70,7 @@ export default function Hero() {
             </div>
             <ScrollVelocity
                 texts={["Evergreen", "Realty Philippines"]}
-                velocity={40}
+                velocity={50}
                 className="custom-scroll-text "
             />
         </>
