@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../axios.client";
 import { useStateContext } from "../context/ContextProvider";
 import Header from "../components/header";
@@ -31,7 +31,29 @@ export default function Login() {
       setToken(data.token);
 
       // Redirect to agent dashboard
-      navigate("/agent");
+      if (data.user && data.user.role) {
+        switch (data.user.role) {
+          case "superadmin":
+            navigate("/superadmin");
+            break;
+          case "admin":
+            navigate("/admin");
+            break;
+          case "agent":
+            navigate("/agent");
+            break;
+          case "intern":
+            navigate("/intern");
+            break;
+          default:
+            // Default fallback if role is unknown
+            navigate("/agent");
+            break;
+        }
+      } else {
+        // Fallback if role is not provided
+        navigate("/agent");
+      }
     } catch (err) {
       console.error("Login error:", err);
       const message = err.response?.data?.message || "Invalid credentials";
@@ -198,17 +220,7 @@ export default function Login() {
                 </button>
               </form>
 
-              <div className="mt-8 text-center">
-                <p className="text-sm text-gray-600">
-                  Don't have an account?{" "}
-                  <Link
-                    to="/signup"
-                    className="font-medium text-green-600 hover:text-green-500"
-                  >
-                    Create an account
-                  </Link>
-                </p>
-              </div>
+              {/* Removed the signup link section */}
             </div>
           </div>
 

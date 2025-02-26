@@ -2,22 +2,17 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useStateContext } from "../context/ContextProvider";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Headset,
-  MessageSquare,
+  LayoutDashboard,
   Users,
   Settings,
-  BarChart2,
+  FileText,
+  MessageSquare,
   ChevronLeft,
   ChevronRight,
-  LayoutDashboard,
-  Clock,
-  FileText,
-  User,
-  Home,
 } from "lucide-react";
 import { useState } from "react";
 
-export default function AgentLayout() {
+export default function AdminLayout() {
   const { user, token } = useStateContext();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
@@ -27,53 +22,41 @@ export default function AgentLayout() {
     return <Navigate to="/login" />;
   }
 
-  // Redirect to appropriate dashboard if user is not an agent
-  if (user && user.role && user.role !== "agent") {
+  // Redirect to appropriate dashboard if user is not an admin
+  if (user && user.role && user.role !== "admin") {
     return <Navigate to={`/${user.role}`} />;
   }
 
   const menuItems = [
     {
-      path: "/agent",
+      path: "/admin",
       name: "Dashboard",
       icon: <LayoutDashboard className="w-6 h-6" />,
-      description: "Performance overview",
+      description: "Admin overview",
     },
     {
-      path: "/agent/tickets",
-      name: "Tickets",
-      icon: <MessageSquare className="w-6 h-6" />,
-      description: "Manage support tickets",
-    },
-    {
-      path: "/agent/customers",
-      name: "Customers",
+      path: "/admin/users",
+      name: "Users",
       icon: <Users className="w-6 h-6" />,
-      description: "Customer information",
+      description: "Manage users",
     },
     {
-      path: "/agent/calls",
-      name: "Call Center",
-      icon: <Headset className="w-6 h-6" />,
-      description: "Call management",
+      path: "/admin/settings",
+      name: "Settings",
+      icon: <Settings className="w-6 h-6" />,
+      description: "System settings",
     },
     {
-      path: "/agent/schedule",
-      name: "Schedule",
-      icon: <Clock className="w-6 h-6" />,
-      description: "Your work schedule",
-    },
-    {
-      path: "/agent/reports",
+      path: "/admin/reports",
       name: "Reports",
       icon: <FileText className="w-6 h-6" />,
-      description: "Generate reports",
+      description: "View reports",
     },
     {
-      path: "/agent/analytics",
-      name: "Analytics",
-      icon: <BarChart2 className="w-6 h-6" />,
-      description: "Performance metrics",
+      path: "/admin/messages",
+      name: "Messages",
+      icon: <MessageSquare className="w-6 h-6" />,
+      description: "Message center",
     },
   ];
 
@@ -91,7 +74,7 @@ export default function AgentLayout() {
             <div className="flex items-center justify-between">
               {!isCollapsed && (
                 <h2 className="text-xl font-bold text-white">
-                  Evergreen Agent
+                  Evergreen Admin
                 </h2>
               )}
               <button
@@ -116,12 +99,12 @@ export default function AgentLayout() {
                   key={item.path}
                   to={item.path}
                   className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
-                                        ${
-                                          isActive
-                                            ? "bg-green-50 text-green-600"
-                                            : "text-gray-600 hover:bg-gray-50"
-                                        }
-                                    `}
+                    ${
+                      isActive
+                        ? "bg-green-50 text-green-600"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }
+                  `}
                 >
                   <div
                     className={`${
@@ -145,7 +128,7 @@ export default function AgentLayout() {
 
           {/* User Info */}
           <div className="p-4 border-t border-gray-200">
-            <Link to="/agent/profile">
+            <Link to="/admin/profile">
               <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
                   {user?.first_name?.[0]?.toUpperCase() ||
@@ -157,9 +140,9 @@ export default function AgentLayout() {
                     <p className="font-medium text-sm">
                       {user?.first_name && user?.last_name
                         ? `${user.first_name} ${user.last_name}`
-                        : user?.name || "Agent"}
+                        : user?.name || "Admin"}
                     </p>
-                    <p className="text-xs text-gray-500">Real Estate Agent</p>
+                    <p className="text-xs text-gray-500">Administrator</p>
                   </div>
                 )}
               </div>

@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\AccountManagementController; // <-- Fix this line: remove 'Api\'
 
 
 
@@ -23,3 +24,14 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);
+
+
+//Super Admin Routes
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('users', AccountManagementController::class);
+    Route::get('roles', function() {
+        return response()->json([
+            'roles' => ['superadmin', 'admin', 'agent', 'intern']
+        ]);
+    });
+});
