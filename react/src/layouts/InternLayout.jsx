@@ -3,10 +3,7 @@ import { useStateContext } from "../context/ContextProvider";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  BookOpen,
-  Calendar,
   FileText,
-  HelpCircle,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -35,28 +32,10 @@ export default function InternLayout() {
       description: "Intern overview",
     },
     {
-      path: "/intern/learning",
-      name: "Learning",
-      icon: <BookOpen className="w-6 h-6" />,
-      description: "Training materials",
-    },
-    {
-      path: "/intern/schedule",
-      name: "Schedule",
-      icon: <Calendar className="w-6 h-6" />,
-      description: "View your schedule",
-    },
-    {
       path: "/intern/tasks",
       name: "Tasks",
       icon: <FileText className="w-6 h-6" />,
       description: "Assigned tasks",
-    },
-    {
-      path: "/intern/help",
-      name: "Help Center",
-      icon: <HelpCircle className="w-6 h-6" />,
-      description: "Get assistance",
     },
   ];
 

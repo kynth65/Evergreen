@@ -12,10 +12,12 @@ import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import SuperAdminDashboard from "./pages/SuperAdminLayout.jsx/SuperAdminDashboard";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import TaskManagement from "./pages/Admin/AdminTaskManagement";
 import InternLayout from "./layouts/InternLayout";
 import InternDashboard from "./pages/Intern/InternDashboard";
 import SuperAdminAccountManagement from "./pages/SuperAdminLayout.jsx/SuperAdminAccountManagement";
 import NotFound from "./404/NotFound";
+import InternTask from "./pages/Intern/InternTask";
 
 const router = createBrowserRouter([
   {
@@ -75,20 +77,8 @@ const router = createBrowserRouter([
         element: <Profile />,
       },
       {
-        path: "users",
-        element: <div>Users Management</div>,
-      },
-      {
-        path: "settings",
-        element: <div>System Settings</div>,
-      },
-      {
-        path: "reports",
-        element: <div>Reports Dashboard</div>,
-      },
-      {
-        path: "messages",
-        element: <div>Message Center</div>,
+        path: "tasks-management",
+        element: <TaskManagement />,
       },
     ],
   },
@@ -115,24 +105,12 @@ const router = createBrowserRouter([
         element: <InternDashboard />,
       },
       {
+        path: "tasks",
+        element: <InternTask />,
+      },
+      {
         path: "profile",
         element: <Profile />,
-      },
-      {
-        path: "learning",
-        element: <div>Learning Materials</div>,
-      },
-      {
-        path: "schedule",
-        element: <div>Intern Schedule</div>,
-      },
-      {
-        path: "tasks",
-        element: <div>Assigned Tasks</div>,
-      },
-      {
-        path: "help",
-        element: <div>Help Center</div>,
       },
     ],
   },

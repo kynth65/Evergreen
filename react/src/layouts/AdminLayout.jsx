@@ -3,12 +3,9 @@ import { useStateContext } from "../context/ContextProvider";
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Users,
-  Settings,
-  FileText,
-  MessageSquare,
   ChevronLeft,
   ChevronRight,
+  CheckSquare,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -35,28 +32,10 @@ export default function AdminLayout() {
       description: "Admin overview",
     },
     {
-      path: "/admin/users",
-      name: "Users",
-      icon: <Users className="w-6 h-6" />,
-      description: "Manage users",
-    },
-    {
-      path: "/admin/settings",
-      name: "Settings",
-      icon: <Settings className="w-6 h-6" />,
-      description: "System settings",
-    },
-    {
-      path: "/admin/reports",
-      name: "Reports",
-      icon: <FileText className="w-6 h-6" />,
-      description: "View reports",
-    },
-    {
-      path: "/admin/messages",
-      name: "Messages",
-      icon: <MessageSquare className="w-6 h-6" />,
-      description: "Message center",
+      path: "/admin/tasks-management",
+      name: "Task Management",
+      icon: <CheckSquare className="w-6 h-6" />,
+      description: "Manage tasks",
     },
   ];
 
