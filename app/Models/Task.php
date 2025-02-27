@@ -20,6 +20,9 @@ class Task extends Model
         'description',
         'instructions',
         'image_path',
+        'submission_file_path',
+        'submission_date',
+        'is_submission_checked',
         'status',
         'due_date',
         'created_by',
@@ -32,6 +35,8 @@ class Task extends Model
      */
     protected $casts = [
         'due_date' => 'datetime',
+        'submission_date' => 'datetime',
+        'is_submission_checked' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -66,5 +71,17 @@ class Task extends Model
     {
         return $query->where('due_date', '<', now())
                      ->where('status', '!=', 'completed');
+    }
+
+    /**
+     * Filter tasks with submissions that need review.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeNeedsReview($query)
+    {
+        return $query->whereNotNull('submission_file_path')
+                     ->where('is_submission_checked', false);
     }
 }

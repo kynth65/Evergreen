@@ -47,10 +47,19 @@
         Route::put('/tasks/{id}', [TaskController::class, 'update']);
         Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
         Route::patch('/tasks/{id}/status', [TaskController::class, 'updateStatus']);
+
+
+        // Routes for checking the submission files
+        Route::patch('/tasks/{id}/submission/check', [TaskController::class, 'markSubmissionChecked']);
+
     });
 
     // Intern Routes - Read-only access to tasks
 Route::middleware(['auth:sanctum', 'role:intern'])->prefix('/intern')->group(function () {
     Route::get('/tasks', [InternTaskController::class, 'index']);
     Route::get('/tasks/{id}', [InternTaskController::class, 'show']);
+    
+    //Routes for submmiting task
+    Route::post('/tasks/{id}/submit', [InternTaskController::class, 'submitWork']);
+
 });

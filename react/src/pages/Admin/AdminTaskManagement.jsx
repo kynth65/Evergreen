@@ -15,6 +15,12 @@ import {
   Tag,
   Tooltip,
   Popconfirm,
+  Badge,
+  Tabs,
+  Card,
+  Descriptions,
+  Typography,
+  Divider,
 } from "antd";
 import {
   PlusOutlined,
@@ -24,12 +30,17 @@ import {
   CloseCircleOutlined,
   ClockCircleOutlined,
   UploadOutlined,
+  FileOutlined,
+  CheckOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStateContext } from "../../context/ContextProvider";
 
 const { TextArea } = Input;
 const { Option } = Select;
+const { TabPane } = Tabs;
+const { Title, Paragraph, Text } = Typography;
 
 export default function AdminTaskManagement() {
   const { token } = useStateContext();
@@ -41,15 +52,24 @@ export default function AdminTaskManagement() {
     total: 0,
   });
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isViewSubmissionModalVisible, setIsViewSubmissionModalVisible] =
+    useState(false);
   const [modalTitle, setModalTitle] = useState("Add New Task");
   const [selectedTask, setSelectedTask] = useState(null);
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState([]);
   const [filterStatus, setFilterStatus] = useState(null);
+  const [filterNeedsReview, setFilterNeedsReview] = useState(false);
+  const [markingAsChecked, setMarkingAsChecked] = useState(false);
 
   useEffect(() => {
     fetchTasks();
-  }, [pagination.current, pagination.pageSize, filterStatus]);
+  }, [
+    pagination.current,
+    pagination.pageSize,
+    filterStatus,
+    filterNeedsReview,
+  ]);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -61,6 +81,10 @@ export default function AdminTaskManagement() {
 
       if (filterStatus) {
         params.status = filterStatus;
+      }
+
+      if (filterNeedsReview) {
+        params.needs_review = "true";
       }
 
       const response = await axiosClient.get("/admin/tasks", { params });
@@ -213,6 +237,30 @@ export default function AdminTaskManagement() {
     }
   };
 
+  const showSubmissionModal = (task) => {
+    setSelectedTask(task);
+    setIsViewSubmissionModalVisible(true);
+  };
+
+  const handleSubmissionModalCancel = () => {
+    setIsViewSubmissionModalVisible(false);
+  };
+
+  const markSubmissionAsChecked = async (id) => {
+    setMarkingAsChecked(true);
+    try {
+      await axiosClient.patch(`/admin/tasks/${id}/submission/check`);
+      message.success("Submission marked as checked");
+      setIsViewSubmissionModalVisible(false);
+      fetchTasks();
+    } catch (error) {
+      console.error("Error marking submission as checked:", error);
+      message.error("Failed to mark submission as checked");
+    } finally {
+      setMarkingAsChecked(false);
+    }
+  };
+
   // Helper function to get creator display name
   const getCreatorName = (creator) => {
     if (!creator) return "Unknown";
@@ -220,6 +268,46 @@ export default function AdminTaskManagement() {
       return `${creator.first_name} ${creator.last_name}`;
     }
     return creator.email || `User #${creator.id}`;
+  };
+
+  // Function to get proper file URL
+  const getFileUrl = (filePath) => {
+    if (!filePath) return null;
+    // Check if the path already has the full URL
+    if (filePath.startsWith("http")) {
+      return filePath;
+    }
+    // Check if the path already includes /storage/
+    if (filePath.startsWith("/storage/")) {
+      return filePath;
+    }
+    // Otherwise, prepend /storage/ to the path
+    return `/storage/${filePath}`;
+  };
+
+  const renderSubmissionStatus = (task) => {
+    if (!task.submission_file_path) {
+      return <Tag>No submission</Tag>;
+    }
+
+    if (task.is_submission_checked) {
+      return (
+        <Tag color="green" icon={<CheckCircleOutlined />}>
+          Reviewed
+        </Tag>
+      );
+    }
+
+    return (
+      <Badge
+        status="processing"
+        text={
+          <Tag color="orange" icon={<ClockCircleOutlined />}>
+            Needs Review
+          </Tag>
+        }
+      />
+    );
   };
 
   const columns = [
@@ -273,6 +361,11 @@ export default function AdminTaskManagement() {
         date ? dayjs(date).format("YYYY-MM-DD") : "No due date",
     },
     {
+      title: "Submission",
+      key: "submission",
+      render: (_, record) => renderSubmissionStatus(record),
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
@@ -283,6 +376,19 @@ export default function AdminTaskManagement() {
             size="small"
             onClick={() => showEditModal(record)}
           />
+
+          {record.submission_file_path && (
+            <Button
+              type="primary"
+              ghost
+              icon={<FileOutlined />}
+              size="small"
+              onClick={() => showSubmissionModal(record)}
+            >
+              {record.is_submission_checked ? "View Submission" : "Review"}
+            </Button>
+          )}
+
           <Popconfirm
             title="Are you sure you want to delete this task?"
             onConfirm={() => handleDelete(record.id)}
@@ -291,6 +397,7 @@ export default function AdminTaskManagement() {
           >
             <Button danger icon={<DeleteOutlined />} size="small" />
           </Popconfirm>
+
           {record.status !== "completed" && (
             <Button
               type="primary"
@@ -330,12 +437,23 @@ export default function AdminTaskManagement() {
             style={{ width: 150 }}
             placeholder="All statuses"
             allowClear
+            value={filterStatus}
             onChange={(value) => setFilterStatus(value)}
           >
             <Option value="pending">Pending</Option>
             <Option value="completed">Completed</Option>
             <Option value="failed">Failed</Option>
           </Select>
+
+          <Tooltip title="Show only tasks with submissions that need review">
+            <Button
+              type={filterNeedsReview ? "primary" : "default"}
+              icon={<InboxOutlined />}
+              onClick={() => setFilterNeedsReview(!filterNeedsReview)}
+            >
+              Needs Review
+            </Button>
+          </Tooltip>
         </Space>
       </div>
 
@@ -348,6 +466,7 @@ export default function AdminTaskManagement() {
         loading={loading}
       />
 
+      {/* Add/Edit Task Modal */}
       <Modal
         title={modalTitle}
         open={isModalVisible}
@@ -417,6 +536,105 @@ export default function AdminTaskManagement() {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* View Submission Modal */}
+      <Modal
+        title="Review Task Submission"
+        open={isViewSubmissionModalVisible}
+        onCancel={handleSubmissionModalCancel}
+        footer={[
+          <Button key="close" onClick={handleSubmissionModalCancel}>
+            Close
+          </Button>,
+          selectedTask &&
+            selectedTask.submission_file_path &&
+            !selectedTask.is_submission_checked && (
+              <Button
+                key="mark-checked"
+                type="primary"
+                icon={<CheckOutlined />}
+                loading={markingAsChecked}
+                onClick={() => markSubmissionAsChecked(selectedTask.id)}
+              >
+                Mark as Reviewed
+              </Button>
+            ),
+        ]}
+        width={800}
+      >
+        {selectedTask && (
+          <div>
+            <Card title="Task Details">
+              <Descriptions bordered column={1}>
+                <Descriptions.Item label="Task Name">
+                  {selectedTask.task_name}
+                </Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  <Tag
+                    color={
+                      selectedTask.status === "completed"
+                        ? "success"
+                        : selectedTask.status === "failed"
+                        ? "error"
+                        : "processing"
+                    }
+                  >
+                    {selectedTask.status.toUpperCase()}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Due Date">
+                  {selectedTask.due_date
+                    ? dayjs(selectedTask.due_date).format("YYYY-MM-DD")
+                    : "No due date"}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Divider />
+
+            <Card title="Submission Details">
+              <Descriptions bordered column={1}>
+                <Descriptions.Item label="Submission Date">
+                  {selectedTask.submission_date
+                    ? dayjs(selectedTask.submission_date).format(
+                        "YYYY-MM-DD HH:mm:ss"
+                      )
+                    : "Not recorded"}
+                </Descriptions.Item>
+                <Descriptions.Item label="Review Status">
+                  {selectedTask.is_submission_checked ? (
+                    <Tag color="green" icon={<CheckCircleOutlined />}>
+                      Reviewed
+                    </Tag>
+                  ) : (
+                    <Tag color="orange" icon={<ClockCircleOutlined />}>
+                      Pending Review
+                    </Tag>
+                  )}
+                </Descriptions.Item>
+                <Descriptions.Item label="Submitted File">
+                  <a
+                    href={getFileUrl(selectedTask.submission_file_path)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Download Submission
+                  </a>
+                </Descriptions.Item>
+              </Descriptions>
+
+              {!selectedTask.is_submission_checked && (
+                <div style={{ marginTop: "20px" }}>
+                  <Text type="warning">
+                    <b>Note:</b> After reviewing this submission, click "Mark as
+                    Reviewed" to indicate that you have checked this submission.
+                  </Text>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
       </Modal>
     </div>
   );

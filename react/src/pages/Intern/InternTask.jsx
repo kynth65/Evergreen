@@ -14,12 +14,16 @@ import {
   Descriptions,
   Image,
   Typography,
+  Upload,
+  Form,
 } from "antd";
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   ClockCircleOutlined,
   EyeOutlined,
+  UploadOutlined,
+  FileDoneOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStateContext } from "../../context/ContextProvider";
@@ -29,6 +33,7 @@ const { Title, Paragraph, Text } = Typography;
 export default function InternTasks() {
   const { token } = useStateContext();
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [tasks, setTasks] = useState([]);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -37,7 +42,10 @@ export default function InternTasks() {
   });
   const [viewingTask, setViewingTask] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isSubmitModalVisible, setIsSubmitModalVisible] = useState(false);
+  const [fileList, setFileList] = useState([]);
   const [filterStatus, setFilterStatus] = useState(null);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     fetchTasks();
@@ -50,15 +58,12 @@ export default function InternTasks() {
         page: pagination.current,
         per_page: pagination.pageSize,
       };
-
       if (filterStatus) {
         params.status = filterStatus;
       }
-
       const response = await axiosClient.get("/intern/tasks", {
         params,
       });
-
       if (response.data && response.data.data) {
         setTasks(response.data.data.data || []);
         setPagination({
@@ -89,10 +94,55 @@ export default function InternTasks() {
     setIsModalVisible(false);
   };
 
+  const showSubmitModal = (task) => {
+    setViewingTask(task);
+    setFileList([]);
+    form.resetFields();
+    setIsSubmitModalVisible(true);
+  };
+
+  const handleSubmitCancel = () => {
+    setIsSubmitModalVisible(false);
+  };
+
+  const handleSubmitWork = async () => {
+    if (fileList.length === 0) {
+      message.error("Please upload a file to submit");
+      return;
+    }
+
+    setSubmitting(true);
+    const formData = new FormData();
+    formData.append("submission_file", fileList[0].originFileObj);
+
+    try {
+      const response = await axiosClient.post(
+        `/intern/tasks/${viewingTask.id}/submit`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      message.success(response.data.message || "Work submitted successfully");
+      setIsSubmitModalVisible(false);
+      fetchTasks(); // Refresh the task list
+    } catch (error) {
+      console.error("Error submitting work:", error);
+      message.error(
+        "Failed to submit work: " +
+          (error.response?.data?.message || error.message)
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const renderStatusTag = (status) => {
     let color = "default";
     let icon = null;
-
     switch (status) {
       case "completed":
         color = "success";
@@ -109,7 +159,6 @@ export default function InternTasks() {
       default:
         break;
     }
-
     return (
       <Tag color={color} icon={icon}>
         {status ? status.toUpperCase() : "UNKNOWN"}
@@ -117,20 +166,37 @@ export default function InternTasks() {
     );
   };
 
+  const renderSubmissionStatus = (task) => {
+    if (!task.submission_file_path) {
+      return <Tag>Not Submitted</Tag>;
+    }
+
+    if (task.is_submission_checked) {
+      return (
+        <Tag color="green" icon={<CheckCircleOutlined />}>
+          Reviewed
+        </Tag>
+      );
+    }
+
+    return (
+      <Tag color="orange" icon={<ClockCircleOutlined />}>
+        Pending Review
+      </Tag>
+    );
+  };
+
   // Function to get proper image URL
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-
     // Check if the path already has the full URL
     if (imagePath.startsWith("http")) {
       return imagePath;
     }
-
     // Check if the path already includes /storage/
     if (imagePath.startsWith("/storage/")) {
       return imagePath;
     }
-
     // Otherwise, prepend /storage/ to the path
     return `/storage/${imagePath}`;
   };
@@ -171,6 +237,11 @@ export default function InternTasks() {
       },
     },
     {
+      title: "Submission",
+      key: "submission",
+      render: (_, record) => renderSubmissionStatus(record),
+    },
+    {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
@@ -183,6 +254,27 @@ export default function InternTasks() {
           >
             View
           </Button>
+          {record.status !== "completed" && !record.submission_file_path && (
+            <Button
+              type="primary"
+              ghost
+              icon={<UploadOutlined />}
+              size="small"
+              onClick={() => showSubmitModal(record)}
+            >
+              Submit
+            </Button>
+          )}
+          {record.submission_file_path && !record.is_submission_checked && (
+            <Button
+              type="dashed"
+              icon={<UploadOutlined />}
+              size="small"
+              onClick={() => showSubmitModal(record)}
+            >
+              Resubmit
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -192,9 +284,8 @@ export default function InternTasks() {
     <div className="intern-tasks">
       <div style={{ marginBottom: "20px" }}>
         <Title level={2}>My Tasks</Title>
-        <Paragraph>View your assigned tasks.</Paragraph>
+        <Paragraph>View your assigned tasks and submit your work.</Paragraph>
       </div>
-
       {loading && tasks.length === 0 ? (
         <div
           style={{ display: "flex", justifyContent: "center", padding: "40px" }}
@@ -217,6 +308,7 @@ export default function InternTasks() {
         />
       )}
 
+      {/* Task Details Modal */}
       <Modal
         title={viewingTask?.task_name}
         open={isModalVisible}
@@ -225,6 +317,21 @@ export default function InternTasks() {
           <Button key="close" onClick={handleCancel}>
             Close
           </Button>,
+          viewingTask &&
+            viewingTask.status !== "completed" &&
+            !viewingTask.submission_file_path && (
+              <Button
+                key="submit"
+                type="primary"
+                icon={<UploadOutlined />}
+                onClick={() => {
+                  handleCancel();
+                  showSubmitModal(viewingTask);
+                }}
+              >
+                Submit Work
+              </Button>
+            ),
         ]}
         width={800}
       >
@@ -246,29 +353,117 @@ export default function InternTasks() {
                 <Descriptions.Item label="Instructions">
                   {viewingTask.instructions || "No instructions provided"}
                 </Descriptions.Item>
+                {viewingTask.submission_file_path && (
+                  <Descriptions.Item label="Submission Status">
+                    {viewingTask.is_submission_checked ? (
+                      <Tag color="green" icon={<CheckCircleOutlined />}>
+                        Reviewed by admin
+                      </Tag>
+                    ) : (
+                      <Tag color="orange" icon={<ClockCircleOutlined />}>
+                        Pending admin review
+                      </Tag>
+                    )}
+                  </Descriptions.Item>
+                )}
+                {viewingTask.submission_file_path && (
+                  <Descriptions.Item label="Submission Date">
+                    {viewingTask.submission_date
+                      ? dayjs(viewingTask.submission_date).format(
+                          "YYYY-MM-DD HH:mm:ss"
+                        )
+                      : "Not recorded"}
+                  </Descriptions.Item>
+                )}
               </Descriptions>
 
               {viewingTask.image_path && (
                 <div style={{ marginTop: "20px" }}>
                   <Text strong>Task Image:</Text>
                   <div style={{ marginTop: "10px" }}>
-                    <Text>
-                      Attempting to load from:{" "}
-                      {getImageUrl(viewingTask.image_path)}
-                    </Text>
-                    <br />
                     <Image
-                      src={`public/storage/${viewingTask.image_path}`}
+                      src={getImageUrl(viewingTask.image_path)}
                       alt={viewingTask.task_name}
                       style={{ maxWidth: "100%" }}
-                      fallback="data:image/png;base64,..."
+                      fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3PTWBSGcbGzM6GCKqlIBRV0dHRJFarQ0eUT8LH4BnRU0NHR0UEFVdIlFRV7TzRksomPY8uykTk/zewQfKw/9znv4yvJynLv4uLiV2dBoDiBf4qP3/ARuCRABEFAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghgg"
                     />
+                  </div>
+                </div>
+              )}
+
+              {viewingTask.submission_file_path && (
+                <div style={{ marginTop: "20px" }}>
+                  <Text strong>Your Submission:</Text>
+                  <div style={{ marginTop: "10px" }}>
+                    <p>
+                      <a
+                        href={getImageUrl(viewingTask.submission_file_path)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Download your submitted file
+                      </a>
+                    </p>
+                    {!viewingTask.is_submission_checked && (
+                      <Text type="warning">
+                        Your submission is pending review by an admin.
+                      </Text>
+                    )}
                   </div>
                 </div>
               )}
             </Card>
           </div>
         )}
+      </Modal>
+
+      {/* Task Submission Modal */}
+      <Modal
+        title={`Submit Work for: ${viewingTask?.task_name}`}
+        open={isSubmitModalVisible}
+        onCancel={handleSubmitCancel}
+        footer={null}
+        width={600}
+      >
+        <Form form={form} layout="vertical" onFinish={handleSubmitWork}>
+          <div style={{ marginBottom: "20px" }}>
+            <Text>
+              Please upload your completed work for this task. Accepted file
+              formats include PDF, Word documents, images, or ZIP files.
+            </Text>
+          </div>
+
+          <Form.Item
+            name="submission_file"
+            label="Upload your work"
+            rules={[{ required: true, message: "Please upload a file" }]}
+          >
+            <Upload
+              listType="text"
+              maxCount={1}
+              beforeUpload={() => false} // Prevent auto upload
+              fileList={fileList}
+              onRemove={() => setFileList([])}
+              onChange={({ fileList }) => setFileList(fileList)}
+            >
+              <Button icon={<UploadOutlined />}>Select File</Button>
+            </Upload>
+          </Form.Item>
+
+          <div style={{ marginTop: "24px", textAlign: "right" }}>
+            <Space>
+              <Button onClick={handleSubmitCancel}>Cancel</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={submitting}
+                disabled={fileList.length === 0}
+              >
+                Submit Work
+              </Button>
+            </Space>
+          </div>
+        </Form>
       </Modal>
     </div>
   );

@@ -23,6 +23,11 @@ class TaskController extends Controller
             $query->byStatus($request->status);
         }
         
+        // Filter by submissions that need review
+        if ($request->has('needs_review') && $request->needs_review === 'true') {
+            $query->needsReview();
+        }
+        
         // Filter overdue tasks
         if ($request->has('overdue') && $request->overdue === 'true') {
             $query->overdue();
@@ -166,6 +171,11 @@ class TaskController extends Controller
             Storage::disk('public')->delete($task->image_path);
         }
         
+        // Delete submission file if it exists
+        if ($task->submission_file_path) {
+            Storage::disk('public')->delete($task->submission_file_path);
+        }
+        
         $task->delete();
         
         return response()->json([
@@ -201,6 +211,35 @@ class TaskController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Task status updated successfully',
+            'data' => $task
+        ]);
+    }
+
+    /**
+     * Mark submission as checked.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function markSubmissionChecked(Request $request, $id)
+    {
+        $task = Task::findOrFail($id);
+        
+        // Validate that there is a submission to check
+        if (!$task->submission_file_path) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This task has no submission to check'
+            ], 422);
+        }
+        
+        $task->is_submission_checked = true;
+        $task->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Submission marked as checked',
             'data' => $task
         ]);
     }
