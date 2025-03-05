@@ -61,6 +61,9 @@ export default function AdminTaskManagement() {
   const [filterStatus, setFilterStatus] = useState(null);
   const [filterNeedsReview, setFilterNeedsReview] = useState(false);
   const [markingAsChecked, setMarkingAsChecked] = useState(false);
+  const noImageFallback =
+    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI3NSIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzg4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PHBhdGggZD0iTTQwLDExMCBMNjAsODAgTDgwLDkwIEwxMDAsNjAgTDEyMCwxMTAgWiIgZmlsbD0iI2RkZCIgc3Ryb2tlPSIjY2NjIiAvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjZGRkIiAvPjwvc3ZnPg==";
+  const baseUrl = "http://localhost:8000";
 
   useEffect(() => {
     fetchTasks();
@@ -133,12 +136,17 @@ export default function AdminTaskManagement() {
 
     // Set file list if image exists
     if (task.image_path) {
+      console.log("Image path from API:", task.image_path); // Debug log
+
+      const imageUrl = getFullImageUrl(task.image_path);
+      console.log("Computed image URL:", imageUrl); // Debug log
+
       setFileList([
         {
           uid: "-1",
           name: task.image_path.split("/").pop(),
           status: "done",
-          url: `/storage/${task.image_path}`,
+          url: imageUrl,
         },
       ]);
     } else {
@@ -277,12 +285,41 @@ export default function AdminTaskManagement() {
     if (filePath.startsWith("http")) {
       return filePath;
     }
-    // Check if the path already includes /storage/
+
+    // If path already includes /storage/, it's good to go
     if (filePath.startsWith("/storage/")) {
       return filePath;
     }
+
+    // If path starts with storage/ (without leading slash), add the slash
+    if (filePath.startsWith("storage/")) {
+      return `/${filePath}`;
+    }
+
     // Otherwise, prepend /storage/ to the path
     return `/storage/${filePath}`;
+  };
+
+  const getFullImageUrl = (filePath) => {
+    if (!filePath) return noImageFallback;
+
+    // If the path already starts with http, return it as is
+    if (filePath.startsWith("http")) {
+      return filePath;
+    }
+
+    // Log the image path for debugging
+    console.log("Processing image path:", filePath);
+
+    // If path starts with /storage or storage, append to base URL
+    if (filePath.startsWith("/storage/") || filePath.startsWith("storage/")) {
+      return filePath.startsWith("/")
+        ? `${baseUrl}${filePath}`
+        : `${baseUrl}/${filePath}`;
+    }
+
+    // For other paths, add /storage/ prefix
+    return `${baseUrl}/storage/${filePath}`;
   };
 
   const renderSubmissionStatus = (task) => {
@@ -506,9 +543,28 @@ export default function AdminTaskManagement() {
               fileList={fileList}
               onRemove={() => setFileList([])}
               onChange={({ fileList }) => setFileList(fileList)}
+              onPreview={() => {
+                if (fileList.length > 0 && fileList[0].url) {
+                  window.open(fileList[0].url, "_blank");
+                }
+              }}
             >
               <Button icon={<UploadOutlined />}>Upload Image</Button>
             </Upload>
+            {fileList.length > 0 && fileList[0].url && (
+              <div className="mt-2">
+                <img
+                  src={fileList[0].url}
+                  alt="Preview"
+                  style={{ maxWidth: "100%", maxHeight: "200px" }}
+                  onError={(e) => {
+                    console.error("Image failed to load:", fileList[0].url);
+                    e.target.onerror = null; // Prevent infinite loop
+                    e.target.src = noImageFallback;
+                  }}
+                />
+              </div>
+            )}
           </Form.Item>
 
           <Form.Item name="status" label="Status">
@@ -615,7 +671,7 @@ export default function AdminTaskManagement() {
                 </Descriptions.Item>
                 <Descriptions.Item label="Submitted File">
                   <a
-                    href={getFileUrl(selectedTask.submission_file_path)}
+                    href={getFullImageUrl(selectedTask.submission_file_path)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

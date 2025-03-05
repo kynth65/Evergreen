@@ -1,11 +1,9 @@
 <?php
 namespace App\Http\Controllers;
-
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-
 class TaskController extends Controller
 {
     /**
@@ -39,6 +37,8 @@ class TaskController extends Controller
         $query->orderBy($sortField, $sortDirection);
         
         $tasks = $query->paginate($request->input('per_page', 15));
+        
+        // No need for transformation since paths are already stored with storage/ prefix
         
         return response()->json([
             'success' => true,
@@ -74,10 +74,9 @@ class TaskController extends Controller
         
         // Handle image upload
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            // Store the file
             $path = $request->file('image')->store('task-images', 'public');
-            $data['image_path'] = $path;
-            \Log::info('Stored image at path: ' . $path);
+            // Prepend 'storage/' to the path
+            $data['image_path'] = 'storage/' . $path;
         }
         
         // Set the creator
@@ -141,18 +140,24 @@ class TaskController extends Controller
         if ($request->hasFile('image')) {
             // Delete old image if exists
             if ($task->image_path) {
-                Storage::disk('public')->delete($task->image_path);
+                // Remove 'storage/' prefix if it exists for proper storage deletion
+                $storageFilePath = str_replace('storage/', '', $task->image_path);
+                Storage::disk('public')->delete($storageFilePath);
             }
             
-            $data['image_path'] = $request->file('image')->store('task-images', 'public');
+            // Store in the task-images folder
+            $path = $request->file('image')->store('task-images', 'public');
+            // Prepend 'storage/' to the path
+            $data['image_path'] = 'storage/' . $path;
         }
         
         $task->update($data);
+        $task = $task->fresh(['creator:id,first_name,last_name,email']);
         
         return response()->json([
             'success' => true,
             'message' => 'Task updated successfully',
-            'data' => $task->fresh(['creator:id,first_name,last_name,email'])
+            'data' => $task
         ]);
     }
     
@@ -168,12 +173,16 @@ class TaskController extends Controller
         
         // Delete the task image if it exists
         if ($task->image_path) {
-            Storage::disk('public')->delete($task->image_path);
+            // Remove 'storage/' prefix for proper storage deletion
+            $storageFilePath = str_replace('storage/', '', $task->image_path);
+            Storage::disk('public')->delete($storageFilePath);
         }
         
         // Delete submission file if it exists
         if ($task->submission_file_path) {
-            Storage::disk('public')->delete($task->submission_file_path);
+            // Remove 'storage/' prefix for proper storage deletion
+            $storageFilePath = str_replace('storage/', '', $task->submission_file_path);
+            Storage::disk('public')->delete($storageFilePath);
         }
         
         $task->delete();
@@ -214,7 +223,7 @@ class TaskController extends Controller
             'data' => $task
         ]);
     }
-
+    
     /**
      * Mark submission as checked.
      *
