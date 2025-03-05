@@ -30,6 +30,13 @@ import { useStateContext } from "../../context/ContextProvider";
 
 const { Title, Paragraph, Text } = Typography;
 
+// Base URL for your API (adjust as needed)
+const baseUrl = "http://localhost:8000";
+
+// Fallback image as base64 string for when images fail to load
+const noImageFallback =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI3NSIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzg4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PHBhdGggZD0iTTQwLDExMCBMNjAsODAgTDgwLDkwIEwxMDAsNjAgTDEyMCwxMTAgWiIgZmlsbD0iI2RkZCIgc3Ryb2tlPSIjY2NjIiAvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjZGRkIiAvPjwvc3ZnPg==";
+
 export default function InternTasks() {
   const { token } = useStateContext();
   const [loading, setLoading] = useState(false);
@@ -65,6 +72,7 @@ export default function InternTasks() {
         params,
       });
       if (response.data && response.data.data) {
+        console.log("Tasks received:", response.data.data.data); // Debug log
         setTasks(response.data.data.data || []);
         setPagination({
           ...pagination,
@@ -186,19 +194,27 @@ export default function InternTasks() {
     );
   };
 
-  // Function to get proper image URL
-  const getImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    // Check if the path already has the full URL
-    if (imagePath.startsWith("http")) {
-      return imagePath;
+  // Function to get full URL for images - adapted from JuicePOS component
+  const getFullImageUrl = (filePath) => {
+    if (!filePath) return noImageFallback;
+
+    // If the path already starts with http, return it as is
+    if (filePath.startsWith("http")) {
+      return filePath;
     }
-    // Check if the path already includes /storage/
-    if (imagePath.startsWith("/storage/")) {
-      return imagePath;
+
+    // Log the image path for debugging
+    console.log("Processing image path:", filePath);
+
+    // If path starts with /storage or storage, append to base URL
+    if (filePath.startsWith("/storage/") || filePath.startsWith("storage/")) {
+      return filePath.startsWith("/")
+        ? `${baseUrl}${filePath}`
+        : `${baseUrl}/${filePath}`;
     }
-    // Otherwise, prepend /storage/ to the path
-    return `/storage/${imagePath}`;
+
+    // For other paths, add /storage/ prefix
+    return `${baseUrl}/storage/${filePath}`;
   };
 
   const columns = [
@@ -382,10 +398,16 @@ export default function InternTasks() {
                   <Text strong>Task Image:</Text>
                   <div style={{ marginTop: "10px" }}>
                     <Image
-                      src={getImageUrl(viewingTask.image_path)}
+                      src={getFullImageUrl(viewingTask.image_path)}
                       alt={viewingTask.task_name}
                       style={{ maxWidth: "100%" }}
-                      fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgeHANwDrkl1AuO+pmgAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAwqADAAQAAAABAAAAwwAAAAD9b/HnAAAHlklEQVR4Ae3dP3PTWBSGcbGzM6GCKqlIBRV0dHRJFarQ0eUT8LH4BnRU0NHR0UEFVdIlFRV7TzRksomPY8uykTk/zewQfKw/9znv4yvJynLv4uLiV2dBoDiBf4qP3/ARuCRABEFAoBEgghggQAQZQKAnYEaQBAQaASKIAQJEkAEEegJmBElAoBEgghgg"
+                      fallback={noImageFallback}
+                      onError={(e) => {
+                        console.error(
+                          "Image failed to load:",
+                          viewingTask.image_path
+                        );
+                      }}
                     />
                   </div>
                 </div>
@@ -397,7 +419,7 @@ export default function InternTasks() {
                   <div style={{ marginTop: "10px" }}>
                     <p>
                       <a
-                        href={getImageUrl(viewingTask.submission_file_path)}
+                        href={getFullImageUrl(viewingTask.submission_file_path)}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
