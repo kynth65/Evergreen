@@ -53,3 +53,115 @@
         U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* Add these styles to your CSS file */
+
+/* Notification list styling */
+.notification-list {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  }
+  
+  .notification-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .notification-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .notification-list::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+  }
+  
+  /* Unread notification styling */
+  .notification-unread {
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+  
+  /* Notification bell animation */
+  @keyframes bellShake {
+    0% { transform: rotate(0); }
+    15% { transform: rotate(10deg); }
+    30% { transform: rotate(-10deg); }
+    45% { transform: rotate(5deg); }
+    60% { transform: rotate(-5deg); }
+    75% { transform: rotate(2deg); }
+    100% { transform: rotate(0); }
+  }
+  
+  .notification-new-alert .notification-bell {
+    animation: bellShake 1s ease;
+  }
+  
+  /* Notification type indicators */
+  .notification-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  .notification-indicator-info {
+    background-color: #3b82f6;
+  }
+  
+  .notification-indicator-success {
+    background-color: #10b981;
+  }
+  
+  .notification-indicator-warning {
+    background-color: #f59e0b;
+  }
+  
+  .notification-indicator-error {
+    background-color: #ef4444;
+  }
+  
+  /* Notification entry animation */
+  @keyframes fadeInDown {
+    from {
+      opacity: 0;
+      transform: translate3d(0, -20px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+  
+  .notification-dropdown {
+    animation: fadeInDown 0.3s ease;
+  }
+  
+  /* Badge styles */
+  .notification-badge {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background-color: #10b981;
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .notification-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    color: #6b7280;
+  }
