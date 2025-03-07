@@ -72,11 +72,6 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
-      // Simulate API call - replace with real API endpoint when available
-      // const response = await axiosClient.get("/admin/dashboard");
-      // setDashboardData(response.data);
-
-      // Mock data for demonstration
       setTimeout(() => {
         setDashboardData({
           stats: {

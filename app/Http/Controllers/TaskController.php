@@ -1,9 +1,13 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Task;
+use App\Models\User;
+use App\Notifications\EvergreenNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+
 class TaskController extends Controller
 {
     /**
@@ -38,8 +42,6 @@ class TaskController extends Controller
         
         $tasks = $query->paginate($request->input('per_page', 15));
         
-        // No need for transformation since paths are already stored with storage/ prefix
-        
         return response()->json([
             'success' => true,
             'data' => $tasks
@@ -61,6 +63,7 @@ class TaskController extends Controller
             'image' => 'nullable|image|max:2048', // 2MB max
             'status' => 'nullable|in:pending,completed,failed',
             'due_date' => 'nullable|date',
+            'assigned_to' => 'nullable|exists:users,id',
         ]);
         
         if ($validator->fails()) {
@@ -83,6 +86,47 @@ class TaskController extends Controller
         $data['created_by'] = auth()->id();
         
         $task = Task::create($data);
+        
+        // Send notification to the assigned intern if provided
+        if (isset($data['assigned_to'])) {
+            $assignedUser = User::find($data['assigned_to']);
+            
+            // Check if the assigned user is an intern
+            if ($assignedUser && $assignedUser->role === 'intern') {
+                $creator = auth()->user();
+                $message = "New task assigned: {$task->task_name}";
+                
+                $assignedUser->notify(new EvergreenNotification(
+                    $message,
+                    'info',
+                    [
+                        'task_id' => $task->id,
+                        'task_name' => $task->task_name,
+                        'assigned_by' => $creator->first_name . ' ' . $creator->last_name,
+                        'due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null
+                    ]
+                ));
+            }
+        } else {
+            // If no specific user is assigned, notify all interns
+            $interns = User::where('role', 'intern')->get();
+            
+            foreach ($interns as $intern) {
+                $creator = auth()->user();
+                $message = "New task available: {$task->task_name}";
+                
+                $intern->notify(new EvergreenNotification(
+                    $message,
+                    'info',
+                    [
+                        'task_id' => $task->id,
+                        'task_name' => $task->task_name,
+                        'created_by' => $creator->first_name . ' ' . $creator->last_name,
+                        'due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null
+                    ]
+                ));
+            }
+        }
         
         return response()->json([
             'success' => true,
@@ -125,6 +169,7 @@ class TaskController extends Controller
             'image' => 'nullable|image|max:2048',
             'status' => 'nullable|in:pending,completed,failed',
             'due_date' => 'nullable|date',
+            'assigned_to' => 'nullable|exists:users,id',
         ]);
         
         if ($validator->fails()) {
@@ -135,6 +180,7 @@ class TaskController extends Controller
         }
         
         $data = $validator->validated();
+        $oldAssignedTo = $task->assigned_to;
         
         // Handle image upload
         if ($request->hasFile('image')) {
@@ -149,6 +195,53 @@ class TaskController extends Controller
             $path = $request->file('image')->store('task-images', 'public');
             // Prepend 'storage/' to the path
             $data['image_path'] = 'storage/' . $path;
+        }
+        
+        // Check if there's a new assignee
+        if (isset($data['assigned_to']) && $data['assigned_to'] != $oldAssignedTo) {
+            $assignedUser = User::find($data['assigned_to']);
+            
+            // Check if the newly assigned user is an intern
+            if ($assignedUser && $assignedUser->role === 'intern') {
+                $admin = auth()->user();
+                $message = "Task reassigned to you: {$task->task_name}";
+                
+                $assignedUser->notify(new EvergreenNotification(
+                    $message,
+                    'info',
+                    [
+                        'task_id' => $task->id,
+                        'task_name' => $task->task_name,
+                        'assigned_by' => $admin->first_name . ' ' . $admin->last_name,
+                        'due_date' => isset($data['due_date']) ? $data['due_date'] : ($task->due_date ? $task->due_date->format('Y-m-d') : null)
+                    ]
+                ));
+            }
+        }
+        
+        // Check if the due date was updated
+        if (isset($data['due_date']) && $data['due_date'] != $task->due_date) {
+            // Notify the assigned intern about the due date change
+            if ($task->assigned_to) {
+                $assignedUser = User::find($task->assigned_to);
+                
+                if ($assignedUser && $assignedUser->role === 'intern') {
+                    $admin = auth()->user();
+                    $message = "Due date updated for task: {$task->task_name}";
+                    
+                    $assignedUser->notify(new EvergreenNotification(
+                        $message,
+                        'warning',
+                        [
+                            'task_id' => $task->id,
+                            'task_name' => $task->task_name,
+                            'updated_by' => $admin->first_name . ' ' . $admin->last_name,
+                            'old_due_date' => $task->due_date ? $task->due_date->format('Y-m-d') : null,
+                            'new_due_date' => $data['due_date']
+                        ]
+                    ));
+                }
+            }
         }
         
         $task->update($data);
@@ -170,6 +263,25 @@ class TaskController extends Controller
     public function destroy($id)
     {
         $task = Task::findOrFail($id);
+        
+        // Notify the assigned intern if applicable
+        if ($task->assigned_to) {
+            $assignedUser = User::find($task->assigned_to);
+            
+            if ($assignedUser && $assignedUser->role === 'intern') {
+                $admin = auth()->user();
+                $message = "Task has been removed: {$task->task_name}";
+                
+                $assignedUser->notify(new EvergreenNotification(
+                    $message,
+                    'error',
+                    [
+                        'task_name' => $task->task_name,
+                        'removed_by' => $admin->first_name . ' ' . $admin->last_name
+                    ]
+                ));
+            }
+        }
         
         // Delete the task image if it exists
         if ($task->image_path) {
@@ -214,8 +326,37 @@ class TaskController extends Controller
         }
         
         $task = Task::findOrFail($id);
+        $oldStatus = $task->status;
         $task->status = $request->status;
         $task->save();
+        
+        // Notify the assigned intern about status change
+        if ($task->assigned_to && $oldStatus !== $request->status) {
+            $assignedUser = User::find($task->assigned_to);
+            
+            if ($assignedUser && $assignedUser->role === 'intern') {
+                $admin = auth()->user();
+                $statusMessages = [
+                    'pending' => 'Task has been marked as pending',
+                    'completed' => 'Task has been marked as completed',
+                    'failed' => 'Task has been marked as failed'
+                ];
+                $message = "{$statusMessages[$request->status]}: {$task->task_name}";
+                $notificationType = $request->status === 'completed' ? 'success' : ($request->status === 'failed' ? 'error' : 'info');
+                
+                $assignedUser->notify(new EvergreenNotification(
+                    $message,
+                    $notificationType,
+                    [
+                        'task_id' => $task->id,
+                        'task_name' => $task->task_name,
+                        'updated_by' => $admin->first_name . ' ' . $admin->last_name,
+                        'old_status' => $oldStatus,
+                        'new_status' => $request->status
+                    ]
+                ));
+            }
+        }
         
         return response()->json([
             'success' => true,
@@ -246,10 +387,31 @@ class TaskController extends Controller
         $task->is_submission_checked = true;
         $task->save();
         
+        // Notify the intern that their submission has been reviewed
+        if ($task->assigned_to) {
+            $assignedUser = User::find($task->assigned_to);
+            
+            if ($assignedUser && $assignedUser->role === 'intern') {
+                $admin = auth()->user();
+                $message = "Your submission for '{$task->task_name}' has been reviewed";
+                
+                $assignedUser->notify(new EvergreenNotification(
+                    $message,
+                    'success',
+                    [
+                        'task_id' => $task->id,
+                        'task_name' => $task->task_name,
+                        'reviewed_by' => $admin->first_name . ' ' . $admin->last_name,
+                        'review_date' => now()->toDateTimeString()
+                    ]
+                ));
+            }
+        }
+        
         return response()->json([
             'success' => true,
             'message' => 'Submission marked as checked',
             'data' => $task
         ]);
-    }
+    }   
 }

@@ -8,6 +8,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
+import NavBar from "../components/NavBar";
 
 export default function InternLayout() {
   const { user, token } = useStateContext();
@@ -130,10 +131,16 @@ export default function InternLayout() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-x-hidden overflow-y-auto">
-        <div className="p-6">
-          <Outlet />
+      {/* Main Content Container */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Navbar with Notifications */}
+        <NavBar />
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="p-6">
+            <Outlet />
+          </div>
         </div>
       </div>
 

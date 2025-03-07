@@ -8,6 +8,7 @@ import {
   CheckSquare,
 } from "lucide-react";
 import { useState } from "react";
+import NavBar from "../components/NavBar";
 
 export default function AdminLayout() {
   const { user, token } = useStateContext();
@@ -104,36 +105,19 @@ export default function AdminLayout() {
               );
             })}
           </nav>
-
-          {/* User Info */}
-          <div className="p-4 border-t border-gray-200">
-            <Link to="/admin/profile">
-              <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
-                  {user?.first_name?.[0]?.toUpperCase() ||
-                    user?.name?.[0]?.toUpperCase() ||
-                    "A"}
-                </div>
-                {!isCollapsed && (
-                  <div className="ml-3">
-                    <p className="font-medium text-sm">
-                      {user?.first_name && user?.last_name
-                        ? `${user.first_name} ${user.last_name}`
-                        : user?.name || "Admin"}
-                    </p>
-                    <p className="text-xs text-gray-500">Administrator</p>
-                  </div>
-                )}
-              </div>
-            </Link>
-          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-x-hidden overflow-y-auto">
-        <div className="p-6">
-          <Outlet />
+      {/* Main Content Container */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Navbar with Notifications */}
+        <NavBar />
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="p-6">
+            <Outlet />
+          </div>
         </div>
       </div>
 
