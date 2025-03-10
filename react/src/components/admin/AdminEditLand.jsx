@@ -85,7 +85,7 @@ export default function AdminEditLand() {
           id: img.id,
           name: img.image_path.split("/").pop(),
           status: "done",
-          url: `${process.env.REACT_APP_API_BASE_URL}/storage/${img.image_path}`,
+          url: `${import.meta.env.VITE_API_BASE_URL}/storage/${img.image_path}`,
           is_primary: img.is_primary,
         }));
 
