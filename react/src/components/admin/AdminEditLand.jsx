@@ -239,6 +239,10 @@ export default function AdminEditLand() {
   return (
     <div className="admin-edit-land">
       <Card>
+        <div className="text-2xl font-bold flex justify-center">
+          Edit Land Property
+        </div>
+
         <div style={{ marginBottom: "24px" }}>
           <Space align="center">
             <Button
@@ -247,9 +251,6 @@ export default function AdminEditLand() {
             >
               Back to Property Details
             </Button>
-            <Title level={2} style={{ margin: 0 }}>
-              Edit Land Property
-            </Title>
           </Space>
           <Paragraph style={{ marginTop: "8px" }}>
             Update the property details below.

@@ -177,11 +177,7 @@ export default function AdminLandManagement() {
   return (
     <div className="admin-land-management">
       <div style={{ marginBottom: "24px" }}>
-        <Title level={2}>Land Management</Title>
-        <Paragraph>
-          Manage land properties, monitor land availability, and track property
-          values.
-        </Paragraph>
+        <h1 className="text-2xl">Land Management</h1>
       </div>
 
       {/* Filters and Search */}

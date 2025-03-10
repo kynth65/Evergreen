@@ -66,6 +66,15 @@ export default function AdminTaskManagement() {
     "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI3NSIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzg4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PHBhdGggZD0iTTQwLDExMCBMNjAsODAgTDgwLDkwIEwxMDAsNjAgTDEyMCwxMTAgWiIgZmlsbD0iI2RkZCIgc3Ryb2tlPSIjY2NjIiAvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjZGRkIiAvPjwvc3ZnPg==";
   const baseUrl = "http://localhost:8000";
 
+  const colors = {
+    primary: "#1da57a", // Primary green
+    secondary: "#52c41a", // Secondary lighter green
+    warning: "#faad14",
+    success: "#52c41a",
+    error: "#f5222d",
+    lightBg: "#f6ffed", // Light green background
+  };
+
   useEffect(() => {
     fetchTasks();
   }, [
@@ -487,8 +496,16 @@ export default function AdminTaskManagement() {
           justifyContent: "space-between",
         }}
       >
-        <h1>Task Management</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
+        <h1 className="text-2xl">Task Management</h1>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          style={{
+            backgroundColor: colors.primary,
+            borderColor: colors.primary,
+          }}
+          onClick={showAddModal}
+        >
           Add Task
         </Button>
       </div>

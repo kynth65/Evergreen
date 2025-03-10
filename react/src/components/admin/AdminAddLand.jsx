@@ -142,6 +142,9 @@ export default function AdminAddLand() {
   return (
     <div className="admin-add-land">
       <Card>
+        <div className="text-2xl font-bold flex justify-center">
+          Add New Land Property
+        </div>
         <div style={{ marginBottom: "24px" }}>
           <Space align="center">
             <Button
@@ -150,9 +153,6 @@ export default function AdminAddLand() {
             >
               Back to Land Management
             </Button>
-            <Title level={2} style={{ margin: 0 }}>
-              Add New Land Property
-            </Title>
           </Space>
           <Paragraph style={{ marginTop: "8px" }}>
             Fill in the details below to add a new land property.
