@@ -7,7 +7,8 @@ import About from "./pages/About";
 import AgentLayout from "./layouts/AgentLayout";
 import AgentDashboard from "./pages/Agent/AgentDashboard";
 import Profile from "./pages/Profile";
-import Land from "./pages/Land";
+import LandCollection from "./pages/Land/LandCollection";
+import LandDetail from "./pages/Land/LandDetail";
 import SuperAdminLayout from "./layouts/SuperAdminLayout";
 import SuperAdminDashboard from "./pages/SuperAdminLayout.jsx/SuperAdminDashboard";
 import AdminLayout from "./layouts/AdminLayout";
@@ -41,8 +42,12 @@ const router = createBrowserRouter([
         element: <About />,
       },
       {
-        path: "/land",
-        element: <Land />,
+        path: "/lands",
+        element: <LandCollection />,
+      },
+      {
+        path: "/lands/:id",
+        element: <LandDetail />,
       },
       {
         path: "contact",
