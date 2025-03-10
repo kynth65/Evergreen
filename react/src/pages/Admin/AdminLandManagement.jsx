@@ -14,6 +14,7 @@ import {
   Select,
   Modal,
   notification,
+  Skeleton,
 } from "antd";
 import {
   SearchOutlined,
@@ -34,6 +35,13 @@ const { Title, Paragraph, Text } = Typography;
 const { Search } = Input;
 const { Option } = Select;
 const { confirm } = Modal;
+
+// Loading placeholder for land property item
+const LandPropertySkeleton = () => (
+  <List.Item>
+    <Skeleton active avatar paragraph={{ rows: 3 }} />
+  </List.Item>
+);
 
 export default function AdminLandManagement() {
   const { token } = useStateContext();
@@ -165,33 +173,7 @@ export default function AdminLandManagement() {
     return <Outlet />;
   }
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px" }}>
-        <Spin size="large" />
-        <p style={{ marginTop: "20px" }}>
-          Loading land management information...
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert
-        message="Error"
-        description={error}
-        type="error"
-        style={{ margin: "30px" }}
-        action={
-          <Button type="primary" onClick={fetchLandData}>
-            Retry
-          </Button>
-        }
-      />
-    );
-  }
-
+  // Render the UI regardless of loading state
   return (
     <div className="admin-land-management">
       <div style={{ marginBottom: "24px" }}>
@@ -214,6 +196,7 @@ export default function AdminLandManagement() {
               placeholder="Filter by location"
               onChange={(value) => setFilterLocation(value)}
               defaultValue="all"
+              disabled={loading}
             >
               <Option value="all">All Locations</Option>
               {landData.locations.map((location) => (
@@ -229,6 +212,7 @@ export default function AdminLandManagement() {
               onSearch={(value) => setSearchText(value)}
               onChange={(e) => setSearchText(e.target.value)}
               enterButton
+              disabled={loading}
             />
           </Col>
         </Row>
@@ -251,91 +235,119 @@ export default function AdminLandManagement() {
           </Button>
         }
       >
-        <List
-          itemLayout="vertical"
-          dataSource={filteredLands}
-          pagination={{
-            pageSize: 5,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} properties`,
-          }}
-          locale={{ emptyText: "No properties found" }}
-          renderItem={(land) => (
-            <List.Item
-              key={land.id}
-              actions={[
-                <Button
-                  type="text"
-                  icon={<EyeOutlined />}
-                  onClick={() => navigate(`${land.id}`)}
-                >
-                  View
-                </Button>,
-                <Button
-                  type="text"
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`${land.id}/edit`)}
-                >
-                  Edit
-                </Button>,
-                <Button
-                  type="text"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleDeleteLand(land.id)}
-                >
-                  Delete
-                </Button>,
-              ]}
-              extra={
-                <div style={{ textAlign: "right", minWidth: "120px" }}>
-                  {renderStatusTag(land.status)}
-                </div>
+        {error ? (
+          <Alert
+            message="Error"
+            description={error}
+            type="error"
+            style={{ margin: "10px 0" }}
+            action={
+              <Button type="primary" onClick={fetchLandData}>
+                Retry
+              </Button>
+            }
+          />
+        ) : (
+          <List
+            itemLayout="vertical"
+            dataSource={loading ? Array(5).fill({}) : filteredLands}
+            pagination={{
+              pageSize: 5,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} properties`,
+            }}
+            locale={{ emptyText: "No properties found" }}
+            renderItem={(land, index) => {
+              // Render skeleton placeholders during loading
+              if (loading) {
+                return <LandPropertySkeleton key={index} />;
               }
-            >
-              <List.Item.Meta
-                title={
-                  <Row align="middle" gutter={8}>
-                    <Col>
-                      <Text strong style={{ fontSize: "16px" }}>
-                        {land.name}
+
+              // Render actual land items when loaded
+              return (
+                <List.Item
+                  key={land.id}
+                  actions={[
+                    <Button
+                      type="text"
+                      icon={<EyeOutlined />}
+                      onClick={() => navigate(`${land.id}`)}
+                    >
+                      View
+                    </Button>,
+                    <Button
+                      type="text"
+                      icon={<EditOutlined />}
+                      onClick={() => navigate(`${land.id}/edit`)}
+                    >
+                      Edit
+                    </Button>,
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleDeleteLand(land.id)}
+                    >
+                      Delete
+                    </Button>,
+                  ]}
+                  extra={
+                    <div style={{ textAlign: "right", minWidth: "120px" }}>
+                      {renderStatusTag(land.status)}
+                    </div>
+                  }
+                >
+                  <List.Item.Meta
+                    title={
+                      <Row align="middle" gutter={8}>
+                        <Col>
+                          <Text strong style={{ fontSize: "16px" }}>
+                            {land.name}
+                          </Text>
+                        </Col>
+                      </Row>
+                    }
+                    description={
+                      <Space direction="vertical" size={4}>
+                        <Space>
+                          <EnvironmentOutlined
+                            style={{ color: colors.primary }}
+                          />
+                          <Text>
+                            {land.location || "No location specified"}
+                          </Text>
+                        </Space>
+                        <Space>
+                          <AreaChartOutlined
+                            style={{ color: colors.primary }}
+                          />
+                          <Text>{land.size.toLocaleString()} sqm</Text>
+                        </Space>
+                      </Space>
+                    }
+                  />
+                  <Row style={{ marginTop: "8px" }}>
+                    <Col span={12}>
+                      <Text type="secondary">Price per sqm:</Text>
+                      <Text
+                        strong
+                        style={{ marginLeft: "8px", color: colors.primary }}
+                      >
+                        ${land.price_per_sqm.toLocaleString()}
+                      </Text>
+                    </Col>
+                    <Col span={12} style={{ textAlign: "right" }}>
+                      <Text type="secondary">Total price:</Text>
+                      <Text strong style={{ marginLeft: "8px" }}>
+                        ${(land.size * land.price_per_sqm).toLocaleString()}
                       </Text>
                     </Col>
                   </Row>
-                }
-                description={
-                  <Space direction="vertical" size={4}>
-                    <Space>
-                      <EnvironmentOutlined style={{ color: colors.primary }} />
-                      <Text>{land.location || "No location specified"}</Text>
-                    </Space>
-                    <Space>
-                      <AreaChartOutlined style={{ color: colors.primary }} />
-                      <Text>{land.size.toLocaleString()} sqm</Text>
-                    </Space>
-                  </Space>
-                }
-              />
-              <Row style={{ marginTop: "8px" }}>
-                <Col span={12}>
-                  <Text type="secondary">Price per sqm:</Text>
-                  <Text
-                    strong
-                    style={{ marginLeft: "8px", color: colors.primary }}
-                  >
-                    ${land.price_per_sqm.toLocaleString()}
-                  </Text>
-                </Col>
-                <Col span={12} style={{ textAlign: "right" }}>
-                  <Text type="secondary">Total price:</Text>
-                  <Text strong style={{ marginLeft: "8px" }}>
-                    ${(land.size * land.price_per_sqm).toLocaleString()}
-                  </Text>
-                </Col>
-              </Row>
-            </List.Item>
-          )}
-        />
+                </List.Item>
+              );
+            }}
+          />
+        )}
       </Card>
 
       {/* Outlet for child routes */}

@@ -21,6 +21,7 @@ import {
   Descriptions,
   Typography,
   Divider,
+  Skeleton,
 } from "antd";
 import {
   PlusOutlined,
@@ -308,18 +309,18 @@ export default function AdminTaskManagement() {
       return filePath;
     }
 
-    // Log the image path for debugging
-    console.log("Processing image path:", filePath);
+    // Update for Vite environment variable format
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || baseUrl;
 
     // If path starts with /storage or storage, append to base URL
     if (filePath.startsWith("/storage/") || filePath.startsWith("storage/")) {
       return filePath.startsWith("/")
-        ? `${baseUrl}${filePath}`
-        : `${baseUrl}/${filePath}`;
+        ? `${apiBaseUrl}${filePath}`
+        : `${apiBaseUrl}/${filePath}`;
     }
 
     // For other paths, add /storage/ prefix
-    return `${baseUrl}/storage/${filePath}`;
+    return `${apiBaseUrl}/storage/${filePath}`;
   };
 
   const renderSubmissionStatus = (task) => {
@@ -346,6 +347,31 @@ export default function AdminTaskManagement() {
       />
     );
   };
+
+  // Custom skeleton row for loading state
+  const SkeletonRow = () => (
+    <tr className="ant-table-row">
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 150 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 80 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 100 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 100 }} />
+      </td>
+      <td>
+        <Space>
+          <Skeleton.Button active size="small" shape="square" />
+          <Skeleton.Button active size="small" shape="square" />
+          <Skeleton.Button active size="small" shape="square" />
+        </Space>
+      </td>
+    </tr>
+  );
 
   const columns = [
     {
@@ -476,6 +502,7 @@ export default function AdminTaskManagement() {
             allowClear
             value={filterStatus}
             onChange={(value) => setFilterStatus(value)}
+            disabled={loading}
           >
             <Option value="pending">Pending</Option>
             <Option value="completed">Completed</Option>
@@ -487,6 +514,7 @@ export default function AdminTaskManagement() {
               type={filterNeedsReview ? "primary" : "default"}
               icon={<InboxOutlined />}
               onClick={() => setFilterNeedsReview(!filterNeedsReview)}
+              disabled={loading}
             >
               Needs Review
             </Button>
@@ -496,11 +524,30 @@ export default function AdminTaskManagement() {
 
       <Table
         columns={columns}
-        dataSource={tasks}
+        dataSource={loading ? [] : tasks}
         rowKey="id"
         pagination={pagination}
         onChange={handleTableChange}
-        loading={loading}
+        loading={false} // We're handling our own loading state with skeletons
+        components={{
+          body: {
+            wrapper: (props) => {
+              // Add skeleton rows if loading
+              if (loading) {
+                return (
+                  <tbody {...props}>
+                    {Array(pagination.pageSize > 5 ? 5 : pagination.pageSize)
+                      .fill(null)
+                      .map((_, index) => (
+                        <SkeletonRow key={index} />
+                      ))}
+                  </tbody>
+                );
+              }
+              return <tbody {...props} />;
+            },
+          },
+        }}
       />
 
       {/* Add/Edit Task Modal */}
@@ -619,7 +666,7 @@ export default function AdminTaskManagement() {
         ]}
         width={800}
       >
-        {selectedTask && (
+        {selectedTask ? (
           <div>
             <Card title="Task Details">
               <Descriptions bordered column={1}>
@@ -689,6 +736,10 @@ export default function AdminTaskManagement() {
                 </div>
               )}
             </Card>
+          </div>
+        ) : (
+          <div>
+            <Skeleton active paragraph={{ rows: 4 }} />
           </div>
         )}
       </Modal>
