@@ -95,7 +95,7 @@ export default function Header() {
               </Link>
             </li>
             <li>
-              <Link to="/land" className="hover:text-gray-600 text-lg">
+              <Link to="/lands" className="hover:text-gray-600 text-lg">
                 Land
               </Link>
             </li>
