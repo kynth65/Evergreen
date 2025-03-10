@@ -33,7 +33,6 @@ const LandDetail = () => {
         console.error(err);
       }
     };
-
     fetchLand();
   }, [id]);
 
@@ -86,7 +85,6 @@ const LandDetail = () => {
         >
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to land listings
         </Link>
-
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Image gallery */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
@@ -102,7 +100,6 @@ const LandDetail = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-
                   {land.images.length > 1 && (
                     <div className="flex space-x-2 overflow-x-auto pb-2">
                       {land.images.map((image, index) => (
@@ -131,7 +128,6 @@ const LandDetail = () => {
                 </div>
               )}
             </div>
-
             {/* Land details */}
             <div className="space-y-6">
               <div className="space-y-2">
@@ -157,7 +153,6 @@ const LandDetail = () => {
                   <Map className="h-4 w-4 mr-1" /> {land.location}
                 </p>
               </div>
-
               <div className="border-t border-b border-gray-200 py-4">
                 <div className="text-3xl font-bold text-[#384438]">
                   {formatPrice(land.price_per_sqm, land.size)}
@@ -166,7 +161,6 @@ const LandDetail = () => {
                   {land.price_per_sqm.toLocaleString()} PHP per square meter
                 </p>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-500">Land Size</p>
@@ -181,7 +175,6 @@ const LandDetail = () => {
                   </p>
                 </div>
               </div>
-
               {land.description && (
                 <div>
                   <h3 className="text-lg font-medium text-[#384438] mb-2">
@@ -190,7 +183,6 @@ const LandDetail = () => {
                   <p className="text-gray-600">{land.description}</p>
                 </div>
               )}
-
               {/* Agent information */}
               {land.agent && (
                 <div className="border-t border-gray-200 pt-4">
@@ -218,40 +210,49 @@ const LandDetail = () => {
               )}
             </div>
           </div>
-
           {/* Features */}
           <div className="px-6 py-8 border-t border-gray-200">
             <h3 className="text-xl font-bold text-[#384438] mb-4">
               Property Features
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-start">
-                <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                <p>Complete documentation available</p>
-              </div>
-              <div className="flex items-start">
-                <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                <p>Ready for development</p>
-              </div>
-              <div className="flex items-start">
-                <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                <p>Accessible location</p>
-              </div>
-              <div className="flex items-start">
-                <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                <p>Flat terrain</p>
-              </div>
-              <div className="flex items-start">
-                <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                <p>Utilities available nearby</p>
-              </div>
-              <div className="flex items-start">
-                <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
-                <p>Clear title</p>
-              </div>
+              {land.features && land.features.length > 0 ? (
+                land.features.map((feature, index) => (
+                  <div className="flex items-start" key={index}>
+                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                    <p>{feature}</p>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                    <p>Complete documentation available</p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                    <p>Ready for development</p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                    <p>Accessible location</p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                    <p>Flat terrain</p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                    <p>Utilities available nearby</p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+                    <p>Clear title</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-
           {/* Location Map Placeholder */}
           <div className="px-6 py-8 border-t border-gray-200">
             <h3 className="text-xl font-bold text-[#384438] mb-4">Location</h3>

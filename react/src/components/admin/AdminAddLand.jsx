@@ -15,6 +15,9 @@ import {
   Alert,
   Space,
   Divider,
+  Tag,
+  Tooltip,
+  Input as AntInput,
 } from "antd";
 import {
   SaveOutlined,
@@ -22,6 +25,7 @@ import {
   ArrowLeftOutlined,
   PictureOutlined,
   DeleteOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../../axios.client";
@@ -39,6 +43,12 @@ export default function AdminAddLand() {
   const [agents, setAgents] = useState([]);
   const [fileList, setFileList] = useState([]);
 
+  // For handling feature tags
+  const [features, setFeatures] = useState([]);
+  const [inputVisible, setInputVisible] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = React.useRef(null);
+
   // Define green color scheme (matching your dashboard)
   const colors = {
     primary: "#1da57a", // Primary green
@@ -52,6 +62,12 @@ export default function AdminAddLand() {
   useEffect(() => {
     fetchAgents();
   }, []);
+
+  useEffect(() => {
+    if (inputVisible) {
+      inputRef.current?.focus();
+    }
+  }, [inputVisible]);
 
   const fetchAgents = async () => {
     setLoading(true);
@@ -85,11 +101,32 @@ export default function AdminAddLand() {
     setFileList(newFileList);
   };
 
+  // Feature tag handlers
+  const handleClose = (removedTag) => {
+    const newTags = features.filter((tag) => tag !== removedTag);
+    setFeatures(newTags);
+  };
+
+  const showInput = () => {
+    setInputVisible(true);
+  };
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleInputConfirm = () => {
+    if (inputValue && !features.includes(inputValue)) {
+      setFeatures([...features, inputValue]);
+    }
+    setInputVisible(false);
+    setInputValue("");
+  };
+
   // Handle form submission
   const handleSubmit = async (values) => {
     setSubmitting(true);
     setError(null);
-
     try {
       // Create form data for file upload
       const formData = new FormData();
@@ -101,6 +138,9 @@ export default function AdminAddLand() {
       formData.append("location", values.location);
       formData.append("description", values.description || "");
       formData.append("status", values.status);
+
+      // Add features as JSON
+      formData.append("features", JSON.stringify(features));
 
       if (values.agent_id) {
         formData.append("agent_id", values.agent_id);
@@ -142,22 +182,28 @@ export default function AdminAddLand() {
   return (
     <div className="admin-add-land">
       <Card>
-        <div className="text-2xl font-bold flex justify-center">
-          Add New Land Property
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/admin/land-management")}
+          >
+            Back to Land Management
+          </Button>
+          <Title level={2} style={{ margin: 0 }}>
+            Add New Land Property
+          </Title>
         </div>
-        <div style={{ marginBottom: "24px" }}>
-          <Space align="center">
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/admin/land-management")}
-            >
-              Back to Land Management
-            </Button>
-          </Space>
-          <Paragraph style={{ marginTop: "8px" }}>
-            Fill in the details below to add a new land property.
-          </Paragraph>
-        </div>
+
+        <Paragraph style={{ marginTop: "8px", marginBottom: "24px" }}>
+          Fill in the details below to add a new land property.
+        </Paragraph>
 
         {error && (
           <Alert
@@ -299,6 +345,60 @@ export default function AdminAddLand() {
 
           <Form.Item name="description" label="Description">
             <TextArea rows={4} placeholder="Enter property description" />
+          </Form.Item>
+
+          {/* Property Features */}
+          <Form.Item label="Property Features">
+            <Card title="Add Property Features" bordered={false}>
+              <div style={{ marginBottom: "16px" }}>
+                <Text>
+                  Enter features like "Flat terrain", "Complete documentation
+                  available", etc.
+                </Text>
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {features.map((tag, index) => (
+                  <Tag
+                    key={tag}
+                    closable
+                    onClose={() => handleClose(tag)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "5px 10px",
+                      backgroundColor: colors.lightBg,
+                      color: colors.primary,
+                    }}
+                  >
+                    {tag}
+                  </Tag>
+                ))}
+
+                {inputVisible ? (
+                  <AntInput
+                    ref={inputRef}
+                    type="text"
+                    size="small"
+                    style={{ width: 150 }}
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    onBlur={handleInputConfirm}
+                    onPressEnter={handleInputConfirm}
+                  />
+                ) : (
+                  <Tag
+                    onClick={showInput}
+                    style={{
+                      borderStyle: "dashed",
+                      padding: "5px 10px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <PlusOutlined /> Add Feature
+                  </Tag>
+                )}
+              </div>
+            </Card>
           </Form.Item>
 
           <Form.Item

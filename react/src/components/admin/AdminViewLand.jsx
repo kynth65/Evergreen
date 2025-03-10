@@ -21,6 +21,7 @@ import {
   EnvironmentOutlined,
   DollarOutlined,
   UserOutlined,
+  CheckOutlined,
 } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosClient from "../../axios.client";
@@ -237,6 +238,27 @@ export default function AdminViewLand() {
           </Paragraph>
         </Card>
 
+        {/* Property Features */}
+        {land.features && land.features.length > 0 && (
+          <Card title="Property Features" style={{ marginTop: "24px" }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {land.features.map((feature, index) => (
+                <div className="flex items-start" key={index}>
+                  <CheckOutlined
+                    style={{
+                      color: colors.success,
+                      marginRight: "8px",
+                      fontSize: "16px",
+                      marginTop: "3px",
+                    }}
+                  />
+                  <Text>{feature}</Text>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
         {/* Actions */}
         <div style={{ marginTop: "24px", textAlign: "right" }}>
           <Space>
@@ -265,7 +287,7 @@ export default function AdminViewLand() {
       {/* Delete Confirmation Modal */}
       <Modal
         title="Delete Property"
-        visible={deleteModalVisible}
+        open={deleteModalVisible}
         onCancel={() => setDeleteModalVisible(false)}
         onOk={handleDelete}
         okText="Yes, Delete"

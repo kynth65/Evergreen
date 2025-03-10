@@ -58,6 +58,7 @@ class LandController extends Controller
             'agent_id' => 'nullable|exists:users,id',
             'location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'features' => 'nullable|json',
             'status' => 'required|in:available,pending,sold',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
@@ -68,10 +69,18 @@ class LandController extends Controller
         }
 
         // Create land record
-        $land = Land::create($request->only([
+        $landData = $request->only([
             'name', 'size', 'price_per_sqm', 'agent_id', 
             'location', 'description', 'status'
-        ]));
+        ]);
+        
+        // Handle features
+        if ($request->has('features')) {
+            $features = json_decode($request->features, true);
+            $landData['features'] = $features;
+        }
+
+        $land = Land::create($landData);
 
         // Handle image uploads
         if ($request->hasFile('images')) {
@@ -117,6 +126,7 @@ class LandController extends Controller
             'agent_id' => 'nullable|exists:users,id',
             'location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'features' => 'nullable|json',
             'status' => 'sometimes|required|in:available,pending,sold',
             'new_images' => 'nullable|array',
             'new_images.*' => 'image|mimes:jpeg,png,jpg|max:2048',
@@ -130,10 +140,18 @@ class LandController extends Controller
         }
 
         // Update land record
-        $land->update($request->only([
+        $landData = $request->only([
             'name', 'size', 'price_per_sqm', 'agent_id', 
             'location', 'description', 'status'
-        ]));
+        ]);
+        
+        // Handle features
+        if ($request->has('features')) {
+            $features = json_decode($request->features, true);
+            $landData['features'] = $features;
+        }
+
+        $land->update($landData);
 
         // Handle image uploads
         if ($request->hasFile('new_images')) {

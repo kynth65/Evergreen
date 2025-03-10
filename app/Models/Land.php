@@ -16,7 +16,12 @@ class Land extends Model
         'agent_id', 
         'location', 
         'description', 
+        'features',
         'status'
+    ];
+
+    protected $casts = [
+        'features' => 'array',
     ];
 
     /**
