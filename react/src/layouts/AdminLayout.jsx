@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckSquare,
+  Map,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -37,6 +38,12 @@ export default function AdminLayout() {
       name: "Task Management",
       icon: <CheckSquare className="w-6 h-6" />,
       description: "Manage tasks",
+    },
+    {
+      path: "/admin/land-management",
+      name: "Land Management",
+      icon: <Map className="w-6 h-6" />,
+      description: "Manage land properties",
     },
   ];
 

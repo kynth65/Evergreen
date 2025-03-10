@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\LandController;
 use App\Http\Controllers\AccountManagementController; 
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\InternTaskController;
@@ -57,6 +58,10 @@ Route::middleware(['auth:sanctum', 'role:admin,superadmin'])->prefix('/admin')->
     // Routes for checking the submission files
     Route::patch('/tasks/{id}/submission/check', [TaskController::class, 'markSubmissionChecked']);
 });
+
+//Land Management Routes
+Route::get('lands/stats', [LandController::class, 'getStats']);
+Route::apiResource('lands', LandController::class);
 
 // Intern Routes
 Route::middleware(['auth:sanctum', 'role:intern'])->prefix('/intern')->group(function () {

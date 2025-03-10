@@ -13,6 +13,10 @@ import SuperAdminDashboard from "./pages/SuperAdminLayout.jsx/SuperAdminDashboar
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import TaskManagement from "./pages/Admin/AdminTaskManagement";
+import AdminLandManagement from "./pages/Admin/AdminLandManagement";
+import AdminEditLand from "./components/admin/AdminEditLand";
+import AdminViewLand from "./components/admin/AdminViewLand";
+import AdminAddLand from "./components/admin/AdminAddLand";
 import InternLayout from "./layouts/InternLayout";
 import InternDashboard from "./pages/Intern/InternDashboard";
 import SuperAdminAccountManagement from "./pages/SuperAdminLayout.jsx/SuperAdminAccountManagement";
@@ -79,6 +83,24 @@ const router = createBrowserRouter([
       {
         path: "tasks-management",
         element: <TaskManagement />,
+      },
+      {
+        path: "land-management",
+        element: <AdminLandManagement />,
+        children: [
+          {
+            path: "new",
+            element: <AdminAddLand />,
+          },
+          {
+            path: ":id/edit",
+            element: <AdminEditLand />,
+          },
+          {
+            path: ":id",
+            element: <AdminViewLand />,
+          },
+        ],
       },
     ],
   },
