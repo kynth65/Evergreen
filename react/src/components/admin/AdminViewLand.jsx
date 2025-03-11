@@ -152,10 +152,6 @@ export default function AdminViewLand() {
             >
               Back to Land Management
             </Button>
-            <Title level={2} style={{ margin: 0 }}>
-              {land.name}
-            </Title>
-            {renderStatusTag(land.status)}
           </Space>
         </div>
 
@@ -191,6 +187,9 @@ export default function AdminViewLand() {
           <Col xs={24} md={12}>
             <Card title="Property Details">
               <Descriptions bordered column={1} size="small">
+                <Descriptions.Item label="Name" className="uppercase font-bold">
+                  {land.name}
+                </Descriptions.Item>
                 <Descriptions.Item label="Property ID">
                   {land.id}
                 </Descriptions.Item>
@@ -200,7 +199,7 @@ export default function AdminViewLand() {
                     {land.location || "No location specified"}
                   </Space>
                 </Descriptions.Item>
-                <Descriptions.Item label="Size">
+                <Descriptions.Item label="Size" className="font-bold">
                   {land.size.toLocaleString()} sqm
                 </Descriptions.Item>
                 <Descriptions.Item label="Price per sqm">

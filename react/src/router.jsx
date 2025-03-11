@@ -23,6 +23,9 @@ import InternDashboard from "./pages/Intern/InternDashboard";
 import SuperAdminAccountManagement from "./pages/SuperAdminLayout.jsx/SuperAdminAccountManagement";
 import NotFound from "./404/NotFound";
 import InternTask from "./pages/Intern/InternTask";
+import AdminLotList from "./pages/Admin/AdminLotList";
+import AdminLotForm from "./components/admin/AdminLotForm";
+import AdminLotView from "./components/admin/AdminLotView";
 
 const router = createBrowserRouter([
   {
@@ -104,6 +107,24 @@ const router = createBrowserRouter([
           {
             path: ":id",
             element: <AdminViewLand />,
+          },
+        ],
+      },
+      {
+        path: "lot-management",
+        element: <AdminLotList />,
+        children: [
+          {
+            path: "new",
+            element: <AdminLotForm />,
+          },
+          {
+            path: ":id/edit",
+            element: <AdminLotForm />,
+          },
+          {
+            path: ":id/view",
+            element: <AdminLotView />,
           },
         ],
       },
