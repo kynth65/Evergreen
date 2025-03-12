@@ -4,6 +4,7 @@ import axiosClient from "../axios.client";
 import { useStateContext } from "../context/ContextProvider";
 import Header from "../components/header";
 import { Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import EvergreenLogo from "../assets/Logo/evergreen logo.png";
 
 export default function Login() {
   const emailRef = useRef();
@@ -66,7 +67,7 @@ export default function Login() {
   return (
     <>
       <Header />
-      <div className="min-h-screen flex items-center justify-center mt-[-110px] bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center mt-[-110px] bg-neutral-50 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full relative">
           {/* Decorative element - top leaf */}
           <div className="hidden lg:block absolute -top-8 -right-8 opacity-60">
@@ -90,7 +91,7 @@ export default function Login() {
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8">
               <div className="flex justify-center mb-4">
                 <div className="bg-white bg-opacity-20 rounded-full p-3">
-                  <LogIn className="h-8 w-8 text-white" />
+                  <img src={EvergreenLogo} alt="" className="h-16" />
                 </div>
               </div>
               <h2 className="text-2xl font-bold text-white text-center">

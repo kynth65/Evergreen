@@ -14,10 +14,10 @@ import SuperAdminDashboard from "./pages/SuperAdminLayout.jsx/SuperAdminDashboar
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import TaskManagement from "./pages/Admin/AdminTaskManagement";
-import AdminLandManagement from "./pages/Admin/AdminLandManagement";
-import AdminEditLand from "./components/admin/AdminEditLand";
-import AdminViewLand from "./components/admin/AdminViewLand";
-import AdminAddLand from "./components/admin/AdminAddLand";
+import LandManagement from "./components/Land/LandManagement";
+import LandAddForm from "./components/Land/LandAddForm";
+import LandEditForm from "./components/Land/LandEditForm";
+import LandView from "./components/Land/LandView";
 import InternLayout from "./layouts/InternLayout";
 import InternDashboard from "./pages/Intern/InternDashboard";
 import SuperAdminAccountManagement from "./pages/SuperAdminLayout.jsx/SuperAdminAccountManagement";
@@ -74,6 +74,24 @@ const router = createBrowserRouter([
         path: "profile",
         element: <Profile />,
       },
+      {
+        path: "land-management",
+        element: <LandManagement role="superadmin" />,
+        children: [
+          {
+            path: "new",
+            element: <LandAddForm role="superadmin" />,
+          },
+          {
+            path: ":id/edit",
+            element: <LandEditForm role="superadmin" />,
+          },
+          {
+            path: ":id",
+            element: <LandView role="superadmin" />,
+          },
+        ],
+      },
     ],
   },
   {
@@ -92,21 +110,22 @@ const router = createBrowserRouter([
         path: "tasks-management",
         element: <TaskManagement />,
       },
+      // Use the same shared land management components for admin
       {
         path: "land-management",
-        element: <AdminLandManagement />,
+        element: <LandManagement role="admin" />,
         children: [
           {
             path: "new",
-            element: <AdminAddLand />,
+            element: <LandAddForm role="admin" />,
           },
           {
             path: ":id/edit",
-            element: <AdminEditLand />,
+            element: <LandEditForm role="admin" />,
           },
           {
             path: ":id",
-            element: <AdminViewLand />,
+            element: <LandView role="admin" />,
           },
         ],
       },

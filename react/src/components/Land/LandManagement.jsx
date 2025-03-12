@@ -43,7 +43,7 @@ const LandPropertySkeleton = () => (
   </List.Item>
 );
 
-export default function AdminLandManagement() {
+export default function LandManagement({ role = "admin" }) {
   const { token } = useStateContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,7 +54,7 @@ export default function AdminLandManagement() {
   const [refreshData, setRefreshData] = useState(false);
 
   // Check if we're on the exact land-management path (not a child route)
-  const isExactPath = location.pathname === "/admin/land-management";
+  const isExactPath = location.pathname === `/${role}/land-management`;
 
   // Define green color scheme (matching your dashboard)
   const colors = {
@@ -76,7 +76,7 @@ export default function AdminLandManagement() {
     if (isExactPath) {
       fetchLandData();
     }
-  }, [refreshData, isExactPath]);
+  }, [refreshData, isExactPath, role]);
 
   const fetchLandData = async () => {
     setLoading(true);
@@ -86,6 +86,7 @@ export default function AdminLandManagement() {
       const landsResponse = await axiosClient.get("/lands", {
         params: {
           per_page: 100, // Get a large number to extract locations
+          role: role, // Pass the role to the API to handle role-specific data
         },
       });
 
@@ -175,7 +176,7 @@ export default function AdminLandManagement() {
 
   // Render the UI regardless of loading state
   return (
-    <div className="admin-land-management">
+    <div className="land-management">
       <div style={{ marginBottom: "24px" }}>
         <h1 className="text-2xl">Land Management</h1>
       </div>

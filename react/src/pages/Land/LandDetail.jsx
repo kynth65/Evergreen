@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axiosClient from "../../axios.client";
+import Header from "../../components/header";
+import Footer from "../../components/footer";
 import {
   ArrowLeft,
   Map,
@@ -78,6 +80,7 @@ const LandDetail = () => {
 
   return (
     <div className="bg-[#f7fdf7] min-h-screen">
+      <Header />
       <div className="max-w-7xl mx-auto px-6 py-12">
         <Link
           to="/lands"
@@ -267,6 +270,7 @@ const LandDetail = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

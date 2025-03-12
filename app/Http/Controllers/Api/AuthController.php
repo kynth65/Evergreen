@@ -51,16 +51,39 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        /** @var \App\Models\User $user */
-        $user = $request->user();
-
-        /** @var \Laravel\Sanctum\PersonalAccessToken $token */
-        $token = $user->currentAccessToken();
-        $token->delete();
-
-        return response()->json([
-            'message' => 'Logged out successfully'
-        ], 204);
+        try {
+            // Get the authenticated user safely
+            $user = $request->user();
+            
+            // Only try to revoke token if user exists and has a token
+            if ($user) {
+                try {
+                    // Try to revoke the current token if possible
+                    if (method_exists($user, 'currentAccessToken') && $user->currentAccessToken()) {
+                        $user->currentAccessToken()->delete();
+                    } else {
+                        // Fallback: revoke all tokens for this user
+                        if (method_exists($user, 'tokens')) {
+                            $user->tokens()->delete();
+                        }
+                    }
+                } catch (\Exception $e) {
+                    // Log token revocation error but continue with logout
+                    \Log::error('Error revoking token: ' . $e->getMessage());
+                }
+            }
+            
+            // Always clear session regardless of token operations
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            return response()->json(['message' => 'Successfully logged out'], 200);
+        } catch (\Exception $e) {
+            // Log error but return success to client for better UX
+            \Log::error('Logout error: ' . $e->getMessage());
+            return response()->json(['message' => 'Logged out successfully'], 200);
+        }
     }
     
     /**

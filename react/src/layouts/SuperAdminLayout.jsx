@@ -6,6 +6,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Map,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -37,6 +38,12 @@ export default function SuperAdminLayout() {
       name: "Account Management",
       icon: <Users className="w-6 h-6" />,
       description: "Manage user accounts",
+    },
+    {
+      path: "/superadmin/land-management",
+      name: "Land Management",
+      icon: <Map className="w-6 h-6" />,
+      description: "Manage land properties",
     },
   ];
 
@@ -73,7 +80,10 @@ export default function SuperAdminLayout() {
           {/* Navigation Links */}
           <nav className="flex-1 overflow-y-auto py-4">
             {menuItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive =
+                location.pathname === item.path ||
+                (item.path !== "/superadmin" &&
+                  location.pathname.startsWith(item.path + "/"));
               return (
                 <Link
                   key={item.path}

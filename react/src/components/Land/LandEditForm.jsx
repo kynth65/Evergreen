@@ -26,16 +26,18 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../../axios.client";
+import { useStateContext } from "../../context/ContextProvider";
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 const { confirm } = Modal;
 
-export default function AdminEditLand() {
+export default function LandEditForm() {
   const { id } = useParams();
   const [form] = Form.useForm();
   const navigate = useNavigate();
+  const { user } = useStateContext(); // Get user from context
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -207,7 +209,7 @@ export default function AdminEditLand() {
       });
 
       message.success("Land property updated successfully");
-      navigate(`/admin/land-management/${id}`);
+      navigate(`/${user.role}/land-management/${id}`);
     } catch (error) {
       console.error("Error updating land:", error);
       const errorMsg =
@@ -237,7 +239,7 @@ export default function AdminEditLand() {
   }
 
   return (
-    <div className="admin-edit-land">
+    <div className="land-edit">
       <Card>
         <div className="text-2xl font-bold flex justify-center">
           Edit Land Property
@@ -247,7 +249,7 @@ export default function AdminEditLand() {
           <Space align="center">
             <Button
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(`/admin/land-management/${id}`)}
+              onClick={() => navigate(`/${user.role}/land-management/${id}`)}
             >
               Back to Property Details
             </Button>
@@ -485,7 +487,7 @@ export default function AdminEditLand() {
                 Save Changes
               </Button>
               <Button
-                onClick={() => navigate(`/admin/land-management/${id}`)}
+                onClick={() => navigate(`/${user.role}/land-management/${id}`)}
                 icon={<ArrowLeftOutlined />}
               >
                 Cancel

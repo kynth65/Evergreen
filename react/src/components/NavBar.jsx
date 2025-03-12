@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { Bell, User, LogOut, Settings, Search } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Import useNavigate hook
 import { useStateContext } from "../context/ContextProvider";
 import axiosClient from "../axios.client";
 
 export default function NavBar() {
-  const { user } = useStateContext();
+  const { user, setToken, setUser: setContextUser } = useStateContext(); // Make sure to get setUser and setToken
+  const navigate = useNavigate(); // Initialize useNavigate hook
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -52,6 +53,20 @@ export default function NavBar() {
       fetchNotifications();
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  // Logout function
+  const handleLogout = async () => {
+    try {
+      await axiosClient.post("/logout");
+    } catch (err) {
+      console.error("Error during logout:", err);
+    } finally {
+      localStorage.removeItem("ACCESS_TOKEN");
+      setToken(null);
+      setContextUser({});
+      navigate("/login");
     }
   };
 
@@ -275,13 +290,14 @@ export default function NavBar() {
                     Settings
                   </Link>
                   <hr className="my-1" />
-                  <Link
-                    to="/logout"
-                    className="px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                  {/* Changed from Link to button for logout */}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}

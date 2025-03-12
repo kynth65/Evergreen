@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axiosClient from "../../axios.client";
 import { Link } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Map } from "lucide-react";
-import Header from "../../components/Header";
+import Header from "../../components/header";
 import Footer from "../../components/footer";
 
 const LandCard = ({ land }) => {
@@ -108,7 +108,7 @@ const LandCard = ({ land }) => {
         </div>
 
         <Link to={`/lands/${land.id}`} className="block w-full">
-          <button className="w-full bg-[#384438] text-white py-2 rounded-lg hover:bg-[#2a332a] transition-colors">
+          <button className="w-full bg-[#384438] text-white py-2 rounded-lg hover:bg-[#2a332a] transition-colors cursor-pointer">
             View Details
           </button>
         </Link>
@@ -181,9 +181,8 @@ const LandCollection = () => {
 
   return (
     <>
-      {" "}
-      <Header />
       <div className="bg-[#f7fdf7] mt-[-45px]">
+        <Header />
         <div className="max-w-7xl mx-auto px-6 py-12">
           <h1 className="text-4xl md:text-5xl font-grotesk font-bold text-[#384438] mb-2">
             Available Lands
@@ -207,7 +206,7 @@ const LandCollection = () => {
               </div>
               <button
                 type="submit"
-                className="bg-[#384438] text-white px-6 py-2 rounded-lg hover:bg-[#2a332a] transition-colors"
+                className="bg-[#384438] text-white px-6 py-2 rounded-lg hover:bg-[#2a332a] transition-colors cursor-pointer"
               >
                 Search
               </button>

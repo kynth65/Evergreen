@@ -34,7 +34,7 @@ const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-export default function AdminAddLand() {
+export default function LandAddForm({ role = "admin" }) {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -138,6 +138,7 @@ export default function AdminAddLand() {
       formData.append("location", values.location);
       formData.append("description", values.description || "");
       formData.append("status", values.status);
+      formData.append("role", role); // Add role to the request
 
       // Add features as JSON
       formData.append("features", JSON.stringify(features));
@@ -159,7 +160,7 @@ export default function AdminAddLand() {
       });
 
       message.success("Land property added successfully");
-      navigate("/admin/land-management");
+      navigate(`/${role}/land-management`);
     } catch (error) {
       console.error("Error adding land:", error);
       const errorMsg =
@@ -180,7 +181,7 @@ export default function AdminAddLand() {
   );
 
   return (
-    <div className="admin-add-land">
+    <div className="land-add-form">
       <Card>
         <div
           style={{
@@ -192,7 +193,7 @@ export default function AdminAddLand() {
         >
           <Button
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/admin/land-management")}
+            onClick={() => navigate(`/${role}/land-management`)}
           >
             Back to Land Management
           </Button>
@@ -435,7 +436,7 @@ export default function AdminAddLand() {
                 Save Property
               </Button>
               <Button
-                onClick={() => navigate("/admin/land-management")}
+                onClick={() => navigate(`/${role}/land-management`)}
                 icon={<ArrowLeftOutlined />}
               >
                 Cancel

@@ -26,12 +26,14 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import axiosClient from "../../axios.client";
 import Modal from "antd/lib/modal/Modal";
+import { useStateContext } from "../../context/ContextProvider";
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function AdminViewLand() {
+export default function LandView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useStateContext(); // Get user from context
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [land, setLand] = useState(null);
@@ -69,7 +71,7 @@ export default function AdminViewLand() {
     try {
       await axiosClient.delete(`/lands/${id}`);
       setDeleteModalVisible(false);
-      navigate("/admin/land-management");
+      navigate(`/${user.role}/land-management`);
     } catch (error) {
       console.error("Error deleting land:", error);
       setError("Failed to delete land property. Please try again.");
@@ -132,7 +134,7 @@ export default function AdminViewLand() {
         action={
           <Button
             type="primary"
-            onClick={() => navigate("/admin/land-management")}
+            onClick={() => navigate(`/${user.role}/land-management`)}
           >
             Back to Land Management
           </Button>
@@ -142,13 +144,13 @@ export default function AdminViewLand() {
   }
 
   return (
-    <div className="admin-view-land">
+    <div className="land-view">
       <Card>
         <div style={{ marginBottom: "24px" }}>
           <Space align="center">
             <Button
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate("/admin/land-management")}
+              onClick={() => navigate(`/${user.role}/land-management`)}
             >
               Back to Land Management
             </Button>
@@ -264,7 +266,9 @@ export default function AdminViewLand() {
             <Button
               type="primary"
               icon={<EditOutlined />}
-              onClick={() => navigate(`/admin/land-management/${id}/edit`)}
+              onClick={() =>
+                navigate(`/${user.role}/land-management/${id}/edit`)
+              }
               style={{
                 backgroundColor: colors.primary,
                 borderColor: colors.primary,
