@@ -81,3 +81,6 @@ Route::middleware(['auth:sanctum', 'role:intern'])->prefix('/intern')->group(fun
     Route::post('/tasks/{id}/accept', [InternTaskController::class, 'acceptTask']);
     Route::post('/tasks/{id}/request-more-time', [InternTaskController::class, 'requestMoreTime']);
 });
+
+//Temporary Register
+Route::post('/register', [AccountManagementController::class, 'store']);

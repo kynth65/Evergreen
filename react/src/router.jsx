@@ -26,6 +26,7 @@ import InternTask from "./pages/Intern/InternTask";
 import AdminLotList from "./pages/Admin/AdminLotList";
 import AdminLotForm from "./components/admin/AdminLotForm";
 import AdminLotView from "./components/admin/AdminLotView";
+import Register from "./pages/Register";
 
 const router = createBrowserRouter([
   {
@@ -55,6 +56,10 @@ const router = createBrowserRouter([
       {
         path: "contact",
         element: <ContactUs />,
+      },
+      {
+        path: "register",
+        element: <Register />,
       },
     ],
   },
