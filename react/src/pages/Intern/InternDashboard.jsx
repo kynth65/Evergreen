@@ -35,8 +35,7 @@ import {
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
-// Import the separate components
-import ProfileCard from "../../components/Dashboard/ProfileCard";
+// Import the StatsCards component
 import StatsCards from "../../components/Dashboard/StatsCards";
 import TaskDetails from "../../components/Dashboard/TaskDetails";
 
@@ -50,7 +49,6 @@ const { Title } = Typography;
 const InternDashboard = () => {
   const { user } = useStateContext();
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [stats, setStats] = useState({
     pending: 0,
@@ -97,10 +95,6 @@ const InternDashboard = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch user profile data
-        const profileResponse = await axiosClient.get("/user");
-        setProfileData(profileResponse.data);
-
         // Fetch tasks assigned to the intern
         const tasksResponse = await axiosClient.get("/intern/tasks");
 
@@ -420,26 +414,24 @@ const InternDashboard = () => {
     return (
       <div className="intern-dashboard" style={{ padding: "20px" }}>
         <Row gutter={[16, 16]}>
-          <Col xs={24} lg={6}>
-            <Card>
-              <Skeleton avatar active paragraph={{ rows: 2 }} />
-            </Card>
-          </Col>
-          <Col xs={24} md={6}>
+          {/* Skeleton for stats cards */}
+          <Col xs={24} md={8}>
             <Card>
               <Skeleton active paragraph={{ rows: 1 }} />
             </Card>
           </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Card>
               <Skeleton active paragraph={{ rows: 1 }} />
             </Card>
           </Col>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Card>
               <Skeleton active paragraph={{ rows: 1 }} />
             </Card>
           </Col>
+
+          {/* Skeleton for tasks */}
           <Col span={24}>
             <Card>
               <Skeleton active paragraph={{ rows: 6 }} />
@@ -461,14 +453,8 @@ const InternDashboard = () => {
 
   return (
     <div className="intern-dashboard" style={{ padding: "16px" }}>
-      {/* Profile and Stats Section */}
+      {/* Stats Cards Section (without profile card) */}
       <Row gutter={[16, 16]}>
-        {/* Profile Card */}
-        <Col xs={24} lg={6}>
-          <ProfileCard profileData={profileData} />
-        </Col>
-
-        {/* Stats Cards */}
         <StatsCards stats={stats} />
       </Row>
 

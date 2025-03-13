@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axiosClient from "../../axios.client";
+import { useStateContext } from "../../context/ContextProvider";
+import { useNavigate } from "react-router-dom";
 import {
   Row,
   Col,
@@ -11,12 +13,14 @@ import {
   Progress,
   Button,
   Typography,
+  Space,
   Spin,
   Alert,
-  Space,
   Divider,
   Badge,
   Tooltip,
+  Skeleton,
+  Empty,
 } from "antd";
 import {
   UserOutlined,
@@ -29,12 +33,14 @@ import {
   TeamOutlined,
   RightOutlined,
   EyeOutlined,
+  PlusOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
-import { useStateContext } from "../../context/ContextProvider";
-import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
 const { Title, Paragraph, Text } = Typography;
+dayjs.extend(relativeTime);
 
 export default function AdminDashboard() {
   const { token } = useStateContext();
@@ -53,8 +59,9 @@ export default function AdminDashboard() {
     pendingSubmissions: [],
   });
   const [error, setError] = useState(null);
+  const [screenSize, setScreenSize] = useState(window.innerWidth);
 
-  // Define green color scheme
+  // Theme colors - same as intern dashboard
   const colors = {
     primary: "#1da57a", // Primary green
     secondary: "#52c41a", // Secondary lighter green
@@ -64,6 +71,18 @@ export default function AdminDashboard() {
     lightBg: "#f6ffed", // Light green background
   };
 
+  // Update screen size on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -72,6 +91,7 @@ export default function AdminDashboard() {
     setLoading(true);
     setError(null);
     try {
+      // Simulate API response
       setTimeout(() => {
         setDashboardData({
           stats: {
@@ -89,6 +109,7 @@ export default function AdminDashboard() {
               status: "pending",
               due_date: dayjs().add(2, "day").format("YYYY-MM-DD"),
               created_by: "Admin User",
+              assigned_to: 5,
             },
             {
               id: 2,
@@ -96,6 +117,7 @@ export default function AdminDashboard() {
               status: "completed",
               due_date: dayjs().subtract(1, "day").format("YYYY-MM-DD"),
               created_by: "Content Manager",
+              assigned_to: 8,
             },
             {
               id: 3,
@@ -103,6 +125,7 @@ export default function AdminDashboard() {
               status: "pending",
               due_date: dayjs().add(5, "day").format("YYYY-MM-DD"),
               created_by: "Admin User",
+              assigned_to: 3,
             },
             {
               id: 4,
@@ -110,6 +133,7 @@ export default function AdminDashboard() {
               status: "pending",
               due_date: dayjs().add(1, "day").format("YYYY-MM-DD"),
               created_by: "System Admin",
+              assigned_to: 2,
             },
             {
               id: 5,
@@ -117,6 +141,7 @@ export default function AdminDashboard() {
               status: "completed",
               due_date: dayjs().subtract(2, "day").format("YYYY-MM-DD"),
               created_by: "QA Team",
+              assigned_to: 6,
             },
           ],
           pendingSubmissions: [
@@ -163,163 +188,308 @@ export default function AdminDashboard() {
     }
   };
 
-  const renderStatusTag = (status) => {
-    let color = "default";
-    let icon = null;
-
-    switch (status) {
-      case "completed":
-        color = "success";
-        icon = <CheckCircleOutlined />;
-        break;
-      case "failed":
-        color = "error";
-        icon = <ExclamationCircleOutlined />;
-        break;
-      case "pending":
-        color = "processing";
-        icon = <ClockCircleOutlined />;
-        break;
-      default:
-        break;
-    }
-
-    return (
-      <Tag color={color} icon={icon}>
-        {status ? status.toUpperCase() : "UNKNOWN"}
-      </Tag>
-    );
+  // Card styles for consistent appearance - same as intern dashboard
+  const cardStyle = {
+    height: "100%",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.03)",
+    border: "1px solid #f0f0f0",
+    borderRadius: "8px",
   };
 
+  // Card body styles for consistent internal spacing
+  const cardBodyStyle = {
+    padding: screenSize < 576 ? "16px" : "24px",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+  };
+
+  // Render status tag for tasks
+  const renderStatusTag = (status) => {
+    switch (status) {
+      case "completed":
+        return (
+          <Tag color="success" icon={<CheckCircleOutlined />}>
+            COMPLETED
+          </Tag>
+        );
+      case "pending":
+        return (
+          <Tag color="processing" icon={<ClockCircleOutlined />}>
+            PENDING
+          </Tag>
+        );
+      case "failed":
+        return (
+          <Tag color="error" icon={<ExclamationCircleOutlined />}>
+            FAILED
+          </Tag>
+        );
+      default:
+        return <Tag>{status ? status.toUpperCase() : "UNKNOWN"}</Tag>;
+    }
+  };
+
+  // Loading skeleton - matches intern dashboard style
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "50px" }}>
-        <Spin size="large" />
-        <p style={{ marginTop: "20px" }}>Loading dashboard information...</p>
+      <div className="admin-dashboard" style={{ padding: "20px" }}>
+        <Row gutter={[16, 16]}>
+          {/* Skeleton for stats cards */}
+          <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 1 }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 1 }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 1 }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 1 }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 1 }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 1 }} />
+            </Card>
+          </Col>
+
+          {/* Skeleton for main content */}
+          <Col xs={24} lg={12}>
+            <Card>
+              <Skeleton active paragraph={{ rows: 3 }} />
+            </Card>
+          </Col>
+          <Col xs={24} lg={12}>
+            <Card>
+              <Skeleton active avatar paragraph={{ rows: 3 }} />
+            </Card>
+          </Col>
+
+          {/* Skeleton for tasks list */}
+          <Col span={24}>
+            <Card>
+              <Skeleton active avatar paragraph={{ rows: 6 }} />
+            </Card>
+          </Col>
+        </Row>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <Alert
-        message="Error"
-        description={error}
-        type="error"
-        style={{ margin: "30px" }}
-        action={
-          <Button type="primary" onClick={fetchDashboardData}>
-            Retry
-          </Button>
-        }
-      />
+      <div style={{ padding: "20px" }}>
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+          action={
+            <Button type="primary" onClick={fetchDashboardData}>
+              Retry
+            </Button>
+          }
+        />
+      </div>
     );
   }
 
   const { stats, recentTasks, pendingSubmissions } = dashboardData;
 
   return (
-    <div className="admin-dashboard">
-      <div style={{ marginBottom: "24px" }}>
-        <Title level={2}>Admin Dashboard</Title>
+    <div className="admin-dashboard" style={{ padding: "16px" }}>
+      {/* Header Section */}
+      <div style={{ marginBottom: screenSize < 576 ? "16px" : "24px" }}>
+        <Title
+          level={screenSize < 576 ? 3 : 2}
+          style={{ margin: 0, marginBottom: "8px" }}
+        >
+          Admin Dashboard
+        </Title>
         <Paragraph>
-          Welcome to the admin dashboard. Here you can monitor task progress,
-          manage submissions, and view system statistics.
+          Monitor task progress, manage submissions, and view system statistics.
         </Paragraph>
       </div>
 
       {/* Key Statistics */}
       <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} sm={12} md={8} lg={8} xl={4}>
-          <Card
-            style={{ background: colors.lightBg, borderColor: colors.primary }}
-          >
+          <Card style={cardStyle} bodyStyle={cardBodyStyle} bordered={false}>
             <Statistic
-              title="Total Tasks"
+              title={
+                <div style={{ fontSize: "14px", color: "#8c8c8c" }}>
+                  Total Tasks
+                </div>
+              }
               value={stats.totalTasks}
-              prefix={<FileOutlined />}
-              valueStyle={{ color: colors.primary }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={8} xl={4}>
-          <Card
-            style={{ background: colors.lightBg, borderColor: colors.primary }}
-          >
-            <Statistic
-              title="Pending Tasks"
-              value={stats.pendingTasks}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: colors.warning }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={8} xl={4}>
-          <Card
-            style={{ background: colors.lightBg, borderColor: colors.primary }}
-          >
-            <Statistic
-              title="Completed Tasks"
-              value={stats.completedTasks}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: colors.success }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={8} xl={4}>
-          <Badge count={stats.submissionsNeedingReview} offset={[-5, 5]}>
-            <Card
-              style={{
-                background: colors.lightBg,
-                borderColor: colors.primary,
+              prefix={
+                <FileOutlined
+                  style={{ color: colors.primary, marginRight: "8px" }}
+                />
+              }
+              valueStyle={{
+                color: colors.primary,
+                fontSize: screenSize < 576 ? "28px" : "32px",
               }}
-            >
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+          <Card style={cardStyle} bodyStyle={cardBodyStyle} bordered={false}>
+            <Statistic
+              title={
+                <div style={{ fontSize: "14px", color: "#8c8c8c" }}>
+                  Pending Tasks
+                </div>
+              }
+              value={stats.pendingTasks}
+              prefix={
+                <ClockCircleOutlined
+                  style={{ color: colors.warning, marginRight: "8px" }}
+                />
+              }
+              valueStyle={{
+                color: colors.warning,
+                fontSize: screenSize < 576 ? "28px" : "32px",
+              }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+          <Card style={cardStyle} bodyStyle={cardBodyStyle} bordered={false}>
+            <Statistic
+              title={
+                <div style={{ fontSize: "14px", color: "#8c8c8c" }}>
+                  Completed Tasks
+                </div>
+              }
+              value={stats.completedTasks}
+              prefix={
+                <CheckCircleOutlined
+                  style={{ color: colors.success, marginRight: "8px" }}
+                />
+              }
+              valueStyle={{
+                color: colors.success,
+                fontSize: screenSize < 576 ? "28px" : "32px",
+              }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={8} xl={4}>
+          <Badge count={stats.submissionsNeedingReview} offset={[-10, 5]}>
+            <Card style={cardStyle} bodyStyle={cardBodyStyle} bordered={false}>
               <Statistic
-                title="Submissions to Review"
+                title={
+                  <div style={{ fontSize: "14px", color: "#8c8c8c" }}>
+                    Pending Reviews
+                  </div>
+                }
                 value={stats.submissionsNeedingReview}
-                prefix={<InboxOutlined />}
-                valueStyle={{ color: colors.primary }}
+                prefix={
+                  <InboxOutlined
+                    style={{ color: colors.primary, marginRight: "8px" }}
+                  />
+                }
+                valueStyle={{
+                  color: colors.primary,
+                  fontSize: screenSize < 576 ? "28px" : "32px",
+                }}
               />
             </Card>
           </Badge>
         </Col>
         <Col xs={24} sm={12} md={8} lg={8} xl={4}>
-          <Card
-            style={{ background: colors.lightBg, borderColor: colors.primary }}
-          >
+          <Card style={cardStyle} bodyStyle={cardBodyStyle} bordered={false}>
             <Statistic
-              title="Total Users"
+              title={
+                <div style={{ fontSize: "14px", color: "#8c8c8c" }}>
+                  Total Users
+                </div>
+              }
               value={stats.totalUsers}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: colors.primary }}
+              prefix={
+                <UserOutlined
+                  style={{ color: colors.primary, marginRight: "8px" }}
+                />
+              }
+              valueStyle={{
+                color: colors.primary,
+                fontSize: screenSize < 576 ? "28px" : "32px",
+              }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={8} lg={8} xl={4}>
-          <Card
-            style={{ background: colors.lightBg, borderColor: colors.primary }}
-          >
+          <Card style={cardStyle} bodyStyle={cardBodyStyle} bordered={false}>
             <Statistic
-              title="Total Interns"
+              title={
+                <div style={{ fontSize: "14px", color: "#8c8c8c" }}>
+                  Total Interns
+                </div>
+              }
               value={stats.totalInterns}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: colors.primary }}
+              prefix={
+                <TeamOutlined
+                  style={{ color: colors.primary, marginRight: "8px" }}
+                />
+              }
+              valueStyle={{
+                color: colors.primary,
+                fontSize: screenSize < 576 ? "28px" : "32px",
+              }}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Task Progress */}
+      {/* Task Progress & Pending Submissions */}
       <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
         <Col xs={24} lg={12}>
           <Card
-            title={<Title level={4}>Task Progress</Title>}
+            title={
+              <Title
+                level={4}
+                style={{
+                  margin: 0,
+                  fontSize: screenSize < 576 ? "16px" : "18px",
+                }}
+              >
+                Task Progress
+              </Title>
+            }
             extra={
-              <Button type="link" onClick={() => navigate("/admin/tasks")}>
+              <Button
+                type="primary"
+                size={screenSize < 576 ? "small" : "middle"}
+                style={{
+                  background: colors.primary,
+                  borderColor: colors.primary,
+                }}
+                onClick={() => navigate("/admin/tasks")}
+              >
                 View All
               </Button>
             }
-            style={{ height: "100%" }}
+            style={cardStyle}
+            bodyStyle={cardBodyStyle}
+            bordered={false}
           >
             <div style={{ marginBottom: "20px" }}>
               <Progress
@@ -330,15 +500,8 @@ export default function AdminDashboard() {
                 format={(percent) => `${percent}% Completed`}
               />
             </div>
-            <div>
-              <Text strong>Task Status Breakdown:</Text>
-              <div
-                style={{
-                  marginTop: "10px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
+            <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
                   <Text type="secondary">Pending:</Text>
                   <Text strong style={{ marginLeft: "8px" }}>
@@ -358,43 +521,77 @@ export default function AdminDashboard() {
                   </Text>
                 </div>
               </div>
-            </div>
+
+              <Divider style={{ margin: "12px 0" }} />
+
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                size={screenSize < 576 ? "middle" : "large"}
+                style={{
+                  background: colors.primary,
+                  borderColor: colors.primary,
+                }}
+                onClick={() => navigate("/admin/tasks/new")}
+                block
+              >
+                Create New Task
+              </Button>
+            </Space>
           </Card>
         </Col>
+
         <Col xs={24} lg={12}>
           <Card
-            title={<Title level={4}>Submissions Pending Review</Title>}
+            title={
+              <Title
+                level={4}
+                style={{
+                  margin: 0,
+                  fontSize: screenSize < 576 ? "16px" : "18px",
+                }}
+              >
+                Submissions Pending Review
+              </Title>
+            }
             extra={
               <Tooltip title="View all submissions that need review">
                 <Button
                   type="primary"
                   ghost
+                  size={screenSize < 576 ? "small" : "middle"}
                   icon={<EyeOutlined />}
+                  style={{ borderColor: colors.primary, color: colors.primary }}
                   onClick={() =>
                     navigate("/admin/tasks", {
                       state: { filterNeedsReview: true },
                     })
                   }
                 >
-                  Review All
+                  {screenSize >= 576 && "Review All"}
                 </Button>
               </Tooltip>
             }
-            style={{ height: "100%" }}
+            style={cardStyle}
+            bodyStyle={cardBodyStyle}
+            bordered={false}
           >
             {pendingSubmissions.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "20px" }}>
-                <Text>No submissions pending review</Text>
-              </div>
+              <Empty description="No submissions pending review" />
             ) : (
               <List
                 dataSource={pendingSubmissions}
+                size={screenSize < 576 ? "small" : "default"}
                 renderItem={(item) => (
                   <List.Item
                     actions={[
                       <Button
-                        type="link"
-                        icon={<RightOutlined />}
+                        type="primary"
+                        size="small"
+                        style={{
+                          background: colors.primary,
+                          borderColor: colors.primary,
+                        }}
                         onClick={() => navigate(`/admin/tasks/${item.id}`)}
                       >
                         Review
@@ -411,20 +608,32 @@ export default function AdminDashboard() {
                       title={item.task_name}
                       description={
                         <Space direction="vertical" size={0}>
-                          <Text type="secondary">
+                          <Text
+                            type="secondary"
+                            style={{
+                              fontSize: screenSize < 576 ? "12px" : "14px",
+                            }}
+                          >
                             Submitted by: {item.intern_name}
                           </Text>
-                          <Text type="secondary">
-                            Date:{" "}
-                            {dayjs(item.submission_date).format(
-                              "YYYY-MM-DD HH:mm"
-                            )}
+                          <Text
+                            type="secondary"
+                            style={{
+                              fontSize: screenSize < 576 ? "12px" : "14px",
+                            }}
+                          >
+                            {dayjs(item.submission_date).fromNow()}
                           </Text>
                         </Space>
                       }
                     />
                   </List.Item>
                 )}
+                style={{
+                  maxHeight: screenSize < 576 ? "200px" : "300px",
+                  overflow: "auto",
+                  paddingRight: "8px",
+                }}
               />
             )}
           </Card>
@@ -435,20 +644,51 @@ export default function AdminDashboard() {
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Card
-            title={<Title level={4}>Recent Tasks</Title>}
-            extra={
-              <Button type="link" onClick={() => navigate("/admin/tasks")}>
-                View All Tasks
-              </Button>
+            title={
+              <Title
+                level={4}
+                style={{
+                  margin: 0,
+                  fontSize: screenSize < 576 ? "16px" : "18px",
+                }}
+              >
+                Recent Tasks
+              </Title>
             }
+            extra={
+              <Space>
+                <Button
+                  type="primary"
+                  ghost
+                  size={screenSize < 576 ? "small" : "middle"}
+                  icon={<BarChartOutlined />}
+                  style={{ borderColor: colors.primary, color: colors.primary }}
+                  onClick={() => navigate("/admin/reports")}
+                >
+                  {screenSize >= 576 && "Reports"}
+                </Button>
+                <Button
+                  type="link"
+                  size={screenSize < 576 ? "small" : "middle"}
+                  onClick={() => navigate("/admin/tasks")}
+                >
+                  View All
+                </Button>
+              </Space>
+            }
+            style={cardStyle}
+            bodyStyle={cardBodyStyle}
+            bordered={false}
           >
             <List
               dataSource={recentTasks}
+              size={screenSize < 576 ? "small" : "default"}
               renderItem={(item) => (
                 <List.Item
                   actions={[
                     <Button
                       type="link"
+                      size={screenSize < 576 ? "small" : "middle"}
                       onClick={() => navigate(`/admin/tasks/${item.id}`)}
                     >
                       Details
@@ -456,118 +696,67 @@ export default function AdminDashboard() {
                   ]}
                 >
                   <List.Item.Meta
-                    title={<span>{item.task_name}</span>}
+                    title={
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <span style={{ marginRight: "8px" }}>
+                          {item.task_name}
+                        </span>
+                        {renderStatusTag(item.status)}
+                      </div>
+                    }
                     description={
                       <Space direction="vertical" size={0}>
-                        <Text type="secondary">
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: screenSize < 576 ? "12px" : "14px",
+                          }}
+                        >
                           Created by: {item.created_by}
                         </Text>
                         <Space size="small" align="center">
                           <CalendarOutlined style={{ fontSize: "12px" }} />
-                          <Text type="secondary">Due: {item.due_date}</Text>
+                          <Text
+                            type="secondary"
+                            style={{
+                              fontSize: screenSize < 576 ? "12px" : "14px",
+                            }}
+                          >
+                            {item.status === "completed"
+                              ? "Completed"
+                              : `Due ${dayjs(item.due_date).fromNow()}`}
+                          </Text>
+                          {dayjs().isAfter(dayjs(item.due_date)) &&
+                            item.status === "pending" && (
+                              <Tag
+                                color="error"
+                                style={{ fontSize: "10px", padding: "0 4px" }}
+                              >
+                                Overdue
+                              </Tag>
+                            )}
                         </Space>
                       </Space>
                     }
                   />
-                  {renderStatusTag(item.status)}
+                  <div style={{ textAlign: "center", minWidth: "50px" }}>
+                    <Badge
+                      count={item.assigned_to}
+                      style={{ backgroundColor: colors.primary }}
+                    />
+                    <div style={{ fontSize: "10px", marginTop: "4px" }}>
+                      Assigned
+                    </div>
+                  </div>
                 </List.Item>
               )}
             />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Quick Actions */}
-      <Row gutter={[16, 16]} style={{ marginTop: "24px" }}>
-        <Col span={24}>
-          <Card>
-            <Title level={4}>Quick Actions</Title>
-            <Divider style={{ margin: "16px 0" }} />
-            <Row gutter={[16, 16]}>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Button
-                  type="primary"
-                  block
-                  size="large"
-                  style={{
-                    backgroundColor: colors.primary,
-                    borderColor: colors.primary,
-                    height: "auto",
-                    padding: "12px 0",
-                  }}
-                  onClick={() => navigate("/admin/tasks/new")}
-                >
-                  <Space direction="vertical" size={0}>
-                    <FileOutlined style={{ fontSize: "24px" }} />
-                    <span>Create New Task</span>
-                  </Space>
-                </Button>
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Button
-                  type="primary"
-                  ghost
-                  block
-                  size="large"
-                  style={{
-                    borderColor: colors.primary,
-                    color: colors.primary,
-                    height: "auto",
-                    padding: "12px 0",
-                  }}
-                  onClick={() =>
-                    navigate("/admin/tasks", {
-                      state: { filterNeedsReview: true },
-                    })
-                  }
-                >
-                  <Space direction="vertical" size={0}>
-                    <InboxOutlined style={{ fontSize: "24px" }} />
-                    <span>Review Submissions</span>
-                  </Space>
-                </Button>
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Button
-                  type="primary"
-                  ghost
-                  block
-                  size="large"
-                  style={{
-                    borderColor: colors.primary,
-                    color: colors.primary,
-                    height: "auto",
-                    padding: "12px 0",
-                  }}
-                  onClick={() => navigate("/admin/users")}
-                >
-                  <Space direction="vertical" size={0}>
-                    <TeamOutlined style={{ fontSize: "24px" }} />
-                    <span>Manage Users</span>
-                  </Space>
-                </Button>
-              </Col>
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Button
-                  type="primary"
-                  ghost
-                  block
-                  size="large"
-                  style={{
-                    borderColor: colors.primary,
-                    color: colors.primary,
-                    height: "auto",
-                    padding: "12px 0",
-                  }}
-                  onClick={() => navigate("/admin/reports")}
-                >
-                  <Space direction="vertical" size={0}>
-                    <FileOutlined style={{ fontSize: "24px" }} />
-                    <span>Generate Reports</span>
-                  </Space>
-                </Button>
-              </Col>
-            </Row>
           </Card>
         </Col>
       </Row>
