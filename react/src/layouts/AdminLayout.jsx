@@ -86,8 +86,9 @@ export default function AdminLayout() {
           <nav className="flex-1 overflow-y-auto py-4">
             {menuItems.map((item) => {
               const isActive =
-                location.pathname === item.path ||
-                location.pathname.startsWith(item.path + "/");
+                (item.path === "/admin" && location.pathname === "/admin") ||
+                (item.path !== "/admin" &&
+                  location.pathname.startsWith(item.path));
               return (
                 <Link
                   key={item.path}

@@ -591,8 +591,11 @@ export default function AdminTaskManagement() {
             <Input placeholder="Enter task name" />
           </Form.Item>
 
-          <Form.Item name="description" label="Description">
-            <TextArea rows={4} placeholder="Enter task description" />
+          <Form.Item name="description" label="Description / Members Included">
+            <TextArea
+              rows={4}
+              placeholder="Enter task description or member that is included for task"
+            />
           </Form.Item>
 
           <Form.Item name="instructions" label="Instructions">
