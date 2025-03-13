@@ -21,6 +21,7 @@ class Task extends Model
         'instructions',
         'image_path',
         'submission_file_path',
+        'submission_comments', // Added this field
         'submission_date',
         'is_submission_checked',
         'status',

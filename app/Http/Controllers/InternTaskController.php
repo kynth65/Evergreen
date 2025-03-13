@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 
 class InternTaskController extends Controller
 {
@@ -107,7 +108,12 @@ class InternTaskController extends Controller
             $task->submission_file_path = 'storage/' . $path;
             $task->submission_date = now();
             $task->is_submission_checked = false;
-            $task->submission_comments = $request->input('comments');
+            
+            // Only set submission_comments if the column exists
+            if (Schema::hasColumn('tasks', 'submission_comments')) {
+                $task->submission_comments = $request->input('comments');
+            }
+            
             $task->save();
             
             // Notify admins about the new submission
@@ -117,17 +123,23 @@ class InternTaskController extends Controller
             foreach ($admins as $admin) {
                 $message = "New task submission received from {$intern->first_name} {$intern->last_name} for task: {$task->task_name}";
                 
+                $notificationData = [
+                    'task_id' => $task->id,
+                    'task_name' => $task->task_name,
+                    'submitted_by' => $intern->first_name . ' ' . $intern->last_name,
+                    'submission_date' => $task->submission_date->toDateTimeString(),
+                    'needs_review' => true
+                ];
+                
+                // Only include comments in notification if the column exists
+                if (Schema::hasColumn('tasks', 'submission_comments')) {
+                    $notificationData['comments'] = $task->submission_comments;
+                }
+                
                 $admin->notify(new EvergreenNotification(
                     $message,
                     'info',
-                    [
-                        'task_id' => $task->id,
-                        'task_name' => $task->task_name,
-                        'submitted_by' => $intern->first_name . ' ' . $intern->last_name,
-                        'submission_date' => $task->submission_date->toDateTimeString(),
-                        'needs_review' => true,
-                        'comments' => $task->submission_comments
-                    ]
+                    $notificationData
                 ));
             }
             
@@ -181,7 +193,8 @@ class InternTaskController extends Controller
         $oldStatus = $task->status;
         $task->status = $request->status;
         
-        if ($request->has('comments')) {
+        // Only set submission_comments if the column exists
+        if ($request->has('comments') && Schema::hasColumn('tasks', 'submission_comments')) {
             $task->submission_comments = $request->comments;
         }
         
@@ -201,18 +214,24 @@ class InternTaskController extends Controller
             $message = "{$statusMessages[$request->status]} by {$intern->first_name} {$intern->last_name}: {$task->task_name}";
             $notificationType = $request->status === 'completed' ? 'success' : ($request->status === 'failed' ? 'warning' : 'info');
             
+            $notificationData = [
+                'task_id' => $task->id,
+                'task_name' => $task->task_name,
+                'updated_by' => $intern->first_name . ' ' . $intern->last_name,
+                'old_status' => $oldStatus,
+                'new_status' => $request->status
+            ];
+            
+            // Only include comments in notification if provided and column exists
+            if ($request->has('comments') && Schema::hasColumn('tasks', 'submission_comments')) {
+                $notificationData['comments'] = $request->comments;
+            }
+            
             foreach ($admins as $admin) {
                 $admin->notify(new EvergreenNotification(
                     $message,
                     $notificationType,
-                    [
-                        'task_id' => $task->id,
-                        'task_name' => $task->task_name,
-                        'updated_by' => $intern->first_name . ' ' . $intern->last_name,
-                        'old_status' => $oldStatus,
-                        'new_status' => $request->status,
-                        'comments' => $request->comments ?? null
-                    ]
+                    $notificationData
                 ));
             }
         }
