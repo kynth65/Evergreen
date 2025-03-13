@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Map,
+  Grid,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -45,6 +46,12 @@ export default function SuperAdminLayout() {
       icon: <Map className="w-6 h-6" />,
       description: "Manage land properties",
     },
+    {
+      path: "/superadmin/lot-management",
+      name: "Lot Management",
+      icon: <Grid className="w-6 h-6" />,
+      description: "Manage property lots",
+    },
   ];
 
   return (
@@ -60,9 +67,7 @@ export default function SuperAdminLayout() {
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
             <div className="flex items-center justify-between">
               {!isCollapsed && (
-                <h2 className="text-xl font-bold text-white">
-                  Evergreen Superadmin
-                </h2>
+                <h2 className="text-xl font-bold text-white">Evergreen</h2>
               )}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}

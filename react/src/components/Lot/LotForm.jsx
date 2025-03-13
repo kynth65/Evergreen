@@ -1,4 +1,4 @@
-// src/pages/Admin/AdminLotForm.jsx
+// src/components/Lot/LotForm.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import axiosClient from "../../axios.client";
@@ -18,7 +18,7 @@ import {
 const { Option } = Select;
 const { Title, Text } = Typography;
 
-const AdminLotForm = () => {
+const LotForm = ({ role }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { refreshLots } = useOutletContext() || { refreshLots: () => {} };
@@ -94,8 +94,8 @@ const AdminLotForm = () => {
         );
         // Refresh the parent list
         if (refreshLots) refreshLots();
-        // Redirect back to list
-        navigate("/admin/lot-management");
+        // Redirect back to list based on the role
+        navigate(`/${role}/lot-management`);
       })
       .catch((err) => {
         setSubmitting(false);
@@ -278,7 +278,7 @@ const AdminLotForm = () => {
                 {isAddMode ? "Create Lot" : "Update Lot"}
               </Button>
             )}
-            <Button onClick={() => navigate("/admin/lot-management")}>
+            <Button onClick={() => navigate(`/${role}/lot-management`)}>
               {isViewMode ? "Back to List" : "Cancel"}
             </Button>
           </Space>
@@ -288,4 +288,4 @@ const AdminLotForm = () => {
   );
 };
 
-export default AdminLotForm;
+export default LotForm;

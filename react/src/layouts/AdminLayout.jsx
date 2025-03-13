@@ -67,9 +67,7 @@ export default function AdminLayout() {
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
             <div className="flex items-center justify-between">
               {!isCollapsed && (
-                <h2 className="text-xl font-bold text-white">
-                  Evergreen Admin
-                </h2>
+                <h2 className="text-xl font-bold text-white">Evergreen</h2>
               )}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}

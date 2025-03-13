@@ -1,4 +1,4 @@
-// src/pages/Admin/AdminLotList.jsx
+// src/components/Lot/LotList.jsx
 import React, { useState, useEffect } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import axiosClient from "../../axios.client";
@@ -31,7 +31,7 @@ import {
 const { Search } = Input;
 const { Option } = Select;
 
-const AdminLotList = () => {
+const LotList = ({ role }) => {
   const [lots, setLots] = useState([]);
   const [filteredLots, setFilteredLots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,7 +135,9 @@ const AdminLotList = () => {
       });
   };
 
-  const showMainList = location.pathname === "/admin/lot-management";
+  // Determine if we should show the main list view based on the current URL pathname
+  const basePath = `/${role}/lot-management`;
+  const showMainList = location.pathname === basePath;
 
   // Reset all filters
   const resetFilters = () => {
@@ -195,7 +197,9 @@ const AdminLotList = () => {
       render: (text, record) => (
         <Tooltip title="Click to view details">
           <a
-            onClick={() => navigate(`/admin/lot-management/${record.id}/view`)}
+            onClick={() =>
+              navigate(`/${role}/lot-management/${record.id}/view`)
+            }
           >
             {text}
           </a>
@@ -255,7 +259,9 @@ const AdminLotList = () => {
             type="primary"
             icon={<FileOutlined />}
             size="small"
-            onClick={() => navigate(`/admin/lot-management/${record.id}/view`)}
+            onClick={() =>
+              navigate(`/${role}/lot-management/${record.id}/view`)
+            }
           >
             View
           </Button>
@@ -263,7 +269,9 @@ const AdminLotList = () => {
             type="primary"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => navigate(`/admin/lot-management/${record.id}/edit`)}
+            onClick={() =>
+              navigate(`/${role}/lot-management/${record.id}/edit`)
+            }
           >
             Edit
           </Button>
@@ -283,7 +291,7 @@ const AdminLotList = () => {
   ];
 
   return (
-    <div className="admin-lot-management">
+    <div className="lot-management">
       <div
         className="header-section"
         style={{
@@ -301,7 +309,7 @@ const AdminLotList = () => {
             backgroundColor: colors.primary,
             borderColor: colors.primary,
           }}
-          onClick={() => navigate("/admin/lot-management/new")}
+          onClick={() => navigate(`/${role}/lot-management/new`)}
         >
           Add Lot
         </Button>
@@ -404,11 +412,11 @@ const AdminLotList = () => {
           />
         </Card>
       ) : (
-        // Outlet for child routes (AdminLotForm, AdminLotView)
+        // Outlet for child routes (LotForm, LotView)
         <Outlet context={{ refreshLots: fetchLots }} />
       )}
     </div>
   );
 };
 
-export default AdminLotList;
+export default LotList;

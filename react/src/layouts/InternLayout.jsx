@@ -6,6 +6,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Grid,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -38,6 +39,12 @@ export default function InternLayout() {
       icon: <FileText className="w-6 h-6" />,
       description: "Assigned tasks",
     },
+    {
+      path: "/intern/lot-management",
+      name: "Lot Management",
+      icon: <Grid className="w-6 h-6" />,
+      description: "View property lots",
+    },
   ];
 
   return (
@@ -53,9 +60,7 @@ export default function InternLayout() {
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
             <div className="flex items-center justify-between">
               {!isCollapsed && (
-                <h2 className="text-xl font-bold text-white">
-                  Evergreen Intern
-                </h2>
+                <h2 className="text-xl font-bold text-white">Evergreen</h2>
               )}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -73,7 +78,10 @@ export default function InternLayout() {
           {/* Navigation Links */}
           <nav className="flex-1 overflow-y-auto py-4">
             {menuItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive =
+                location.pathname === item.path ||
+                (item.path !== "/intern" &&
+                  location.pathname.startsWith(item.path + "/"));
               return (
                 <Link
                   key={item.path}

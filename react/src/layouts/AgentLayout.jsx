@@ -14,6 +14,7 @@ import {
   FileText,
   User,
   Home,
+  Grid,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -65,6 +66,12 @@ export default function AgentLayout() {
       description: "Your work schedule",
     },
     {
+      path: "/agent/lot-management",
+      name: "Lot Management",
+      icon: <Grid className="w-6 h-6" />,
+      description: "Manage property lots",
+    },
+    {
       path: "/agent/reports",
       name: "Reports",
       icon: <FileText className="w-6 h-6" />,
@@ -91,9 +98,7 @@ export default function AgentLayout() {
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
             <div className="flex items-center justify-between">
               {!isCollapsed && (
-                <h2 className="text-xl font-bold text-white">
-                  Evergreen Agent
-                </h2>
+                <h2 className="text-xl font-bold text-white">Evergreen</h2>
               )}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
@@ -111,7 +116,10 @@ export default function AgentLayout() {
           {/* Navigation Links */}
           <nav className="flex-1 overflow-y-auto py-4">
             {menuItems.map((item) => {
-              const isActive = location.pathname === item.path;
+              const isActive =
+                location.pathname === item.path ||
+                (item.path !== "/agent" &&
+                  location.pathname.startsWith(item.path + "/"));
               return (
                 <Link
                   key={item.path}

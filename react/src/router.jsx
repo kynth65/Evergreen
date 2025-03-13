@@ -23,9 +23,10 @@ import InternDashboard from "./pages/Intern/InternDashboard";
 import SuperAdminAccountManagement from "./pages/SuperAdminLayout.jsx/SuperAdminAccountManagement";
 import NotFound from "./404/NotFound";
 import InternTask from "./pages/Intern/InternTask";
-import AdminLotList from "./pages/Admin/AdminLotList";
-import AdminLotForm from "./components/admin/AdminLotForm";
-import AdminLotView from "./components/admin/AdminLotView";
+// Import the new reusable components
+import LotList from "./components/Lot/LotList";
+import LotForm from "./components/Lot/LotForm";
+import LotView from "./components/Lot/LotView";
 import Register from "./pages/Register";
 
 const router = createBrowserRouter([
@@ -97,6 +98,25 @@ const router = createBrowserRouter([
           },
         ],
       },
+      // Add lot management for superadmin
+      {
+        path: "lot-management",
+        element: <LotList role="superadmin" />,
+        children: [
+          {
+            path: "new",
+            element: <LotForm role="superadmin" />,
+          },
+          {
+            path: ":id/edit",
+            element: <LotForm role="superadmin" />,
+          },
+          {
+            path: ":id/view",
+            element: <LotView role="superadmin" />,
+          },
+        ],
+      },
     ],
   },
   {
@@ -134,21 +154,22 @@ const router = createBrowserRouter([
           },
         ],
       },
+      // Updated lot management for admin with the new components
       {
         path: "lot-management",
-        element: <AdminLotList />,
+        element: <LotList role="admin" />,
         children: [
           {
             path: "new",
-            element: <AdminLotForm />,
+            element: <LotForm role="admin" />,
           },
           {
             path: ":id/edit",
-            element: <AdminLotForm />,
+            element: <LotForm role="admin" />,
           },
           {
             path: ":id/view",
-            element: <AdminLotView />,
+            element: <LotView role="admin" />,
           },
         ],
       },
@@ -165,6 +186,25 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <Profile />,
+      },
+      // Add lot management for agent
+      {
+        path: "lot-management",
+        element: <LotList role="agent" />,
+        children: [
+          {
+            path: "new",
+            element: <LotForm role="agent" />,
+          },
+          {
+            path: ":id/edit",
+            element: <LotForm role="agent" />,
+          },
+          {
+            path: ":id/view",
+            element: <LotView role="agent" />,
+          },
+        ],
       },
     ],
   },
@@ -183,6 +223,25 @@ const router = createBrowserRouter([
       {
         path: "profile",
         element: <Profile />,
+      },
+      // Add lot management for intern
+      {
+        path: "lot-management",
+        element: <LotList role="intern" />,
+        children: [
+          {
+            path: "new",
+            element: <LotForm role="intern" />,
+          },
+          {
+            path: ":id/edit",
+            element: <LotForm role="intern" />,
+          },
+          {
+            path: ":id/view",
+            element: <LotView role="intern" />,
+          },
+        ],
       },
     ],
   },

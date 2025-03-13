@@ -1,4 +1,4 @@
-// src/pages/Admin/AdminLotView.jsx
+// src/components/Lot/LotView.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosClient from "../../axios.client";
@@ -17,7 +17,7 @@ import { EditOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
-const AdminLotView = () => {
+const LotView = ({ role }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [lot, setLot] = useState(null);
@@ -90,14 +90,14 @@ const AdminLotView = () => {
   }
 
   return (
-    <div className="admin-lot-view" style={{ maxWidth: 800, margin: "0 auto" }}>
+    <div className="lot-view" style={{ maxWidth: 800, margin: "0 auto" }}>
       <Card
         title={<Title level={4}>Lot Details</Title>}
         extra={
           <Button
             type="primary"
             icon={<EditOutlined />}
-            onClick={() => navigate(`/admin/lot-management/${id}/edit`)}
+            onClick={() => navigate(`/${role}/lot-management/${id}/edit`)}
             style={{
               backgroundColor: colors.primary,
               borderColor: colors.primary,
@@ -164,7 +164,7 @@ const AdminLotView = () => {
           <Space>
             <Button
               type="primary"
-              onClick={() => navigate(`/admin/lot-management/${id}/edit`)}
+              onClick={() => navigate(`/${role}/lot-management/${id}/edit`)}
               style={{
                 backgroundColor: colors.warning,
                 borderColor: colors.warning,
@@ -172,7 +172,7 @@ const AdminLotView = () => {
             >
               Edit
             </Button>
-            <Button onClick={() => navigate("/admin/lot-management")}>
+            <Button onClick={() => navigate(`/${role}/lot-management`)}>
               Back to List
             </Button>
           </Space>
@@ -182,4 +182,4 @@ const AdminLotView = () => {
   );
 };
 
-export default AdminLotView;
+export default LotView;
