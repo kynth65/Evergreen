@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import axiosClient from "../../axios.client";
 import { useStateContext } from "../../context/ContextProvider";
 import {
   Card,
   Row,
   Col,
-  Statistic,
-  Progress,
   Table,
   Tag,
   Button,
   Skeleton,
   Space,
   Tooltip,
-  Badge,
   Tabs,
   Upload,
   Modal,
@@ -23,32 +19,33 @@ import {
   message,
   Empty,
   Alert,
+  Typography,
 } from "antd";
 import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   FileTextOutlined,
-  UserOutlined,
   CalendarOutlined,
   InboxOutlined,
-  EditOutlined,
   EyeOutlined,
   UploadOutlined,
-  LoadingOutlined,
-  FileOutlined,
   FileImageOutlined,
-  FilePdfOutlined,
-  FileWordOutlined,
-  FileExcelOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+
+// Import the separate components
+import ProfileCard from "../../components/Dashboard/ProfileCard";
+import StatsCards from "../../components/Dashboard/StatsCards";
+import TaskDetails from "../../components/Dashboard/TaskDetails";
 
 dayjs.extend(relativeTime);
 
 const { TabPane } = Tabs;
 const { Dragger } = Upload;
 const { TextArea } = Input;
+const { Title } = Typography;
 
 const InternDashboard = () => {
   const { user } = useStateContext();
@@ -68,6 +65,10 @@ const InternDashboard = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [form] = Form.useForm();
+  const [screenSize, setScreenSize] = useState(window.innerWidth);
+
+  // Base URL for the application
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 
   // Theme colors
   const colors = {
@@ -78,6 +79,18 @@ const InternDashboard = () => {
     error: "#f5222d",
     lightBg: "#f6ffed", // Light green background
   };
+
+  // Update screen size on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -90,9 +103,6 @@ const InternDashboard = () => {
 
         // Fetch tasks assigned to the intern
         const tasksResponse = await axiosClient.get("/intern/tasks");
-
-        // Check the structure of the response and extract the array properly
-        console.log("Tasks response:", tasksResponse.data); // Debug log
 
         // Handle different response structures
         let taskData = [];
@@ -116,7 +126,7 @@ const InternDashboard = () => {
 
         setTasks(taskData);
 
-        // Calculate stats - only if taskData is properly initialized as an array
+        // Calculate stats
         const pendingCount = taskData.filter(
           (task) => task.status === "pending"
         ).length;
@@ -242,68 +252,24 @@ const InternDashboard = () => {
     }
   };
 
-  // Get file icon based on file type
-  const getFileIcon = (fileName) => {
-    if (!fileName) return <FileOutlined />;
+  // Helper function to get full image URL
+  const getFullImageUrl = (filePath) => {
+    if (!filePath) return null;
 
-    const extension = fileName.split(".").pop().toLowerCase();
-    switch (extension) {
-      case "jpg":
-      case "jpeg":
-      case "png":
-      case "gif":
-        return <FileImageOutlined style={{ color: colors.primary }} />;
-      case "pdf":
-        return <FilePdfOutlined style={{ color: "#ff4d4f" }} />;
-      case "doc":
-      case "docx":
-        return <FileWordOutlined style={{ color: "#1890ff" }} />;
-      case "xls":
-      case "xlsx":
-        return <FileExcelOutlined style={{ color: "#52c41a" }} />;
-      default:
-        return <FileOutlined />;
-    }
-  };
-
-  // Format full name
-  const getFullName = () => {
-    if (!profileData) return "User";
-
-    let fullName = profileData.first_name || "";
-    if (profileData.middle_initial)
-      fullName += ` ${profileData.middle_initial}.`;
-    if (profileData.last_name) fullName += ` ${profileData.last_name}`;
-
-    return fullName || "User";
-  };
-
-  // Generate random colors for avatar based on user ID or name
-  const getRandomAvatarColors = () => {
-    if (!profileData) return "linear-gradient(to right, #1da57a, #52c41a)";
-
-    // Use user ID or name as seed for consistent colors for the same user
-    const seed = profileData.id || getFullName() || "default";
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    // If the path already starts with http, return it as is
+    if (filePath.startsWith("http")) {
+      return filePath;
     }
 
-    // Generate 2 colors for gradient
-    const color1 = `hsl(${hash % 360}, 70%, 60%)`;
-    const color2 = `hsl(${(hash + 40) % 360}, 70%, 50%)`;
+    // If path starts with /storage or storage, append to base URL
+    if (filePath.startsWith("/storage/") || filePath.startsWith("storage/")) {
+      return filePath.startsWith("/")
+        ? `${baseUrl}${filePath}`
+        : `${baseUrl}/${filePath}`;
+    }
 
-    return `linear-gradient(to right, ${color1}, ${color2})`;
-  };
-
-  // Get user initials for avatar
-  const getUserInitials = () => {
-    if (!profileData) return "U";
-
-    let initials = profileData.first_name ? profileData.first_name[0] : "";
-    if (profileData.last_name) initials += profileData.last_name[0];
-
-    return initials.toUpperCase() || "U";
+    // For other paths, add /storage/ prefix
+    return `${baseUrl}/storage/${filePath}`;
   };
 
   // Render task status badge
@@ -345,71 +311,95 @@ const InternDashboard = () => {
     return <Tag color="warning">Pending Review</Tag>;
   };
 
-  // Active tasks columns
-  const taskColumns = [
-    {
-      title: "Task Name",
-      dataIndex: "task_name",
-      key: "task_name",
-      render: (text, record) => (
-        <div>
-          <div>{text}</div>
-          <small style={{ color: "#888" }}>
-            {record.due_date && (
-              <>
-                <CalendarOutlined style={{ marginRight: 5 }} />
-                Due: {dayjs(record.due_date).format("MMM D, YYYY")}
-                {dayjs().isAfter(dayjs(record.due_date)) &&
-                  record.status === "pending" && (
-                    <Tag color="error" style={{ marginLeft: 5 }}>
-                      Overdue
-                    </Tag>
-                  )}
-              </>
-            )}
-          </small>
-        </div>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => renderTaskStatus(status),
-    },
-    {
-      title: "Submission",
-      key: "submission",
-      render: (_, record) => renderSubmissionStatus(record),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="View Details">
-            <Button
-              type="primary"
-              size="small"
-              ghost
-              icon={<EyeOutlined />}
-              onClick={() => showTaskDetails(record)}
-            />
-          </Tooltip>
-          {record.status === "pending" && (
-            <Tooltip title="Submit Task">
+  // Define responsive columns for different screen sizes
+  const getTaskColumns = () => {
+    // Base columns for all screen sizes
+    const baseColumns = [
+      {
+        title: "Task Name",
+        dataIndex: "task_name",
+        key: "task_name",
+        render: (text, record) => (
+          <div>
+            <div style={{ fontWeight: "500" }}>{text}</div>
+            <small style={{ color: "#888" }}>
+              {record.due_date && (
+                <>
+                  <CalendarOutlined style={{ marginRight: 5 }} />
+                  Due: {dayjs(record.due_date).format("MMM D, YYYY")}
+                  {dayjs().isAfter(dayjs(record.due_date)) &&
+                    record.status === "pending" && (
+                      <Tag color="error" style={{ marginLeft: 5 }}>
+                        Overdue
+                      </Tag>
+                    )}
+                </>
+              )}
+            </small>
+          </div>
+        ),
+        ellipsis: screenSize < 768,
+      },
+      {
+        title: "Status",
+        dataIndex: "status",
+        key: "status",
+        render: (status) => renderTaskStatus(status),
+      },
+      {
+        title: "Submission",
+        key: "submission",
+        render: (_, record) => renderSubmissionStatus(record),
+      },
+    ];
+
+    // Only add actions column on larger screens or merge with compact view on small screens
+    if (screenSize >= 576) {
+      baseColumns.push({
+        title: "Actions",
+        key: "actions",
+        render: (_, record) => (
+          <Space>
+            <Tooltip title="View Details">
               <Button
                 type="primary"
                 size="small"
-                icon={<UploadOutlined />}
-                onClick={() => showUploadModal(record)}
+                ghost
+                icon={<EyeOutlined />}
+                onClick={() => showTaskDetails(record)}
               />
             </Tooltip>
-          )}
-        </Space>
-      ),
-    },
-  ];
+            {record.status === "pending" && (
+              <Tooltip title="Submit Task">
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<UploadOutlined />}
+                  onClick={() => showUploadModal(record)}
+                />
+              </Tooltip>
+            )}
+          </Space>
+        ),
+      });
+    } else {
+      // For very small screens, add a single actions column with a dropdown menu
+      baseColumns.push({
+        title: "",
+        key: "compact-actions",
+        width: 48,
+        render: (_, record) => (
+          <Button
+            type="text"
+            icon={<MoreOutlined />}
+            onClick={() => showTaskDetails(record)}
+          />
+        ),
+      });
+    }
+
+    return baseColumns;
+  };
 
   // Show task details modal
   const [isTaskDetailsVisible, setIsTaskDetailsVisible] = useState(false);
@@ -435,17 +425,17 @@ const InternDashboard = () => {
               <Skeleton avatar active paragraph={{ rows: 2 }} />
             </Card>
           </Col>
-          <Col xs={24} sm={8} lg={6}>
+          <Col xs={24} md={6}>
             <Card>
               <Skeleton active paragraph={{ rows: 1 }} />
             </Card>
           </Col>
-          <Col xs={24} sm={8} lg={6}>
+          <Col xs={24} md={6}>
             <Card>
               <Skeleton active paragraph={{ rows: 1 }} />
             </Card>
           </Col>
-          <Col xs={24} sm={8} lg={6}>
+          <Col xs={24} md={6}>
             <Card>
               <Skeleton active paragraph={{ rows: 1 }} />
             </Card>
@@ -469,152 +459,62 @@ const InternDashboard = () => {
     );
   }
 
-  // Calculate completion percentage
-  const completionPercentage =
-    stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
-
   return (
-    <div className="intern-dashboard" style={{ padding: "20px" }}>
+    <div className="intern-dashboard" style={{ padding: "16px" }}>
       {/* Profile and Stats Section */}
       <Row gutter={[16, 16]}>
         {/* Profile Card */}
         <Col xs={24} lg={6}>
-          <Card style={{ overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <div
-                style={{
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "50%",
-                  background: getRandomAvatarColors(),
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  marginRight: "16px",
-                }}
-              >
-                {getUserInitials()}
-              </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: "18px" }}>{getFullName()}</h3>
-                <p style={{ margin: 0, color: "#888" }}>
-                  {profileData?.role
-                    ? profileData.role.charAt(0).toUpperCase() +
-                      profileData.role.slice(1)
-                    : "Intern"}
-                </p>
-                <p
-                  style={{
-                    margin: "4px 0 0 0",
-                    fontSize: "12px",
-                    color: "#888",
-                  }}
-                >
-                  {profileData?.email}
-                </p>
-              </div>
-            </div>
-            <div style={{ marginTop: "16px" }}>
-              <Link to="/intern/profile">
-                <Button
-                  type="primary"
-                  ghost
-                  icon={<EditOutlined />}
-                  style={{ width: "100%" }}
-                >
-                  View Profile
-                </Button>
-              </Link>
-            </div>
-          </Card>
+          <ProfileCard profileData={profileData} />
         </Col>
 
-        {/* Task Completion Card */}
-        <Col xs={24} sm={8} lg={6}>
-          <Card>
-            <Statistic
-              title="Task Completion"
-              value={completionPercentage}
-              suffix="%"
-              valueStyle={{
-                color: colors.primary,
-              }}
-            />
-            <Progress
-              percent={completionPercentage}
-              strokeColor={colors.primary}
-              size="small"
-              style={{ marginTop: "8px" }}
-            />
-            <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#888" }}>
-              {stats.completed} of {stats.total} tasks completed
-            </p>
-          </Card>
-        </Col>
-
-        {/* Pending Tasks Card */}
-        <Col xs={24} sm={8} lg={6}>
-          <Card>
-            <Statistic
-              title="Pending Tasks"
-              value={stats.pending}
-              valueStyle={{
-                color: colors.warning,
-              }}
-              prefix={<ClockCircleOutlined />}
-            />
-            {stats.upcomingDue > 0 && (
-              <p
-                style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#888" }}
-              >
-                <Badge color={colors.warning} />
-                {stats.upcomingDue} {stats.upcomingDue === 1 ? "task" : "tasks"}{" "}
-                due in the next 3 days
-              </p>
-            )}
-          </Card>
-        </Col>
-
-        {/* Completed Tasks Card */}
-        <Col xs={24} sm={8} lg={6}>
-          <Card>
-            <Statistic
-              title="Completed Tasks"
-              value={stats.completed}
-              valueStyle={{
-                color: colors.success,
-              }}
-              prefix={<CheckCircleOutlined />}
-            />
-            <p style={{ margin: "8px 0 0 0", fontSize: "12px", color: "#888" }}>
-              Great job keeping up with your tasks!
-            </p>
-          </Card>
-        </Col>
+        {/* Stats Cards */}
+        <StatsCards stats={stats} />
       </Row>
 
       {/* Tasks Section */}
       <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
         <Col span={24}>
-          <Card title="My Tasks">
-            <Tabs defaultActiveKey="active">
+          <Card
+            title={
+              <Title
+                level={4}
+                style={{
+                  margin: 0,
+                  fontSize: screenSize < 576 ? "16px" : "18px",
+                }}
+              >
+                My Tasks
+              </Title>
+            }
+            className="task-card"
+            bodyStyle={{ padding: screenSize < 576 ? "12px" : "24px" }}
+          >
+            <Tabs
+              defaultActiveKey="active"
+              size={screenSize < 576 ? "small" : "middle"}
+              tabBarStyle={{ marginBottom: "16px" }}
+            >
               <TabPane
                 tab={
                   <span>
                     <ClockCircleOutlined />
-                    Active Tasks
+                    {screenSize > 480 && " Active Tasks"}
                   </span>
                 }
                 key="active"
               >
                 <Table
-                  columns={taskColumns}
+                  columns={getTaskColumns()}
                   dataSource={tasks.filter((task) => task.status === "pending")}
                   rowKey="id"
-                  pagination={{ pageSize: 5 }}
+                  pagination={{
+                    pageSize: 5,
+                    size: screenSize < 576 ? "small" : "default",
+                    hideOnSinglePage: true,
+                  }}
+                  size={screenSize < 576 ? "small" : "middle"}
+                  scroll={{ x: screenSize < 768 ? true : undefined }}
                   locale={{
                     emptyText: (
                       <Empty
@@ -623,6 +523,14 @@ const InternDashboard = () => {
                       />
                     ),
                   }}
+                  onRow={(record) => ({
+                    onClick: () => {
+                      if (screenSize < 576) {
+                        showTaskDetails(record);
+                      }
+                    },
+                    style: { cursor: screenSize < 576 ? "pointer" : "default" },
+                  })}
                 />
               </TabPane>
 
@@ -630,18 +538,24 @@ const InternDashboard = () => {
                 tab={
                   <span>
                     <CheckCircleOutlined />
-                    Completed Tasks
+                    {screenSize > 480 && " Completed"}
                   </span>
                 }
                 key="completed"
               >
                 <Table
-                  columns={taskColumns}
+                  columns={getTaskColumns()}
                   dataSource={tasks.filter(
                     (task) => task.status === "completed"
                   )}
                   rowKey="id"
-                  pagination={{ pageSize: 5 }}
+                  pagination={{
+                    pageSize: 5,
+                    size: screenSize < 576 ? "small" : "default",
+                    hideOnSinglePage: true,
+                  }}
+                  size={screenSize < 576 ? "small" : "middle"}
+                  scroll={{ x: screenSize < 768 ? true : undefined }}
                   locale={{
                     emptyText: (
                       <Empty
@@ -650,6 +564,14 @@ const InternDashboard = () => {
                       />
                     ),
                   }}
+                  onRow={(record) => ({
+                    onClick: () => {
+                      if (screenSize < 576) {
+                        showTaskDetails(record);
+                      }
+                    },
+                    style: { cursor: screenSize < 576 ? "pointer" : "default" },
+                  })}
                 />
               </TabPane>
 
@@ -657,16 +579,22 @@ const InternDashboard = () => {
                 tab={
                   <span>
                     <FileTextOutlined />
-                    All Tasks
+                    {screenSize > 480 && " All Tasks"}
                   </span>
                 }
                 key="all"
               >
                 <Table
-                  columns={taskColumns}
+                  columns={getTaskColumns()}
                   dataSource={tasks}
                   rowKey="id"
-                  pagination={{ pageSize: 5 }}
+                  pagination={{
+                    pageSize: 5,
+                    size: screenSize < 576 ? "small" : "default",
+                    hideOnSinglePage: true,
+                  }}
+                  size={screenSize < 576 ? "small" : "middle"}
+                  scroll={{ x: screenSize < 768 ? true : undefined }}
                   locale={{
                     emptyText: (
                       <Empty
@@ -675,6 +603,14 @@ const InternDashboard = () => {
                       />
                     ),
                   }}
+                  onRow={(record) => ({
+                    onClick: () => {
+                      if (screenSize < 576) {
+                        showTaskDetails(record);
+                      }
+                    },
+                    style: { cursor: screenSize < 576 ? "pointer" : "default" },
+                  })}
                 />
               </TabPane>
             </Tabs>
@@ -687,6 +623,8 @@ const InternDashboard = () => {
         title="Submit Task"
         open={isUploadModalVisible}
         onCancel={handleModalCancel}
+        centered
+        width={screenSize < 576 ? "95%" : 520}
         footer={[
           <Button key="cancel" onClick={handleModalCancel}>
             Cancel
@@ -758,6 +696,8 @@ const InternDashboard = () => {
         title="Task Details"
         open={isTaskDetailsVisible}
         onCancel={closeTaskDetails}
+        centered
+        width={screenSize < 576 ? "95%" : 700}
         footer={[
           <Button key="close" onClick={closeTaskDetails}>
             Close
@@ -775,102 +715,18 @@ const InternDashboard = () => {
             </Button>
           ),
         ]}
-        width={700}
       >
         {taskDetails && (
-          <div>
-            <Card bordered={false} style={{ marginBottom: 16 }}>
-              <h3 style={{ margin: 0, color: colors.primary }}>
-                {taskDetails.task_name}
-              </h3>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginTop: 8,
-                }}
-              >
-                <div>
-                  <p>
-                    <strong>Status:</strong>{" "}
-                    {renderTaskStatus(taskDetails.status)}
-                  </p>
-                  {taskDetails.due_date && (
-                    <p>
-                      <strong>Due Date:</strong>{" "}
-                      {dayjs(taskDetails.due_date).format("MMMM D, YYYY")}
-                      {dayjs().isAfter(dayjs(taskDetails.due_date)) &&
-                        taskDetails.status === "pending" && (
-                          <Tag color="error" style={{ marginLeft: 8 }}>
-                            Overdue
-                          </Tag>
-                        )}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p>
-                    <strong>Submission:</strong>{" "}
-                    {renderSubmissionStatus(taskDetails)}
-                  </p>
-                  {taskDetails.submission_date && (
-                    <p>
-                      <strong>Submitted:</strong>{" "}
-                      {dayjs(taskDetails.submission_date).format(
-                        "MMMM D, YYYY"
-                      )}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
-
-            <Card
-              title="Task Description"
-              bordered={false}
-              style={{ marginBottom: 16 }}
-            >
-              <div style={{ whiteSpace: "pre-wrap" }}>
-                {taskDetails.description || "No description provided."}
-              </div>
-            </Card>
-
-            <Card
-              title="Instructions"
-              bordered={false}
-              style={{ marginBottom: 16 }}
-            >
-              <div style={{ whiteSpace: "pre-wrap" }}>
-                {taskDetails.instructions ||
-                  "No specific instructions provided."}
-              </div>
-            </Card>
-
-            {taskDetails.submission_file_path && (
-              <Card title="Your Submission" bordered={false}>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  {getFileIcon(taskDetails.submission_file_path)}
-                  <a
-                    href={taskDetails.submission_file_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ marginLeft: 8 }}
-                  >
-                    {taskDetails.submission_file_path.split("/").pop() ||
-                      "Download Submission"}
-                  </a>
-                </div>
-                {taskDetails.submission_comments && (
-                  <div style={{ marginTop: 16 }}>
-                    <strong>Your Comment:</strong>
-                    <div style={{ whiteSpace: "pre-wrap", marginTop: 8 }}>
-                      {taskDetails.submission_comments}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            )}
-          </div>
+          <TaskDetails
+            taskDetails={taskDetails}
+            colors={colors}
+            baseUrl={baseUrl}
+            noImageFallback={
+              <FileImageOutlined
+                style={{ fontSize: 48, color: colors.primary }}
+              />
+            }
+          />
         )}
       </Modal>
     </div>
