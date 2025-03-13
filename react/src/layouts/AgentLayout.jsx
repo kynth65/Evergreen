@@ -15,6 +15,7 @@ import {
   User,
   Home,
   Grid,
+  Map,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -64,6 +65,12 @@ export default function AgentLayout() {
       name: "Schedule",
       icon: <Clock className="w-6 h-6" />,
       description: "Your work schedule",
+    },
+    {
+      path: "/agent/land-management",
+      name: "Land Management",
+      icon: <Map className="w-6 h-6" />,
+      description: "Manage land properties",
     },
     {
       path: "/agent/lot-management",

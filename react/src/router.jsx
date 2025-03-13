@@ -23,7 +23,7 @@ import InternDashboard from "./pages/Intern/InternDashboard";
 import SuperAdminAccountManagement from "./pages/SuperAdminLayout.jsx/SuperAdminAccountManagement";
 import NotFound from "./404/NotFound";
 import InternTask from "./pages/Intern/InternTask";
-// Import the new reusable components
+// Import the reusable components
 import LotList from "./components/Lot/LotList";
 import LotForm from "./components/Lot/LotForm";
 import LotView from "./components/Lot/LotView";
@@ -98,7 +98,7 @@ const router = createBrowserRouter([
           },
         ],
       },
-      // Add lot management for superadmin
+      // Lot management for superadmin
       {
         path: "lot-management",
         element: <LotList role="superadmin" />,
@@ -135,7 +135,7 @@ const router = createBrowserRouter([
         path: "tasks-management",
         element: <TaskManagement />,
       },
-      // Use the same shared land management components for admin
+      // Land management for admin
       {
         path: "land-management",
         element: <LandManagement role="admin" />,
@@ -154,7 +154,7 @@ const router = createBrowserRouter([
           },
         ],
       },
-      // Updated lot management for admin with the new components
+      // Lot management for admin
       {
         path: "lot-management",
         element: <LotList role="admin" />,
@@ -187,7 +187,26 @@ const router = createBrowserRouter([
         path: "profile",
         element: <Profile />,
       },
-      // Add lot management for agent
+      // Land management for agent
+      {
+        path: "land-management",
+        element: <LandManagement role="agent" />,
+        children: [
+          {
+            path: "new",
+            element: <LandAddForm role="agent" />,
+          },
+          {
+            path: ":id/edit",
+            element: <LandEditForm role="agent" />,
+          },
+          {
+            path: ":id",
+            element: <LandView role="agent" />,
+          },
+        ],
+      },
+      // Lot management for agent
       {
         path: "lot-management",
         element: <LotList role="agent" />,
@@ -224,7 +243,26 @@ const router = createBrowserRouter([
         path: "profile",
         element: <Profile />,
       },
-      // Add lot management for intern
+      // Land management for intern
+      {
+        path: "land-management",
+        element: <LandManagement role="intern" />,
+        children: [
+          {
+            path: "new",
+            element: <LandAddForm role="intern" />,
+          },
+          {
+            path: ":id/edit",
+            element: <LandEditForm role="intern" />,
+          },
+          {
+            path: ":id",
+            element: <LandView role="intern" />,
+          },
+        ],
+      },
+      // Lot management for intern
       {
         path: "lot-management",
         element: <LotList role="intern" />,

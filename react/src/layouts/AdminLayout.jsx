@@ -119,6 +119,28 @@ export default function AdminLayout() {
               );
             })}
           </nav>
+          {/* User Info */}
+          <div className="p-4 border-t border-gray-200">
+            <Link to="/admin/profile">
+              <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
+                  {user?.first_name?.[0]?.toUpperCase() ||
+                    user?.name?.[0]?.toUpperCase() ||
+                    "I"}
+                </div>
+                {!isCollapsed && (
+                  <div className="ml-3">
+                    <p className="font-medium text-sm">
+                      {user?.first_name && user?.last_name
+                        ? `${user.first_name} ${user.last_name}`
+                        : user?.name || "admin"}
+                    </p>
+                    <p className="text-xs text-gray-500">Real Estate admin</p>
+                  </div>
+                )}
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
 

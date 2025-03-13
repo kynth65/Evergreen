@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Grid,
+  Map,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -38,6 +39,12 @@ export default function InternLayout() {
       name: "Tasks",
       icon: <FileText className="w-6 h-6" />,
       description: "Assigned tasks",
+    },
+    {
+      path: "/intern/land-management",
+      name: "Land Management",
+      icon: <Map className="w-6 h-6" />,
+      description: "View land properties",
     },
     {
       path: "/intern/lot-management",
