@@ -591,18 +591,30 @@ export default function AdminTaskManagement() {
             <Input placeholder="Enter task name" />
           </Form.Item>
 
-          <Form.Item name="description" label="Description / Members Included">
+          <Form.Item
+            name="description"
+            label="Description / Members Included"
+            rules={[
+              { required: true, message: "Please enter task description" },
+            ]}
+          >
             <TextArea
               rows={4}
               placeholder="Enter task description or member that is included for task"
             />
           </Form.Item>
 
-          <Form.Item name="instructions" label="Instructions">
+          <Form.Item
+            name="instructions"
+            label="Instructions"
+            rules={[
+              { required: true, message: "Please enter task instructions" },
+            ]}
+          >
             <TextArea rows={4} placeholder="Enter task instructions" />
           </Form.Item>
 
-          <Form.Item label="Image">
+          <Form.Item label="Image (Optional)">
             <Upload
               listType="picture"
               maxCount={1}
@@ -634,7 +646,11 @@ export default function AdminTaskManagement() {
             )}
           </Form.Item>
 
-          <Form.Item name="status" label="Status">
+          <Form.Item
+            name="status"
+            label="Status"
+            rules={[{ required: true, message: "Please select a status" }]}
+          >
             <Select>
               <Option value="pending">Pending</Option>
               <Option value="completed">Completed</Option>
@@ -642,7 +658,11 @@ export default function AdminTaskManagement() {
             </Select>
           </Form.Item>
 
-          <Form.Item name="due_date" label="Due Date">
+          <Form.Item
+            name="due_date"
+            label="Due Date"
+            rules={[{ required: true, message: "Please select a due date" }]}
+          >
             <DatePicker
               showTime
               format="YYYY-MM-DD HH:mm:ss"
