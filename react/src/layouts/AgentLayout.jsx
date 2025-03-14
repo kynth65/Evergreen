@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Clock,
   FileText,
+  FileSpreadsheet,
   User,
   Home,
   Grid,
@@ -89,6 +90,12 @@ export default function AgentLayout() {
       name: "Analytics",
       icon: <BarChart2 className="w-6 h-6" />,
       description: "Performance metrics",
+    },
+    {
+      path: "/agent/residential-form",
+      name: "Residential Form",
+      icon: <FileSpreadsheet className="w-6 h-6" />,
+      description: "Residential property forms",
     },
   ];
 

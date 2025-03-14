@@ -7,6 +7,7 @@ import {
   ChevronRight,
   CheckSquare,
   Map,
+  FileSpreadsheet,
   Grid,
 } from "lucide-react";
 import { useState } from "react";
@@ -51,6 +52,12 @@ export default function AdminLayout() {
       name: "Lot Management",
       icon: <Grid className="w-6 h-6" />,
       description: "Manage property lots",
+    },
+    {
+      path: "/admin/residential-form",
+      name: "Residential Form",
+      icon: <FileSpreadsheet className="w-6 h-6" />,
+      description: "Manage residential forms",
     },
   ];
 

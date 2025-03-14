@@ -14,6 +14,8 @@
     "antd": "^5.24.2",
     "axios": "^1.7.9",
     "framer-motion": "^11.18.2",
+    "html2pdf": "^0.0.11",
+    "html2pdf.js": "^0.10.3",
     "lucide-react": "^0.475.0",
     "ogl": "^1.0.11",
     "react": "^18.3.1",

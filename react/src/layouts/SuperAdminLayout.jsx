@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Map,
   Grid,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -51,6 +52,12 @@ export default function SuperAdminLayout() {
       name: "Lot Management",
       icon: <Grid className="w-6 h-6" />,
       description: "Manage property lots",
+    },
+    {
+      path: "/superadmin/residential-form",
+      name: "Residential Form",
+      icon: <FileSpreadsheet className="w-6 h-6" />,
+      description: "Manage residential forms",
     },
   ];
 

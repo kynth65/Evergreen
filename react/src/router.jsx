@@ -28,6 +28,7 @@ import LotList from "./components/Lot/LotList";
 import LotForm from "./components/Lot/LotForm";
 import LotView from "./components/Lot/LotView";
 import Register from "./pages/Register";
+import RFSForm from "./components/ResidentialSheet/RFSForm";
 
 const router = createBrowserRouter([
   {
@@ -117,6 +118,10 @@ const router = createBrowserRouter([
           },
         ],
       },
+      {
+        path: "residential-form",
+        element: <RFSForm />,
+      },
     ],
   },
   {
@@ -173,6 +178,10 @@ const router = createBrowserRouter([
           },
         ],
       },
+      {
+        path: "residential-form",
+        element: <RFSForm />,
+      },
     ],
   },
   {
@@ -206,6 +215,7 @@ const router = createBrowserRouter([
           },
         ],
       },
+
       // Lot management for agent
       {
         path: "lot-management",
@@ -224,6 +234,10 @@ const router = createBrowserRouter([
             element: <LotView role="agent" />,
           },
         ],
+      },
+      {
+        path: "residential-form",
+        element: <RFSForm />,
       },
     ],
   },
@@ -280,6 +294,10 @@ const router = createBrowserRouter([
             element: <LotView role="intern" />,
           },
         ],
+      },
+      {
+        path: "residential-form",
+        element: <RFSForm />,
       },
     ],
   },

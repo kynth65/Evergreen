@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Grid,
   Map,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -51,6 +52,12 @@ export default function InternLayout() {
       name: "Lot Management",
       icon: <Grid className="w-6 h-6" />,
       description: "View property lots",
+    },
+    {
+      path: "/intern/residential-form",
+      name: "Residential Form",
+      icon: <FileSpreadsheet className="w-6 h-6" />,
+      description: "View residential forms",
     },
   ];
 
