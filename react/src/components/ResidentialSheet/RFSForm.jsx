@@ -82,7 +82,7 @@ const ResidentInformationForm = () => {
     printArea.style.margin = "0";
     printArea.style.padding = "0";
 
-    // Apply special styling for PDF output based on Avida Towers style
+    // Apply special styling for PDF output
     printArea.style.fontSize = "9px";
     printArea.style.lineHeight = "1.2";
     printArea.style.fontFamily = "Arial, sans-serif";
@@ -265,11 +265,12 @@ const ResidentInformationForm = () => {
 
     // Make section titles match Avida's style
     sectionTitles.forEach((title) => {
-      title.style.padding = "2px 4px";
+      title.style.padding = "0px 0px 6px 4px";
       title.style.fontSize = "9px";
       title.style.marginBottom = "0";
       title.style.marginTop = "0";
       title.style.textAlign = "center";
+      title.style.justfiyContent = "center";
       title.style.backgroundColor = "#f0f0f0";
       title.style.fontWeight = "bold";
       title.style.border = "1px solid #000";
@@ -279,6 +280,7 @@ const ResidentInformationForm = () => {
     const compactTexts = printArea.querySelectorAll(".compact-text");
     compactTexts.forEach((text) => {
       text.style.fontSize = "8px";
+      text.style.padding = "0px 0px 6px 4px";
       text.style.lineHeight = "1.1";
       text.style.marginBottom = "0";
       text.style.marginTop = "0";
@@ -290,10 +292,19 @@ const ResidentInformationForm = () => {
     if (signatureSection) {
       signatureSection.style.marginTop = "0";
 
-      const signatureTable = signatureSection.querySelector("table");
+      // Get the signature table
+      const signatureTable = signatureSection.querySelector(".signature-table");
       if (signatureTable) {
-        signatureTable.style.marginBottom = "0";
-        signatureTable.style.borderCollapse = "collapse";
+        // Remove borders from inside cells of the signature table
+        const signatureCells = signatureTable.querySelectorAll("td");
+        signatureCells.forEach((cell) => {
+          cell.style.border = "none"; // Remove all cell borders
+          cell.style.borderCollapse = "collapse";
+          cell.style.padding = "10px 4px";
+        });
+
+        // Add border only to the table itself (outer border)
+        signatureTable.style.border = "1px solid #000";
       }
 
       const signatureLines = signatureSection.querySelectorAll(
@@ -307,9 +318,11 @@ const ResidentInformationForm = () => {
       // Make distribution text smaller
       const distributionText = signatureSection.querySelector(".distribution");
       if (distributionText) {
+        distributionText.style.padding = "0px 0px 6px 4px";
         distributionText.style.fontSize = "8px";
         distributionText.style.textAlign = "center";
         distributionText.style.marginTop = "2px";
+        distributionText.style.border = "none"; // Make sure distribution text has no border
       }
     }
 
@@ -434,16 +447,6 @@ const ResidentInformationForm = () => {
             </div>
           </div>
 
-          {/* Note */}
-          <div className="note-container">
-            <p>
-              <span className="note-highlight">Note: (*)</span> are required
-              information. Community-related updates, Statement of Accounts and
-              other official communications shall be sent to the registered
-              mobile numbers and email addresses.
-            </p>
-          </div>
-
           {/* Form */}
           <form id="residentForm" ref={formRef}>
             {/* PERTINENT DATA Section */}
@@ -489,7 +492,6 @@ const ResidentInformationForm = () => {
                       <label htmlFor="representative">
                         Name of Authorized Representative*
                       </label>
-                      <small>(Attach SPA / Secretary's Certificate)</small>
                     </td>
                     <td colSpan="3">
                       <input
@@ -641,9 +643,7 @@ const ResidentInformationForm = () => {
                   </tr>
                   <tr>
                     <td className="label-cell">
-                      <label htmlFor="mailingAddress">
-                        Mailing / Business Address*:
-                      </label>
+                      <label htmlFor="mailingAddress">Mailing Address*:</label>
                     </td>
                     <td colSpan="6">
                       <input
@@ -810,7 +810,7 @@ const ResidentInformationForm = () => {
                         name="contractEndDate"
                       />
                     </td>
-                    <td className="label-cell">(Attach the document)</td>
+
                     <td className="label-cell">Parking Slot included:</td>
                     <td>
                       <div className="checkbox-item">
