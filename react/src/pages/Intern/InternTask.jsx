@@ -16,6 +16,7 @@ import {
   Typography,
   Upload,
   Form,
+  Skeleton,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -24,6 +25,7 @@ import {
   EyeOutlined,
   UploadOutlined,
   FileDoneOutlined,
+  FileImageOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useStateContext } from "../../context/ContextProvider";
@@ -32,10 +34,6 @@ const { Title, Paragraph, Text } = Typography;
 
 // Base URL for your API (adjust as needed)
 const baseUrl = "http://localhost:8000";
-
-// Fallback image as base64 string for when images fail to load
-const noImageFallback =
-  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiB2aWV3Qm94PSIwIDAgMTUwIDE1MCI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiNmMGYwZjAiLz48dGV4dCB4PSI3NSIgeT0iNzUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzg4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+Tm8gSW1hZ2U8L3RleHQ+PHBhdGggZD0iTTQwLDExMCBMNjAsODAgTDgwLDkwIEwxMDAsNjAgTDEyMCwxMTAgWiIgZmlsbD0iI2RkZCIgc3Ryb2tlPSIjY2NjIiAvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjEwIiBmaWxsPSIjZGRkIiAvPjwvc3ZnPg==";
 
 export default function InternTasks() {
   const { token } = useStateContext();
@@ -194,17 +192,14 @@ export default function InternTasks() {
     );
   };
 
-  // Function to get full URL for images - adapted from JuicePOS component
+  // Function to get full URL for images
   const getFullImageUrl = (filePath) => {
-    if (!filePath) return noImageFallback;
+    if (!filePath) return null;
 
     // If the path already starts with http, return it as is
     if (filePath.startsWith("http")) {
       return filePath;
     }
-
-    // Log the image path for debugging
-    console.log("Processing image path:", filePath);
 
     // If path starts with /storage or storage, append to base URL
     if (filePath.startsWith("/storage/") || filePath.startsWith("storage/")) {
@@ -216,6 +211,30 @@ export default function InternTasks() {
     // For other paths, add /storage/ prefix
     return `${baseUrl}/storage/${filePath}`;
   };
+
+  // Custom skeleton row for loading state
+  const SkeletonRow = () => (
+    <tr className="ant-table-row">
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 150 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 80 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 100 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 100 }} />
+      </td>
+      <td>
+        <Space>
+          <Skeleton.Button active size="small" shape="square" />
+          <Skeleton.Button active size="small" shape="square" />
+        </Space>
+      </td>
+    </tr>
+  );
 
   const columns = [
     {
@@ -302,27 +321,44 @@ export default function InternTasks() {
         <Title level={2}>My Tasks</Title>
         <Paragraph>View your assigned tasks and submit your work.</Paragraph>
       </div>
-      {loading && tasks.length === 0 ? (
-        <div
-          style={{ display: "flex", justifyContent: "center", padding: "40px" }}
-        >
-          <Spin size="large" />
-        </div>
-      ) : tasks.length === 0 ? (
-        <Empty
-          description="No tasks assigned to you yet"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-      ) : (
+
+      <Card>
         <Table
           columns={columns}
-          dataSource={tasks}
+          dataSource={loading ? [] : tasks}
           rowKey="id"
           pagination={pagination}
           onChange={handleTableChange}
-          loading={loading}
+          loading={false} // We're handling our own loading state with skeletons
+          locale={{
+            emptyText: !loading && (
+              <Empty
+                description="No tasks assigned to you yet"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            ),
+          }}
+          components={{
+            body: {
+              wrapper: (props) => {
+                // Add skeleton rows if loading
+                if (loading) {
+                  return (
+                    <tbody {...props}>
+                      {Array(pagination.pageSize > 5 ? 5 : pagination.pageSize)
+                        .fill(null)
+                        .map((_, index) => (
+                          <SkeletonRow key={index} />
+                        ))}
+                    </tbody>
+                  );
+                }
+                return <tbody {...props} />;
+              },
+            },
+          }}
         />
-      )}
+      </Card>
 
       {/* Task Details Modal */}
       <Modal
@@ -351,7 +387,7 @@ export default function InternTasks() {
         ]}
         width={800}
       >
-        {viewingTask && (
+        {viewingTask ? (
           <div>
             <Card>
               <Descriptions bordered column={1}>
@@ -397,18 +433,34 @@ export default function InternTasks() {
                 <div style={{ marginTop: "20px" }}>
                   <Text strong>Task Image:</Text>
                   <div style={{ marginTop: "10px" }}>
-                    <Image
-                      src={getFullImageUrl(viewingTask.image_path)}
-                      alt={viewingTask.task_name}
-                      style={{ maxWidth: "100%" }}
-                      fallback={noImageFallback}
-                      onError={(e) => {
-                        console.error(
-                          "Image failed to load:",
-                          viewingTask.image_path
-                        );
-                      }}
-                    />
+                    {getFullImageUrl(viewingTask.image_path) ? (
+                      <Image
+                        src={getFullImageUrl(viewingTask.image_path)}
+                        alt={viewingTask.task_name}
+                        style={{ maxWidth: "100%" }}
+                        fallback={
+                          <FileImageOutlined
+                            style={{ fontSize: 64, color: "#d9d9d9" }}
+                          />
+                        }
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "20px",
+                          background: "#f5f5f5",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        <FileImageOutlined
+                          style={{ fontSize: 64, color: "#d9d9d9" }}
+                        />
+                        <div style={{ marginTop: "8px", color: "#8c8c8c" }}>
+                          No image available
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -436,6 +488,8 @@ export default function InternTasks() {
               )}
             </Card>
           </div>
+        ) : (
+          <Skeleton active paragraph={{ rows: 6 }} />
         )}
       </Modal>
 
