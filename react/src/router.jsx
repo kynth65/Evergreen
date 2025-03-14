@@ -29,6 +29,7 @@ import LotForm from "./components/Lot/LotForm";
 import LotView from "./components/Lot/LotView";
 import Register from "./pages/Register";
 import RFSForm from "./components/ResidentialSheet/RFSForm";
+import OCSCalculator from "./components/OCSCalculator/OCSCalculator";
 
 const router = createBrowserRouter([
   {
@@ -122,6 +123,10 @@ const router = createBrowserRouter([
         path: "residential-form",
         element: <RFSForm />,
       },
+      {
+        path: "ocs-calculator",
+        element: <OCSCalculator />,
+      },
     ],
   },
   {
@@ -182,6 +187,10 @@ const router = createBrowserRouter([
         path: "residential-form",
         element: <RFSForm />,
       },
+      {
+        path: "ocs-calculator",
+        element: <OCSCalculator />,
+      },
     ],
   },
   {
@@ -238,6 +247,10 @@ const router = createBrowserRouter([
       {
         path: "residential-form",
         element: <RFSForm />,
+      },
+      {
+        path: "ocs-calculator",
+        element: <OCSCalculator />,
       },
     ],
   },
@@ -298,6 +311,10 @@ const router = createBrowserRouter([
       {
         path: "residential-form",
         element: <RFSForm />,
+      },
+      {
+        path: "ocs-calculator",
+        element: <OCSCalculator />,
       },
     ],
   },

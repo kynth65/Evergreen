@@ -280,17 +280,6 @@
   display: block;
 }
 
-/* Input styles */
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="date"] {
-  width: 100%;
-  padding: 2px 5px;
-  border: 1px solid #ccc;
-  font-size: 11px;
-}
-
 input[type="checkbox"] {
   margin: 0;
 }
