@@ -9,6 +9,7 @@ import {
   Map,
   FileSpreadsheet,
   Grid,
+  Calculator,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -58,6 +59,12 @@ export default function AdminLayout() {
       name: "Residential Form",
       icon: <FileSpreadsheet className="w-6 h-6" />,
       description: "Manage residential forms",
+    },
+    {
+      path: "/admin/ocs-calculator",
+      name: "OCS Calculator",
+      icon: <Calculator className="w-6 h-6" />,
+      description: "Create OCS for Client",
     },
   ];
 

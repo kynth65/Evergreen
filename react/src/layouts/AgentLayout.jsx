@@ -17,6 +17,7 @@ import {
   Home,
   Grid,
   Map,
+  Calculator,
 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "../components/NavBar";
@@ -96,6 +97,12 @@ export default function AgentLayout() {
       name: "Residential Form",
       icon: <FileSpreadsheet className="w-6 h-6" />,
       description: "Residential property forms",
+    },
+    {
+      path: "/agent/ocs-calculator",
+      name: "OCS Calculator",
+      icon: <Calculator className="w-6 h-6" />,
+      description: "Create OCS for Client",
     },
   ];
 
