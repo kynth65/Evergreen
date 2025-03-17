@@ -318,8 +318,7 @@ export default function InternTasks() {
   return (
     <div className="intern-tasks">
       <div style={{ marginBottom: "20px" }}>
-        <Title level={2}>My Tasks</Title>
-        <Paragraph>View your assigned tasks and submit your work.</Paragraph>
+        <span className="text-2xl font-bold">My Tasks</span>
       </div>
 
       <Card>

@@ -288,7 +288,7 @@ export default function LandManagement({ role = "admin" }) {
           alignItems: "center",
         }}
       >
-        <h1 className="text-2xl">Land Management</h1>
+        <h1 className="text-2xl font-bold ">Land Management</h1>
         <Button
           type="primary"
           icon={<PlusOutlined />}

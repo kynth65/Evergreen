@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Eye, Download, ArrowLeft, Calculator } from "lucide-react";
 import html2pdf from "html2pdf.js";
-import "./OCSStyle.css"; // Import the CSS file
+import "./OCSStyle.css"; // Import the scoped CSS file
 
 const OCSCalculator = () => {
   // View management state
@@ -188,7 +188,7 @@ const OCSCalculator = () => {
     setCurrentView("result");
   };
 
-  // Fixed PDF generation function to handle the color function error
+  // Fixed PDF generation function with improved styling
   const handleDownloadPDF = () => {
     // Show loading indicator or notify user
     const prevButton = document.activeElement;
@@ -197,91 +197,161 @@ const OCSCalculator = () => {
     // Create a copy of the form to modify for PDF generation
     const printArea = pdfContentRef.current.cloneNode(true);
 
-    // Apply PDF styling directly to avoid custom CSS with oklch
-    printArea.style.width = "100%";
-    printArea.style.maxWidth = "200mm"; // A4 width
-    printArea.style.margin = "0";
-    printArea.style.padding = "0";
-    printArea.style.fontSize = "9px";
-    printArea.style.lineHeight = "1.2";
-    printArea.style.fontFamily = "Arial, sans-serif";
-    printArea.style.border = "1px solid #000";
-    printArea.style.borderWidth = "1px";
-    printArea.style.borderStyle = "solid";
-    printArea.style.borderColor = "#000";
-    printArea.style.boxSizing = "border-box";
+    // Set explicit font family on the printArea
+    printArea.style.fontFamily =
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    printArea.style.color = "#000000";
 
-    // Fix oklch color issues by replacing them with standard hex colors
-    // Find all elements with text-green-600, bg-green-600, etc. classes
-    const greenTextElements = printArea.querySelectorAll(
-      ".text-green-600, .text-green-700"
-    );
-    greenTextElements.forEach((el) => {
-      el.style.color = "#16a34a"; // Replace with hex color
-      el.className = el.className.replace(/text-green-[^ ]*/g, "");
-    });
+    // Add PDF-specific styles to header section
+    const headerTitle = printArea.querySelector(".ocs-header-title");
+    if (headerTitle) {
+      headerTitle.style.textAlign = "center";
+      headerTitle.style.width = "100%";
+      headerTitle.style.paddingTop = "30px";
+      headerTitle.style.marginBottom = "30px";
 
-    const greenBgElements = printArea.querySelectorAll(
-      ".bg-green-600, .bg-green-700, .bg-green-50"
-    );
-    greenBgElements.forEach((el) => {
-      if (el.classList.contains("bg-green-50")) {
-        el.style.backgroundColor = "#f0f8f0"; // Light green
-      } else {
-        el.style.backgroundColor = "#16a34a"; // Green for headers
-        el.style.color = "#ffffff"; // White text for dark bg
+      const h1 = headerTitle.querySelector("h1");
+      if (h1) {
+        h1.style.fontFamily =
+          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        h1.style.fontSize = "24px";
+        h1.style.marginBottom = "10px";
+        h1.style.color = "#16a34a";
+        h1.style.fontWeight = "bold";
+        h1.style.textAlign = "center";
       }
-      el.className = el.className.replace(/bg-green-[^ ]*/g, "");
-    });
 
-    // Handle other tailwind classes that might use modern color functions
-    const tailwindBorderElements =
-      printArea.querySelectorAll("[class*='border-']");
-    tailwindBorderElements.forEach((el) => {
-      if (el.className.includes("border-green")) {
-        el.style.borderColor = "#16a34a";
-      } else if (el.className.includes("border-gray")) {
-        el.style.borderColor = "#d1d5db";
-      } else if (el.className.includes("border-red")) {
-        el.style.borderColor = "#ef4444";
+      const h2 = headerTitle.querySelector("h2");
+      if (h2) {
+        h2.style.fontFamily =
+          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        h2.style.fontSize = "18px";
+        h2.style.marginBottom = "20px";
+        h2.style.color = "#16a34a";
+        h2.style.fontWeight = "600";
+        h2.style.textAlign = "center";
       }
-    });
+    }
 
-    // Style section titles for pdf
-    const sectionTitles = printArea.querySelectorAll(".section-title");
+    // Style all section titles
+    const sectionTitles = printArea.querySelectorAll(".ocs-section-title");
     sectionTitles.forEach((title) => {
-      title.style.padding = "0px 0px 6px 4px";
-      title.style.fontSize = "10px";
-      title.style.marginBottom = "0";
-      title.style.marginTop = "0";
-      title.style.textAlign = "center";
-      title.style.backgroundColor = "#f0f0f0";
-      title.style.fontWeight = "bold";
-      title.style.border = "1px solid #000";
-      title.style.color = "#000000"; // Ensure no oklch colors
+      title.style.padding = "8px 12px";
+      title.style.marginTop = "15px";
+      title.style.marginBottom = "8px";
+      title.style.fontSize = "12px";
+      title.style.fontFamily =
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+      if (title.classList.contains("ocs-payment-title")) {
+        title.style.backgroundColor = "#16a34a";
+        title.style.color = "#ffffff";
+        title.style.padding = "10px";
+        title.style.textAlign = "center";
+        title.style.fontWeight = "bold";
+      }
     });
 
-    // Fix tables
-    const tables = printArea.querySelectorAll("table, .info-table, .border");
-    tables.forEach((table) => {
-      table.style.fontSize = "9px";
-      table.style.marginBottom = "0";
-      table.style.width = "100%";
-      table.style.tableLayout = "fixed";
-      table.style.borderCollapse = "collapse";
-      table.style.border = "1px solid #000";
+    // Add better styling to grid cells
+    const gridCells = printArea.querySelectorAll(".ocs-grid-cell");
+    gridCells.forEach((cell) => {
+      cell.style.padding = "8px";
+      cell.style.fontSize = "11px";
+      cell.style.fontFamily =
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+      if (cell.classList.contains("ocs-label-cell")) {
+        cell.style.backgroundColor = "#f9fafb";
+      }
     });
 
-    // Style table cells
-    const tableCells = printArea.querySelectorAll(
-      "td, th, .p-2, .grid-cols-4 > div"
-    );
-    tableCells.forEach((cell) => {
-      cell.style.padding = "2px 4px";
-      cell.style.border = "1px solid #000";
-      cell.style.fontSize = "9px";
-      cell.style.verticalAlign = "middle";
+    // Style payment grids
+    const paymentGrids = printArea.querySelectorAll(".ocs-payment-grid");
+    paymentGrids.forEach((grid) => {
+      grid.style.padding = "8px 10px";
+      grid.style.fontSize = "11px";
+      grid.style.fontFamily =
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+      if (grid.classList.contains("ocs-total-price-row")) {
+        grid.style.fontWeight = "bold";
+      }
+
+      if (grid.classList.contains("ocs-highlight-row")) {
+        grid.style.fontWeight = "bold";
+      }
     });
+
+    // Style signature section
+    const signatureSection = printArea.querySelector(".ocs-signature-section");
+    if (signatureSection) {
+      signatureSection.style.marginTop = "50px";
+
+      const signatureTitles = signatureSection.querySelectorAll(
+        ".ocs-signature-title"
+      );
+      signatureTitles.forEach((title) => {
+        title.style.fontSize = "11px";
+        title.style.textAlign = "center";
+        title.style.fontFamily =
+          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+      });
+    }
+
+    // Style footer text
+    const footerText = printArea.querySelector(".ocs-footer-text");
+    if (footerText) {
+      footerText.style.marginTop = "40px";
+      footerText.style.textAlign = "center";
+      footerText.style.fontSize = "10px";
+      footerText.style.fontFamily =
+        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    }
+
+    // Fix any oklch colors that html2pdf can't process
+    const convertOklchColors = (element) => {
+      // Replace any potential oklch color with standard hex
+      const colorProperties = [
+        "color",
+        "backgroundColor",
+        "borderColor",
+        "borderLeftColor",
+        "borderRightColor",
+        "borderTopColor",
+        "borderBottomColor",
+      ];
+
+      // Process all elements
+      Array.from(element.querySelectorAll("*")).forEach((el) => {
+        // Apply specific color overrides to avoid tailwind oklch values
+        if (el.classList.contains("text-green-600")) {
+          el.style.color = "#16a34a"; // Standard hex for green-600
+        }
+
+        if (el.classList.contains("bg-green-600")) {
+          el.style.backgroundColor = "#16a34a"; // Standard hex for green-600
+        }
+
+        if (el.classList.contains("border-green-600")) {
+          el.style.borderColor = "#16a34a"; // Standard hex for green-600
+        }
+
+        // Ensure all button backgrounds use standard colors
+        if (el.classList.contains("ocs-btn-primary")) {
+          el.style.backgroundColor = "#16a34a"; // Standard green
+          el.style.color = "#ffffff"; // Standard white
+        }
+
+        // Fix text colors
+        if (el.classList.contains("text-gray-600")) {
+          el.style.color = "#4b5563"; // Standard hex for gray-600
+        }
+
+        if (el.classList.contains("text-gray-500")) {
+          el.style.color = "#6b7280"; // Standard hex for gray-500
+        }
+      });
+    };
 
     // Process all input elements in the document to replace with static content
     const processInputElements = (element) => {
@@ -301,7 +371,7 @@ const OCSCalculator = () => {
         }
 
         const span = document.createElement("span");
-        span.style.fontSize = "9px";
+        span.style.fontSize = "10px";
         span.style.width = "100%";
         span.style.display = "inline-block";
         span.textContent = textContent;
@@ -309,12 +379,116 @@ const OCSCalculator = () => {
       });
     };
 
-    // Process all input elements
+    // First convert all oklch colors to standard hex
+    convertOklchColors(printArea);
+
+    // Then process all input elements
     processInputElements(printArea);
+
+    // Add direct styles to override any Tailwind styles that might use oklch
+    const overrideStyles = document.createElement("style");
+    overrideStyles.textContent = `
+      .ocs-pdf-content * {
+        color: #000000;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      .ocs-pdf-content .ocs-header-title {
+        padding-top: 30px !important;
+        margin-bottom: 30px !important;
+        text-align: center !important;
+        width: 100% !important;
+      }
+      .ocs-pdf-content .ocs-header-title h1 {
+        font-size: 24px !important;
+        margin-bottom: 10px !important;
+        color: #16a34a !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      .ocs-pdf-content .ocs-header-title h2 {
+        font-size: 18px !important;
+        margin-bottom: 20px !important;
+        color: #16a34a !important;
+        font-weight: 600 !important;
+        text-align: center !important;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      .ocs-pdf-content h1, 
+      .ocs-pdf-content h2, 
+      .ocs-pdf-content .text-green-600, 
+      .ocs-pdf-content .ocs-highlighted {
+        color: #16a34a !important;
+      }
+      .ocs-pdf-content .ocs-section-title.ocs-payment-title,
+      .ocs-pdf-content .bg-green-600 {
+        background-color: #16a34a !important;
+        color: #ffffff !important;
+        padding: 10px !important;
+        font-size: 12px !important;
+        text-align: center !important;
+        font-weight: bold !important;
+      }
+      .ocs-pdf-content .ocs-warning-text {
+        color: #dc2626 !important;
+      }
+      .ocs-pdf-content .text-gray-500,
+      .ocs-pdf-content .ocs-footer-text {
+        color: #6b7280 !important;
+      }
+      .ocs-pdf-content .ocs-label-cell {
+        background-color: #f9fafb !important;
+        padding: 8px !important;
+        font-size: 11px !important;
+      }
+      .ocs-pdf-content .ocs-grid-cell {
+        padding: 8px !important;
+        font-size: 11px !important;
+      }
+      .ocs-pdf-content .ocs-section-title {
+        padding: 8px 12px !important;
+        margin-top: 15px !important;
+        margin-bottom: 8px !important;
+        font-size: 12px !important;
+      }
+      .ocs-pdf-content .ocs-info-table {
+        margin-bottom: 25px !important;
+        width: 100% !important;
+      }
+      .ocs-pdf-content .ocs-payment-grid {
+        padding: 8px 10px !important;
+        font-size: 11px !important;
+      }
+      .ocs-pdf-content .ocs-payment-grid.ocs-total-price-row {
+        font-weight: bold !important;
+      }
+      .ocs-pdf-content .ocs-payment-grid.ocs-highlight-row {
+        font-weight: bold !important;
+      }
+      .ocs-pdf-content .ocs-highlighted {
+        color: #16a34a !important;
+      }
+      .ocs-pdf-content .ocs-signature-section {
+        margin-top: 50px !important;
+      }
+      .ocs-pdf-content .ocs-signature-line {
+        margin-bottom: 5px !important;
+      }
+      .ocs-pdf-content .ocs-signature-title {
+        font-size: 11px !important;
+        text-align: center !important;
+      }
+      .ocs-pdf-content .ocs-footer-text {
+        margin-top: 40px !important;
+        text-align: center !important;
+        font-size: 10px !important;
+      }
+    `;
+    printArea.appendChild(overrideStyles);
 
     // Create configuration for jsPDF
     const opt = {
-      margin: [5, 3, 5, 5], // Margins similar to Avida form
+      margin: [10, 10, 10, 10], // Add some margin for better readability
       filename: `EVERGREEN_OCS_${
         formData.clientName.replace(/\s+/g, "_") || "FORM"
       }.pdf`,
@@ -324,6 +498,12 @@ const OCSCalculator = () => {
         letterRendering: true,
         useCORS: true,
         logging: false,
+        ignoreElements: (element) => {
+          // Ignore any elements that might cause problems with color functions
+          return (
+            element.tagName === "STYLE" && element.textContent.includes("oklch")
+          );
+        },
       },
       jsPDF: {
         unit: "mm",
@@ -360,55 +540,55 @@ const OCSCalculator = () => {
   // Generate installment breakdown for PDF
   const generateInstallmentBreakdown = () => {
     return (
-      <div className="grid">
-        <div className="payment-grid total-price-row">
+      <div>
+        <div className="ocs-payment-grid ocs-total-price-row">
           <div>TOTAL CONTRACT PRICE</div>
-          <div className="text-right">
+          <div className="ocs-text-right">
             ₱ {formatCurrency(calculations.totalPrice)}
           </div>
         </div>
-        <div className="payment-grid highlight-coral">
+        <div className="ocs-payment-grid ocs-highlight-row">
           <div>DOWNPAYMENT (20%)</div>
-          <div className="text-right">
+          <div className="ocs-text-right">
             ₱ {formatCurrency(calculations.downPayment)}
           </div>
         </div>
-        <div className="payment-grid">
+        <div className="ocs-payment-grid">
           <div>Reservation Fee (Deductible from Downpayment)</div>
-          <div className="text-right">₱ 20,000.00</div>
+          <div className="ocs-text-right">₱ 20,000.00</div>
         </div>
 
-        <div className="payment-grid highlight-coral">
+        <div className="ocs-payment-grid ocs-highlight-row">
           <div>BALANCE PAYMENT</div>
-          <div className="text-right">
+          <div className="ocs-text-right">
             ₱ {formatCurrency(calculations.balancePayment)}
           </div>
         </div>
-        <div className="payment-grid">
-          <div className="italic">{formData.installmentYears} years</div>
-          <div className="text-right">Monthly Installment</div>
+        <div className="ocs-payment-grid">
+          <div className="ocs-italic">{formData.installmentYears} years</div>
+          <div className="ocs-text-right">Monthly Installment</div>
         </div>
-        <div className="payment-grid">
-          <div className="italic">Every 30th of the month</div>
-          <div className="text-right highlighted">
+        <div className="ocs-payment-grid">
+          <div className="ocs-italic">Every 30th of the month</div>
+          <div className="ocs-text-right ocs-highlighted">
             ₱ {formatCurrency(calculations.monthlyPayment)}
           </div>
         </div>
-        <div className="payment-grid">
-          <div className="italic">
+        <div className="ocs-payment-grid">
+          <div className="ocs-italic">
             {parseInt(formData.installmentYears) * 12} months
           </div>
           <div></div>
         </div>
-        <div className="payment-grid">
+        <div className="ocs-payment-grid">
           <div>Start Year</div>
-          <div className="text-right italic">
+          <div className="ocs-text-right ocs-italic">
             {formatDate(formData.reservationDate, true) || "Not specified"}
           </div>
         </div>
-        <div className="payment-grid">
+        <div className="ocs-payment-grid">
           <div>End Year</div>
-          <div className="text-right italic">
+          <div className="ocs-text-right ocs-italic">
             {calculateEndDate(
               formData.reservationDate,
               formData.installmentYears
@@ -422,35 +602,35 @@ const OCSCalculator = () => {
   // Generate spotcash breakdown for PDF
   const generateSpotcashBreakdown = () => {
     return (
-      <div className="grid">
-        <div className="payment-grid total-price-row">
+      <div>
+        <div className="ocs-payment-grid ocs-total-price-row">
           <div>TOTAL CONTRACT PRICE</div>
-          <div className="text-right">
+          <div className="ocs-text-right">
             ₱ {formatCurrency(calculations.totalPrice)}
           </div>
         </div>
-        <div className="payment-grid highlight-coral">
+        <div className="ocs-payment-grid ocs-highlight-row">
           <div>SPOTCASH</div>
-          <div className="text-right">
+          <div className="ocs-text-right">
             ₱ {formatCurrency(calculations.totalPrice)}
           </div>
         </div>
-        <div className="payment-grid">
-          <div className="italic" style={{ color: "#dc2626" }}>
+        <div className="ocs-payment-grid">
+          <div className="ocs-warning-text">
             Total amount shall be payable within a month.
           </div>
           <div></div>
         </div>
-        <div className="payment-grid">
-          <div className="italic" style={{ color: "#dc2626" }}>
+        <div className="ocs-payment-grid">
+          <div className="ocs-warning-text">
             Initial reservation fee of ₱20,000.00 is required and will be
             deducted from the total price.
           </div>
           <div></div>
         </div>
-        <div className="payment-grid">
+        <div className="ocs-payment-grid">
           <div>Total Amount</div>
-          <div className="text-right">
+          <div className="ocs-text-right">
             ₱ {formatCurrency(calculations.totalPrice)}
           </div>
         </div>
@@ -460,473 +640,532 @@ const OCSCalculator = () => {
 
   // Render calculator view
   const renderCalculatorView = () => (
-    <div className="w-full" id="calculatorView">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-200 pb-4 mb-6">
-          <h2 className="text-xl font-bold text-green-600 mb-4 md:mb-0">
-            {appMode === "full"
-              ? "Official Computation Sheet"
-              : "Quick Calculator"}
-          </h2>
-          <div className="flex space-x-2">
-            <button
-              className={`px-3 py-2 text-sm rounded-md transition-colors ${
-                appMode === "full"
-                  ? "bg-green-600 text-white"
-                  : "bg-green-50 text-green-600 border border-green-600"
-              }`}
-              onClick={() => setAppMode("full")}
-            >
-              Full OCS
-            </button>
-            <button
-              className={`px-3 py-2 text-sm rounded-md transition-colors ${
-                appMode === "calculator-only"
-                  ? "bg-green-600 text-white"
-                  : "bg-green-50 text-green-600 border border-green-600"
-              }`}
-              onClick={() => setAppMode("calculator-only")}
-            >
-              Calculator
-            </button>
-          </div>
+    <>
+      {" "}
+      <div className="flex flex-col md:flex-row justify-between items-center border-gray-200 pb-4 mb-6">
+        <h2 className="text-2xl font-bold text-black mb-4 md:mb-0">
+          {appMode === "full"
+            ? "Official Computation Sheet"
+            : "Quick Calculator"}
+        </h2>
+        <div className="flex space-x-2">
+          <button
+            className={`ocs-btn ${
+              appMode === "full"
+                ? "ocs-btn-primary"
+                : "bg-white text-gray-600 border border-gray-300 hover:text-[#1da57a] hover:border-[#1da57a]"
+            } px-3 py-1 text-sm rounded-md transition-colors flex items-center justify-center h-8`}
+            onClick={() => setAppMode("full")}
+          >
+            Full OCS
+          </button>
+          <button
+            className={`ocs-btn ${
+              appMode === "calculator-only"
+                ? "ocs-btn-primary"
+                : "bg-white text-gray-600 border border-gray-300 hover:text-[#1da57a] hover:border-[#1da57a]"
+            } px-3 py-1 text-sm rounded-md transition-colors flex items-center justify-center h-8`}
+            onClick={() => setAppMode("calculator-only")}
+          >
+            Calculator
+          </button>
         </div>
+      </div>
+      <div className="ocs-calculator w-full" id="calculatorView">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <form className="space-y-6">
+            {appMode === "full" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-base font-medium text-green-600 mb-2">
+                      Client Name*
+                    </label>
+                    <input
+                      type="text"
+                      name="clientName"
+                      value={formData.clientName}
+                      onChange={handleInputChange}
+                      className={`w-full h-12 px-4 py-3 text-base border ${
+                        formErrors.clientName
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                      placeholder="Enter client name"
+                      required
+                    />
+                    {formErrors.clientName && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.clientName}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-base font-medium text-green-600 mb-2">
+                      Project*
+                    </label>
+                    <input
+                      type="text"
+                      name="project"
+                      value={formData.project}
+                      onChange={handleInputChange}
+                      className={`w-full h-12 px-4 py-3 text-base border ${
+                        formErrors.project
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                      required
+                    />
+                    {formErrors.project && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.project}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-base font-medium text-green-600 mb-2">
+                      Contact Number*
+                    </label>
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      className={`w-full h-12 px-4 py-3 text-base border ${
+                        formErrors.phoneNumber
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                      placeholder="Enter contact number"
+                      required
+                    />
+                    {formErrors.phoneNumber && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.phoneNumber}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-base font-medium text-green-600 mb-2">
+                      Reservation Date*
+                    </label>
+                    <input
+                      type="date"
+                      name="reservationDate"
+                      value={formData.reservationDate}
+                      onChange={handleInputChange}
+                      className={`w-full h-12 px-4 py-3 text-base border ${
+                        formErrors.reservationDate
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                      required
+                    />
+                    {formErrors.reservationDate && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.reservationDate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-base font-medium text-green-600 mb-2">
+                    Block and Lot Number*
+                  </label>
+                  <input
+                    type="text"
+                    name="blockLot"
+                    value={formData.blockLot}
+                    onChange={handleInputChange}
+                    className={`w-full h-12 px-4 py-3 text-base border ${
+                      formErrors.blockLot ? "border-red-500" : "border-gray-300"
+                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                    placeholder="Enter Block and Lot"
+                    required
+                  />
+                  {formErrors.blockLot && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {formErrors.blockLot}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
-        <form className="space-y-6">
-          {appMode === "full" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-base font-medium text-green-600 mb-2">
-                    Client Name*
+                    Price per sq.m.*
                   </label>
-                  <input
-                    type="text"
-                    name="clientName"
-                    value={formData.clientName}
-                    onChange={handleInputChange}
-                    className={`w-full h-12 px-4 py-3 text-base border ${
-                      formErrors.clientName
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                    placeholder="Enter client name"
-                    required
-                  />
-                  {formErrors.clientName && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.clientName}
-                    </p>
-                  )}
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-gray-500 text-base">
+                      ₱
+                    </span>
+                    <input
+                      type="number"
+                      name="pricePerSqm"
+                      value={formData.pricePerSqm}
+                      onChange={handleInputChange}
+                      className={`w-full h-12 pl-8 pr-4 py-3 text-base border ${
+                        formErrors.pricePerSqm
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                      placeholder="0.00"
+                      required
+                    />
+                    {formErrors.pricePerSqm && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {formErrors.pricePerSqm}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-base font-medium text-green-600 mb-2">
-                    Project*
+                    Lot Area (sq.m.)*
                   </label>
                   <input
-                    type="text"
-                    name="project"
-                    value={formData.project}
+                    type="number"
+                    name="lotArea"
+                    value={formData.lotArea}
                     onChange={handleInputChange}
                     className={`w-full h-12 px-4 py-3 text-base border ${
-                      formErrors.project ? "border-red-500" : "border-gray-300"
+                      formErrors.lotArea ? "border-red-500" : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
+                    placeholder="Enter lot area"
                     required
                   />
-                  {formErrors.project && (
+                  {formErrors.lotArea && (
                     <p className="text-red-500 text-xs mt-1">
-                      {formErrors.project}
+                      {formErrors.lotArea}
                     </p>
                   )}
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-base font-medium text-green-600 mb-2">
-                    Contact Number*
+                    Payment Type*
                   </label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
+                  <select
+                    name="paymentType"
+                    value={formData.paymentType}
                     onChange={handleInputChange}
-                    className={`w-full h-12 px-4 py-3 text-base border ${
-                      formErrors.phoneNumber
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                    placeholder="Enter contact number"
+                    className="w-full h-12 px-4 py-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                     required
-                  />
-                  {formErrors.phoneNumber && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.phoneNumber}
-                    </p>
-                  )}
+                  >
+                    <option value="SPOTCASH">Spot Cash</option>
+                    <option value="INSTALLMENT">Installment</option>
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-base font-medium text-green-600 mb-2">
-                    Reservation Date*
-                  </label>
-                  <input
-                    type="date"
-                    name="reservationDate"
-                    value={formData.reservationDate}
-                    onChange={handleInputChange}
-                    className={`w-full h-12 px-4 py-3 text-base border ${
-                      formErrors.reservationDate
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                    required
-                  />
-                  {formErrors.reservationDate && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.reservationDate}
-                    </p>
-                  )}
-                </div>
+                {formData.paymentType === "INSTALLMENT" && (
+                  <div>
+                    <label className="block text-base font-medium text-green-600 mb-2">
+                      Installment Period*
+                    </label>
+                    <select
+                      name="installmentYears"
+                      value={formData.installmentYears}
+                      onChange={handleInputChange}
+                      className="w-full h-12 px-4 py-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                      required
+                    >
+                      <option value="2">2 Years (24 months)</option>
+                      <option value="3">3 Years (36 months)</option>
+                      <option value="4">4 Years (48 months)</option>
+                    </select>
+                  </div>
+                )}
               </div>
-              <div>
-                <label className="block text-base font-medium text-green-600 mb-2">
-                  Block and Lot Number*
-                </label>
-                <input
-                  type="text"
-                  name="blockLot"
-                  value={formData.blockLot}
-                  onChange={handleInputChange}
-                  className={`w-full h-12 px-4 py-3 text-base border ${
-                    formErrors.blockLot ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                  placeholder="Enter Block and Lot"
-                  required
-                />
-                {formErrors.blockLot && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {formErrors.blockLot}
-                  </p>
+            </div>
+          </form>
+
+          {calculations.totalPrice > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-bold text-green-600 mb-4">
+                BREAKDOWN OF PAYMENT
+              </h2>
+              <div className="bg-white border border-gray-200 rounded-md p-4 shadow-sm">
+                <h3 className="text-base font-semibold text-green-600 mb-4 border-b pb-2">
+                  {formData.paymentType === "INSTALLMENT"
+                    ? "INSTALLMENT BREAKDOWN"
+                    : "SPOTCASH PAYMENT"}
+                </h3>
+
+                <div className="flex justify-between items-baseline mb-3">
+                  <span className="text-sm text-gray-600 font-medium">
+                    Total Contract Price:
+                  </span>
+                  <span className="text-xl font-bold text-green-600">
+                    ₱ {formatCurrency(calculations.totalPrice)}
+                  </span>
+                </div>
+
+                {formData.paymentType === "INSTALLMENT" ? (
+                  <>
+                    <div className="flex justify-between items-baseline mb-3">
+                      <span className="text-sm text-gray-600 font-medium">
+                        Down Payment (20%):
+                      </span>
+                      <span className="text-xl font-bold text-green-600">
+                        ₱ {formatCurrency(calculations.downPayment)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline mb-3">
+                      <span className="text-sm text-gray-600 font-medium">
+                        Balance:
+                      </span>
+                      <span className="text-xl font-bold text-green-600">
+                        ₱ {formatCurrency(calculations.balancePayment)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-baseline mb-3">
+                      <span className="text-sm text-gray-600 font-medium">
+                        Monthly Payment:
+                      </span>
+                      <span className="text-xl font-bold text-green-600">
+                        ₱ {formatCurrency(calculations.monthlyPayment)}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-500 mt-4 pt-2 border-t">
+                      Terms: {formData.installmentYears} years (
+                      {parseInt(formData.installmentYears) * 12} months)
+                      <br />
+                      Initial reservation fee of ₱20,000.00 is required and will
+                      be deducted from the 20% down payment.
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-gray-500 mt-4 pt-2 border-t">
+                    Total amount shall be payable within a month.
+                    <br />
+                    Initial reservation fee of ₱20,000.00 is required and will
+                    be deducted from the total contract price.
+                  </div>
                 )}
               </div>
             </div>
           )}
 
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-base font-medium text-green-600 mb-2">
-                  Price per sq.m.*
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-3.5 text-gray-500 text-base">
-                    ₱
-                  </span>
-                  <input
-                    type="number"
-                    name="pricePerSqm"
-                    value={formData.pricePerSqm}
-                    onChange={handleInputChange}
-                    className={`w-full h-12 pl-8 pr-4 py-3 text-base border ${
-                      formErrors.pricePerSqm
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                    placeholder="0.00"
-                    required
-                  />
-                  {formErrors.pricePerSqm && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {formErrors.pricePerSqm}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-base font-medium text-green-600 mb-2">
-                  Lot Area (sq.m.)*
-                </label>
-                <input
-                  type="number"
-                  name="lotArea"
-                  value={formData.lotArea}
-                  onChange={handleInputChange}
-                  className={`w-full h-12 px-4 py-3 text-base border ${
-                    formErrors.lotArea ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500`}
-                  placeholder="Enter lot area"
-                  required
-                />
-                {formErrors.lotArea && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {formErrors.lotArea}
-                  </p>
+          <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <button
+              onClick={handleCreateOCS}
+              className="ocs-btn ocs-btn-primary flex-1 py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2"
+              type="button"
+            >
+              <span className="flex items-center">
+                {appMode === "full" ? (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2"
+                    >
+                      <rect
+                        x="3"
+                        y="3"
+                        width="18"
+                        height="18"
+                        rx="2"
+                        ry="2"
+                      ></rect>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Create OCS
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="mr-2"
+                    >
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Calculate
+                  </>
                 )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-base font-medium text-green-600 mb-2">
-                  Payment Type*
-                </label>
-                <select
-                  name="paymentType"
-                  value={formData.paymentType}
-                  onChange={handleInputChange}
-                  className="w-full h-12 px-4 py-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                  required
-                >
-                  <option value="SPOTCASH">Spot Cash</option>
-                  <option value="INSTALLMENT">Installment</option>
-                </select>
-              </div>
-              {formData.paymentType === "INSTALLMENT" && (
-                <div>
-                  <label className="block text-base font-medium text-green-600 mb-2">
-                    Installment Period*
-                  </label>
-                  <select
-                    name="installmentYears"
-                    value={formData.installmentYears}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 py-3 text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                    required
-                  >
-                    <option value="2">2 Years (24 months)</option>
-                    <option value="3">3 Years (36 months)</option>
-                    <option value="4">4 Years (48 months)</option>
-                  </select>
-                </div>
-              )}
-            </div>
+              </span>
+            </button>
+            <button
+              onClick={handleReset}
+              className="ocs-btn ocs-btn-secondary flex-1 py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2"
+              type="button"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-2"
+              >
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                <path d="M3 3v5h5"></path>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                <path d="M16 21h5v-5"></path>
+              </svg>
+              Reset
+            </button>
           </div>
-        </form>
-
-        {calculations.totalPrice > 0 && (
-          <div className="mt-8">
-            <h2 className="text-lg font-bold text-green-600 mb-4">
-              BREAKDOWN OF PAYMENT
-            </h2>
-            <div className="bg-white border border-gray-200 rounded-md p-4 shadow-sm">
-              <h3 className="text-base font-semibold text-green-600 mb-4 border-b pb-2">
-                {formData.paymentType === "INSTALLMENT"
-                  ? "INSTALLMENT BREAKDOWN"
-                  : "SPOTCASH PAYMENT"}
-              </h3>
-
-              <div className="flex justify-between items-baseline mb-3">
-                <span className="text-sm text-gray-600 font-medium">
-                  Total Contract Price:
-                </span>
-                <span className="text-xl font-bold text-green-600">
-                  ₱ {formatCurrency(calculations.totalPrice)}
-                </span>
-              </div>
-
-              {formData.paymentType === "INSTALLMENT" ? (
-                <>
-                  <div className="flex justify-between items-baseline mb-3">
-                    <span className="text-sm text-gray-600 font-medium">
-                      Down Payment (20%):
-                    </span>
-                    <span className="text-xl font-bold text-green-600">
-                      ₱ {formatCurrency(calculations.downPayment)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-baseline mb-3">
-                    <span className="text-sm text-gray-600 font-medium">
-                      Balance:
-                    </span>
-                    <span className="text-xl font-bold text-green-600">
-                      ₱ {formatCurrency(calculations.balancePayment)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-baseline mb-3">
-                    <span className="text-sm text-gray-600 font-medium">
-                      Monthly Payment:
-                    </span>
-                    <span className="text-xl font-bold text-green-600">
-                      ₱ {formatCurrency(calculations.monthlyPayment)}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500 mt-4 pt-2 border-t">
-                    Terms: {formData.installmentYears} years (
-                    {parseInt(formData.installmentYears) * 12} months)
-                    <br />
-                    Initial reservation fee of ₱20,000.00 is required and will
-                    be deducted from the 20% down payment.
-                  </div>
-                </>
-              ) : (
-                <div className="text-sm text-gray-500 mt-4 pt-2 border-t">
-                  Total amount shall be payable within a month.
-                  <br />
-                  Initial reservation fee of ₱20,000.00 is required and will be
-                  deducted from the total contract price.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row gap-4 mt-6">
-          <button
-            onClick={handleCreateOCS}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md font-medium transition-colors flex justify-center items-center btn btn-primary"
-            type="button"
-          >
-            {appMode === "full" ? "Create OCS" : "Calculate"}
-          </button>
-          <button
-            onClick={handleReset}
-            className="flex-1 bg-white hover:bg-gray-50 text-green-600 border border-green-600 py-2 px-4 rounded-md font-medium transition-colors flex justify-center items-center btn btn-secondary"
-            type="button"
-          >
-            Reset
-          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 
   // Render result view with PDF content
   const renderResultView = () => (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="border-b border-gray-200 p-4 md:p-6 form-actions">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h2 className="text-xl font-bold text-green-600">
-            Official Computation Sheet Preview
-          </h2>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              onClick={handleDownloadPDF}
-              className="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md font-medium transition-colors btn btn-primary"
-            >
-              <Download size={16} className="mr-2" />
-              Download PDF
-            </button>
-            <button
-              onClick={() => setCurrentView("calculator")}
-              className="inline-flex items-center justify-center bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 py-2 px-4 rounded-md font-medium transition-colors btn btn-secondary"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Back to Calculator
-            </button>
-          </div>
+    <>
+      {" "}
+      <div className="flex flex-col justify-between mb-10 sm:flex-row gap-2">
+        <h2 className="text-2xl font-bold">Preview</h2>
+        <div className="flex gap-2">
+          {" "}
+          <button
+            onClick={() => setCurrentView("calculator")}
+            className="ocs-btn ocs-btn-secondary inline-flex items-center justify-center gap-2 py-1 px-4 rounded-md font-medium transition-colors h-8"
+          >
+            <ArrowLeft size={14} className="mr-1" />
+            <span>Back to Calculator</span>
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            className="ocs-btn ocs-btn-primary inline-flex items-center justify-center gap-2 py-1 px-4 rounded-md font-medium transition-colors h-8"
+          >
+            <Download size={14} className="mr-1" />
+            <span>Download PDF</span>
+          </button>
         </div>
       </div>
-
-      <div id="pdfContent" ref={pdfContentRef} className="p-8 bg-white">
-        <div className="text-center mb-10 header-title">
-          <h1 className="text-2xl font-bold text-green-600 mb-2">
-            Evergreen Realty Philippines
-          </h1>
-          <h2 className="text-xl font-semibold text-green-600">
-            Official Computation Sheet (OCS)
-          </h2>
-        </div>
-
-        <div className="mb-8 ocs-section">
-          <h3 className="section-title text-lg mb-4 text-green-600">
-            Client Information
-          </h3>
-          <div className="border border-gray-200 rounded-md overflow-hidden info-table">
-            <div className="grid grid-cols-4 border-b border-gray-200">
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Client Name:
-              </div>
-              <div className="p-2 border-r border-gray-200">
-                {formData.clientName}
-              </div>
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Contact Number:
-              </div>
-              <div className="p-2">{formData.phoneNumber}</div>
-            </div>
-            <div className="grid grid-cols-4">
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Reservation Date:
-              </div>
-              <div className="p-2 border-r border-gray-200">
-                {formatDate(formData.reservationDate)}
-              </div>
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Block and Lot Number:
-              </div>
-              <div className="p-2">{formData.blockLot}</div>
-            </div>
+      <div className="ocs-calculator bg-white rounded-lg shadow-md overflow-hidden">
+        <div
+          id="pdfContent"
+          ref={pdfContentRef}
+          className="ocs-pdf-content p-8 bg-white"
+        >
+          <div className="ocs-header-title text-center mb-8 pt-4">
+            <h1 className="text-2xl font-bold text-green-600 mb-3">
+              Evergreen Realty Philippines
+            </h1>
+            <h2 className="text-xl font-semibold text-green-600 mb-4">
+              Official Computation Sheet (OCS)
+            </h2>
           </div>
-        </div>
 
-        <div className="mb-8 ocs-section">
-          <h3 className="section-title text-lg mb-4 text-green-600">
-            Property Details
-          </h3>
-          <div className="border border-gray-200 rounded-md overflow-hidden info-table">
-            <div className="grid grid-cols-4 border-b border-gray-200">
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Project:
+          <div className="mb-6 ocs-section">
+            <h3 className="ocs-section-title font-medium mb-2">
+              Client Information
+            </h3>
+            <div className="ocs-info-table border border-gray-200 rounded-md overflow-hidden">
+              <div className="ocs-grid-row">
+                <div className="ocs-grid-cell ocs-label-cell">Client Name:</div>
+                <div className="ocs-grid-cell">{formData.clientName}</div>
+                <div className="ocs-grid-cell ocs-label-cell">
+                  Contact Number:
+                </div>
+                <div className="ocs-grid-cell">{formData.phoneNumber}</div>
               </div>
-              <div className="p-2 border-r border-gray-200">
-                {formData.project}
+              <div className="ocs-grid-row">
+                <div className="ocs-grid-cell ocs-label-cell">
+                  Reservation Date:
+                </div>
+                <div className="ocs-grid-cell">
+                  {formatDate(formData.reservationDate)}
+                </div>
+                <div className="ocs-grid-cell ocs-label-cell">
+                  Block and Lot Number:
+                </div>
+                <div className="ocs-grid-cell">{formData.blockLot}</div>
               </div>
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Lot Area:
-              </div>
-              <div className="p-2">{formData.lotArea} sq.m.</div>
-            </div>
-            <div className="grid grid-cols-4">
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Price per sq.m.:
-              </div>
-              <div className="p-2 border-r border-gray-200">
-                ₱ {formatCurrency(formData.pricePerSqm)}
-              </div>
-              <div className="p-2 border-r border-gray-200 bg-gray-50 font-medium label-cell">
-                Type:
-              </div>
-              <div className="p-2">Agricultural</div>
             </div>
           </div>
-        </div>
 
-        <div className="ocs-section">
-          <div className="bg-green-600 text-white p-4 text-center font-bold text-lg mb-6 rounded-t-md section-title">
-            BREAKDOWN OF PAYMENT
+          <div className="mb-6 ocs-section">
+            <h3 className="ocs-section-title font-medium mb-2">
+              Property Details
+            </h3>
+            <div className="ocs-info-table border border-gray-200 rounded-md overflow-hidden">
+              <div className="ocs-grid-row">
+                <div className="ocs-grid-cell ocs-label-cell">Project:</div>
+                <div className="ocs-grid-cell">{formData.project}</div>
+                <div className="ocs-grid-cell ocs-label-cell">Lot Area:</div>
+                <div className="ocs-grid-cell">{formData.lotArea} sq.m.</div>
+              </div>
+              <div className="ocs-grid-row">
+                <div className="ocs-grid-cell ocs-label-cell">
+                  Price per sq.m.:
+                </div>
+                <div className="ocs-grid-cell">
+                  ₱ {formatCurrency(formData.pricePerSqm)}
+                </div>
+                <div className="ocs-grid-cell ocs-label-cell">Type:</div>
+                <div className="ocs-grid-cell">Agricultural</div>
+              </div>
+            </div>
           </div>
-          <div className="border border-gray-200 border-t-0 rounded-b-md p-4 info-table">
-            {formData.paymentType === "INSTALLMENT"
-              ? generateInstallmentBreakdown()
-              : generateSpotcashBreakdown()}
-          </div>
-        </div>
 
-        <div className="mt-12 border-t border-gray-300 pt-6 signature-section">
-          <div className="signature-box">
-            <div className="signature-line"></div>
-            <p className="signature-title">Prepared by</p>
+          <div className="ocs-section">
+            <div className="ocs-section-title ocs-payment-title">
+              BREAKDOWN OF PAYMENT
+            </div>
+            <div className="ocs-info-table border border-gray-200 border-t-0 rounded-b-md p-4">
+              {formData.paymentType === "INSTALLMENT"
+                ? generateInstallmentBreakdown()
+                : generateSpotcashBreakdown()}
+            </div>
           </div>
-          <div className="signature-box">
-            <div className="signature-line"></div>
-            <p className="signature-title">
-              Conforme: Client's Signature over Printed Name
+
+          <div className="ocs-signature-section mt-10 border-t border-gray-300 pt-6">
+            <div className="ocs-signature-box">
+              <div className="ocs-signature-line"></div>
+              <p className="ocs-signature-title">Prepared by</p>
+            </div>
+            <div className="ocs-signature-box">
+              <div className="ocs-signature-line"></div>
+              <p className="ocs-signature-title">
+                Conforme: Client's Signature over Printed Name
+              </p>
+            </div>
+          </div>
+
+          <div className="ocs-footer-text mt-10 text-center text-xs text-gray-500">
+            <p>
+              This document is computer-generated and does not require a
+              signature to be official.
             </p>
+            <p>Evergreen Realty Philippines © {new Date().getFullYear()}</p>
           </div>
         </div>
-
-        <div className="mt-12 text-center text-xs text-gray-500 footer-text">
-          <p>
-            This document is computer-generated and does not require a signature
-            to be official.
-          </p>
-          <p>Evergreen Realty Philippines © {new Date().getFullYear()}</p>
-        </div>
       </div>
-    </div>
+    </>
   );
 
   return (
-    <div className="font-sans w-full min-h-screen max-w-6xl mx-auto bg-gray-50 p-4 container">
+    <div className="ocs-calculator font-sans w-full min-h-screen max-w-6xl bg-gray-50 ">
       {currentView === "calculator" && renderCalculatorView()}
       {currentView === "result" && renderResultView()}
     </div>

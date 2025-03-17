@@ -458,7 +458,7 @@ const LotList = ({ role: propRole }) => {
     >
       <div
         className="lot-management"
-        style={{ padding: isMobile ? "8px" : "16px" }}
+        style={{ padding: isMobile ? "0px" : "0px" }}
       >
         <div
           className="header-section"
@@ -471,7 +471,10 @@ const LotList = ({ role: propRole }) => {
             gap: isMobile ? "12px" : "0",
           }}
         >
-          <Title level={isMobile ? 4 : 3} style={{ margin: 0 }}>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{ margin: 0, fontWeight: 700 }}
+          >
             Lot Management
           </Title>
           <Button
