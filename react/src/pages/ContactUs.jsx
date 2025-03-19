@@ -59,8 +59,9 @@ export default function ContactUs() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#f7fdf7]">
-        <Header />
+      {" "}
+      <Header />
+      <div className="min-h-screen bg-[#f7fdf7] pt-20">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white shadow-lg rounded-lg p-8 mt-16">
             <div className="space-y-4 mb-8">

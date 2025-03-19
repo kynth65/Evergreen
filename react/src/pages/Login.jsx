@@ -67,7 +67,7 @@ export default function Login() {
   return (
     <>
       <Header />
-      <div className="min-h-screen flex items-center justify-center mt-[-110px] bg-neutral-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7fdf7] py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full relative">
           {/* Decorative element - top leaf */}
           <div className="hidden lg:block absolute -top-8 -right-8 opacity-60">
