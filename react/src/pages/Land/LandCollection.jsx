@@ -53,7 +53,7 @@ const LandCard = ({ land }) => {
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
             {loading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#384438]"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-800"></div>
             ) : (
               <Map className="h-12 w-12 text-gray-400" />
             )}
@@ -61,7 +61,7 @@ const LandCard = ({ land }) => {
         )}
 
         <div className="absolute top-4 left-4 bg-white px-3 py-1 rounded-lg shadow-md">
-          <p className="text-sm font-bold text-[#384438]">
+          <p className="text-sm font-bold text-green-800">
             {formatPrice(land.price_per_sqm, land.size)}
           </p>
         </div>
@@ -80,7 +80,7 @@ const LandCard = ({ land }) => {
         )}
       </div>
       <div className="p-6">
-        <h3 className="text-xl font-bold text-[#384438] mb-2">{land.name}</h3>
+        <h3 className="text-xl font-bold text-green-800 mb-2">{land.name}</h3>
         {land.location && (
           <p className="text-gray-600 mb-4">
             <span className="flex items-center gap-1">
@@ -108,7 +108,7 @@ const LandCard = ({ land }) => {
         </div>
 
         <Link to={`/lands/${land.id}`} className="block w-full">
-          <button className="w-full bg-[#384438] text-white py-2 rounded-lg hover:bg-[#2a332a] transition-colors cursor-pointer">
+          <button className="w-full bg-green-800 text-white py-2 rounded-lg hover:bg-green-900 transition-colors cursor-pointer">
             View Details
           </button>
         </Link>
@@ -184,7 +184,7 @@ const LandCollection = () => {
       <div className="bg-[#f7fdf7] mt-[-45px]">
         <Header />
         <div className="max-w-7xl mx-auto px-6 py-12">
-          <h1 className="text-4xl md:text-5xl font-grotesk font-bold text-[#384438] mb-2">
+          <h1 className="text-4xl md:text-5xl font-grotesk font-bold text-green-800 mb-2">
             Available Lands
           </h1>
           <p className="text-gray-600 mb-8">
@@ -206,7 +206,7 @@ const LandCollection = () => {
               </div>
               <button
                 type="submit"
-                className="bg-[#384438] text-white px-6 py-2 rounded-lg hover:bg-[#2a332a] transition-colors cursor-pointer"
+                className="bg-green-800 text-white px-6 py-2 rounded-lg hover:bg-green-900 transition-colors cursor-pointer"
               >
                 Search
               </button>
@@ -236,7 +236,7 @@ const LandCollection = () => {
           {/* Loading indicator */}
           {loading && (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#384438]"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-800"></div>
             </div>
           )}
 
@@ -252,7 +252,7 @@ const LandCollection = () => {
                   setCurrentPage(1);
                   setTimeout(fetchLands, 0);
                 }}
-                className="mt-4 bg-[#384438] text-white px-6 py-2 rounded-lg hover:bg-[#2a332a] transition-colors"
+                className="mt-4 bg-green-800 text-white px-6 py-2 rounded-lg hover:bg-green-900 transition-colors"
               >
                 View All Properties
               </button>
@@ -274,7 +274,7 @@ const LandCollection = () => {
                   className={`p-2 rounded-lg mr-2 ${
                     currentPage === 1
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-[#384438] hover:bg-gray-100"
+                      : "bg-white text-green-800 hover:bg-gray-100"
                   }`}
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -287,8 +287,8 @@ const LandCollection = () => {
                       onClick={() => setCurrentPage(page + 1)}
                       className={`px-4 py-2 rounded-lg ${
                         currentPage === page + 1
-                          ? "bg-[#384438] text-white"
-                          : "bg-white text-[#384438] hover:bg-gray-100"
+                          ? "bg-green-800 text-white"
+                          : "bg-white text-green-800 hover:bg-gray-100"
                       }`}
                     >
                       {page + 1}
@@ -304,7 +304,7 @@ const LandCollection = () => {
                   className={`p-2 rounded-lg ml-2 ${
                     currentPage === totalPages
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-[#384438] hover:bg-gray-100"
+                      : "bg-white text-green-800 hover:bg-gray-100"
                   }`}
                 >
                   <ChevronRight className="h-5 w-5" />
