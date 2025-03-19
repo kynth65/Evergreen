@@ -18,19 +18,19 @@ export default function Header() {
 
   return (
     <header
-      className={`font-grotesk py-4 sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/70 backdrop-blur-md shadow-lg" : "bg-transparent"
+      className={`evergreen-header font-grotesk py-4 sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white/70 backdrop-blur-md shadow-lg" : "bg-white/70"
       }`}
     >
-      <nav className="max-w-7xl mx-auto flex justify-between items-center px-4">
+      <nav className="evergreen-nav max-w-7xl mx-auto flex justify-between items-center px-4">
         {/* Logo */}
-        <Link to="/" className="font-grotesk font-bold text-2xl">
-          <img src={EvergreenLogo} alt="" className="w-16 h-16" />
+        <Link to="/" className="evergreen-logo font-grotesk font-bold text-2xl">
+          <img src={EvergreenLogo} alt="Evergreen Logo" className="w-16 h-16" />
         </Link>
 
-        {/* Hamburger Menu - Show on mobile, hide on lg screens */}
+        {/* Hamburger Menu - Show ONLY on small screens */}
         <button
-          className="lg:hidden z-50"
+          className="evergreen-menu-btn md:hidden z-50"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
           {isMenuOpen ? (
@@ -42,7 +42,7 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="fixed inset-0 bg-white/95 backdrop-blur-sm lg:hidden z-40">
+          <div className="evergreen-mobile-menu fixed inset-0 bg-white/95 backdrop-blur-sm md:hidden z-40">
             <div className="flex flex-col items-center justify-center h-full">
               <ul className="flex flex-col gap-8 font-grotesk font-medium text-center">
                 <li>
@@ -86,34 +86,32 @@ export default function Header() {
           </div>
         )}
 
-        {/* Desktop Navigation Links with Login Button */}
-        <div className="hidden lg:flex items-center gap-8">
-          <ul className="flex gap-8 font-grotesk font-medium">
-            <li>
-              <Link to="/about" className="hover:text-gray-600 text-lg">
-                About
-              </Link>
-            </li>
-            <li>
-              <Link to="/lands" className="hover:text-gray-600 text-lg">
-                Land
-              </Link>
-            </li>
-            <li>
-              <Link to="/contact" className="hover:text-gray-600 text-lg">
-                Contact
-              </Link>
-            </li>
-          </ul>
-          <div className="flex items-center gap-3">
+        {/* Desktop Navigation Links */}
+        <ul className="evergreen-desktop-menu !block md:!flex !items-center gap-8 font-grotesk text-black font-medium">
+          <li>
+            <Link to="/about" className="hover:text-gray-600 text-lg">
+              About
+            </Link>
+          </li>
+          <li>
+            <Link to="/lands" className="hover:text-gray-600 text-lg">
+              Land
+            </Link>
+          </li>
+          <li>
+            <Link to="/contact" className="hover:text-gray-600 text-lg">
+              Contact
+            </Link>
+          </li>
+          <li>
             <Link
               to="/login"
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors font-medium"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors"
             >
               Login
             </Link>
-          </div>
-        </div>
+          </li>
+        </ul>
       </nav>
     </header>
   );

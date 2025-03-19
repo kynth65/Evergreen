@@ -1,0 +1,42 @@
+
+/* Add these styles to your CSS file or create a new one for your navbar */
+
+/* Increase specificity for Evergreen header components */
+.evergreen-header {
+    display: block !important;
+  }
+  
+  .evergreen-nav {
+    display: flex !important;
+  }
+  
+  .evergreen-desktop-menu {
+    display: none !important; /* Hidden by default */
+  }
+  
+  /* Override at medium breakpoint */
+  @media (min-width: 768px) {
+    .evergreen-desktop-menu {
+      display: flex !important; /* Force display flex at md breakpoint */
+      align-items: center !important;
+    }
+  }
+  
+  /* Ensure buttons in navbar aren't affected by other button styles */
+  .evergreen-desktop-menu a, 
+  .evergreen-mobile-menu a {
+    display: inline-block;
+    text-decoration: none;
+  }
+  
+  /* Additional styles to ensure visibility */
+  .evergreen-desktop-menu li {
+    display: block;
+  }
+  
+  /* Force visibility for debugging */
+  .evergreen-desktop-menu {
+    /* Uncomment this to debug */
+    /* border: 2px solid red !important; */
+    
+  }
