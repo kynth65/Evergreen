@@ -7,13 +7,13 @@ import Footer from "../components/footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen ">
+    <>
       <Header />
 
-      <div className="mb-40">
+      <div className="pt-18">
         <Hero />
       </div>
       <Footer />
-    </div>
+    </>
   );
 }

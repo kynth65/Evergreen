@@ -44,7 +44,7 @@ export default function Location() {
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* Image Gallery */}
-          <div className="relative rounded-lg overflow-hidden shadow-2xl h-[350px] md:h-[450px] lg:h-[500px]">
+          <div className="relative rounded-lg overflow-hidden shadow-2xl h-[350px] md:h-[450px] ">
             {/* Main Image */}
             <div className="absolute inset-0 bg-black">
               <img
@@ -63,14 +63,14 @@ export default function Location() {
             <div className="absolute inset-0 flex items-center justify-between px-4">
               <button
                 onClick={prevImage}
-                className="bg-green-700/80 hover:bg-green-600 rounded-full p-2 text-white"
+                className="bg-green-700/80 hover:bg-green-600 rounded-full p-2 text-white cursor-pointer"
                 aria-label="Previous image"
               >
                 <ChevronLeft size={24} />
               </button>
               <button
                 onClick={nextImage}
-                className="bg-green-700/80 hover:bg-green-600 rounded-full p-2 text-white"
+                className="bg-green-700/80 hover:bg-green-600 rounded-full p-2 text-white cursor-pointer"
                 aria-label="Next image"
               >
                 <ChevronRight size={24} />
@@ -94,55 +94,73 @@ export default function Location() {
             </div>
           </div>
 
-          {/* Location Details */}
-          <div className="bg-green-700/40 rounded-lg p-8 shadow-xl">
-            <h3 className="text-3xl font-bold mb-6 text-green-300">
+          {/* Location Details with Glass Morphism */}
+          <div className="backdrop-blur-md bg-green-700/50 rounded-xl p-8 shadow-xl border border-white/10 text-white">
+            <h3 className="text-3xl font-bold mb-6 text-white">
               How to Reach Us
             </h3>
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <MapPin className="text-green-300 mt-1 flex-shrink-0" />
+                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+                  <MapPin className="text-green-200 w-5 h-5" />
+                </div>
                 <div>
-                  <h4 className="font-bold text-xl mb-1">Address</h4>
-                  <p className="text-green-100">123 Evergreen Road</p>
-                  <p className="text-green-100">Norzagaray, Bulacan</p>
-                  <p className="text-green-100">Philippines</p>
+                  <h4 className="font-bold text-xl mb-1 text-white">Address</h4>
+                  <p className="text-green-50/90">123 Evergreen Road</p>
+                  <p className="text-green-50/90">Norzagaray, Bulacan</p>
+                  <p className="text-green-50/90">Philippines</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <Clock className="text-green-300 mt-1 flex-shrink-0" />
+                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+                  <Clock className="text-green-200 w-5 h-5" />
+                </div>
                 <div>
-                  <h4 className="font-bold text-xl mb-1">Office Hours</h4>
-                  <p className="text-green-100">
+                  <h4 className="font-bold text-xl mb-1 text-white">
+                    Office Hours
+                  </h4>
+                  <p className="text-green-50/90">
                     Monday to Friday: 8:00 AM - 5:00 PM
                   </p>
-                  <p className="text-green-100">Saturday: 8:00 AM - 12:00 PM</p>
-                  <p className="text-green-100">Sunday: Closed</p>
+                  <p className="text-green-50/90">
+                    Saturday: 8:00 AM - 12:00 PM
+                  </p>
+                  <p className="text-green-50/90">Sunday: Closed</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <Phone className="text-green-300 mt-1 flex-shrink-0" />
+                <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center flex-shrink-0 backdrop-blur-sm">
+                  <Phone className="text-green-200 w-5 h-5" />
+                </div>
                 <div>
-                  <h4 className="font-bold text-xl mb-1">Contact</h4>
-                  <p className="text-green-100">Phone: (123) 456-7890</p>
-                  <p className="text-green-100">
-                    Email: info@evergreenfarms.com
+                  <h4 className="font-bold text-xl mb-1 text-white">Contact</h4>
+                  <p className="text-green-50/90">Phone: (123) 456-7890</p>
+                  <p className="text-green-50/90">
+                    Email:{" "}
+                    <a
+                      href="mailto:info@evergreenfarms.com"
+                      className="text-green-200 hover:text-white transition-colors"
+                    >
+                      info@evergreenfarms.com
+                    </a>
                   </p>
                 </div>
               </div>
 
-              <div className="pt-4">
-                <h4 className="font-bold text-xl mb-2">Directions</h4>
-                <p className="text-green-100 mb-4">
+              <div className="pt-4 border-t border-white/20">
+                <h4 className="font-bold text-xl mb-2 text-white">
+                  Directions
+                </h4>
+                <p className="text-green-50/90 mb-4">
                   From Manila, take the North Luzon Expressway (NLEX) and exit
                   at Sta. Rita. Continue onto Plaridel Bypass Road then follow
                   signs to Norzagaray. Our office is located 2km past the town
                   center.
                 </p>
-                <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-md font-medium transition-colors inline-flex items-center gap-2">
+                <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-md font-medium transition-colors inline-flex items-center gap-2 shadow-lg backdrop-blur-sm bg-opacity-80 border border-green-500/30 hover:border-green-400/50">
                   <MapPin size={18} />
                   Get Directions
                 </button>

@@ -181,8 +181,8 @@ const LandCollection = () => {
 
   return (
     <>
-      <div className="bg-[#f7fdf7] mt-[-45px]">
-        <Header />
+      <Header />
+      <div className="bg-[#f7fdf7] pt-14">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <h1 className="text-4xl md:text-5xl font-grotesk font-bold text-green-800 mb-2">
             Available Lands

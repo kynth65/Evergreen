@@ -18,7 +18,7 @@ export default function Header() {
 
   return (
     <header
-      className={`evergreen-header font-grotesk py-4 sticky top-0 z-50 transition-all duration-300 ${
+      className={`evergreen-header font-grotesk py-4 fixed w-full top-0 z-50 transition-all duration-300 ${
         isScrolled ? "bg-white/70 backdrop-blur-md shadow-lg" : "bg-white/70"
       }`}
     >
@@ -87,7 +87,7 @@ export default function Header() {
         )}
 
         {/* Desktop Navigation Links */}
-        <ul className="evergreen-desktop-menu !block md:!flex !items-center gap-8 font-grotesk text-black font-medium">
+        <ul className="evergreen-desktop-menu !hidden md:!flex !items-center gap-8 font-grotesk text-black font-medium">
           <li>
             <Link to="/about" className="hover:text-gray-600 text-lg">
               About
