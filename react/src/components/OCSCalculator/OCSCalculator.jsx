@@ -1082,10 +1082,6 @@ const OCSCalculator = () => {
           </div>
 
           <div className="ocs-footer-text mt-10 text-center text-xs text-gray-500">
-            <p>
-              This document is computer-generated and does not require a
-              signature to be official.
-            </p>
             <p>Evergreen Realty Philippines © {new Date().getFullYear()}</p>
           </div>
         </div>
