@@ -189,6 +189,9 @@ const OCSCalculator = () => {
   };
 
   // Fixed PDF generation function with improved styling
+  // Replace your current handleDownloadPDF function with this improved version
+  // that better handles color conversion for html2pdf
+
   const handleDownloadPDF = () => {
     // Show loading indicator or notify user
     const prevButton = document.activeElement;
@@ -202,155 +205,145 @@ const OCSCalculator = () => {
       "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
     printArea.style.color = "#000000";
 
-    // Add PDF-specific styles to header section
-    const headerTitle = printArea.querySelector(".ocs-header-title");
-    if (headerTitle) {
-      headerTitle.style.textAlign = "center";
-      headerTitle.style.width = "100%";
-      headerTitle.style.paddingTop = "30px";
-      headerTitle.style.marginBottom = "30px";
+    // Define a comprehensive color mapping for Tailwind colors
+    const tailwindColorMap = {
+      // Green shades
+      "text-green-600": "#16a34a",
+      "bg-green-600": "#16a34a",
+      "border-green-600": "#16a34a",
+      // Gray shades
+      "text-gray-600": "#4b5563",
+      "text-gray-500": "#6b7280",
+      "bg-gray-200": "#e5e7eb",
+      "bg-gray-100": "#f3f4f6",
+      "bg-gray-50": "#f9fafb",
+      "border-gray-300": "#d1d5db",
+      "border-gray-200": "#e5e7eb",
+      // Other potential colors
+      "text-red-500": "#ef4444",
+      "text-red-600": "#dc2626",
+      "text-black": "#000000",
+      "text-white": "#ffffff",
+      "bg-white": "#ffffff",
+    };
 
-      const h1 = headerTitle.querySelector("h1");
-      if (h1) {
-        h1.style.fontFamily =
-          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-        h1.style.fontSize = "24px";
-        h1.style.marginBottom = "10px";
-        h1.style.color = "#16a34a";
-        h1.style.fontWeight = "bold";
-        h1.style.textAlign = "center";
-      }
-
-      const h2 = headerTitle.querySelector("h2");
-      if (h2) {
-        h2.style.fontFamily =
-          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-        h2.style.fontSize = "18px";
-        h2.style.marginBottom = "20px";
-        h2.style.color = "#16a34a";
-        h2.style.fontWeight = "600";
-        h2.style.textAlign = "center";
-      }
-    }
-
-    // Style all section titles
-    const sectionTitles = printArea.querySelectorAll(".ocs-section-title");
-    sectionTitles.forEach((title) => {
-      title.style.padding = "8px 12px";
-      title.style.marginTop = "15px";
-      title.style.marginBottom = "8px";
-      title.style.fontSize = "12px";
-      title.style.fontFamily =
-        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-
-      if (title.classList.contains("ocs-payment-title")) {
-        title.style.backgroundColor = "#16a34a";
-        title.style.color = "#ffffff";
-        title.style.padding = "10px";
-        title.style.textAlign = "center";
-        title.style.fontWeight = "bold";
-      }
-    });
-
-    // Add better styling to grid cells
-    const gridCells = printArea.querySelectorAll(".ocs-grid-cell");
-    gridCells.forEach((cell) => {
-      cell.style.padding = "8px";
-      cell.style.fontSize = "11px";
-      cell.style.fontFamily =
-        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-
-      if (cell.classList.contains("ocs-label-cell")) {
-        cell.style.backgroundColor = "#f9fafb";
-      }
-    });
-
-    // Style payment grids
-    const paymentGrids = printArea.querySelectorAll(".ocs-payment-grid");
-    paymentGrids.forEach((grid) => {
-      grid.style.padding = "8px 10px";
-      grid.style.fontSize = "11px";
-      grid.style.fontFamily =
-        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-
-      if (grid.classList.contains("ocs-total-price-row")) {
-        grid.style.fontWeight = "bold";
-      }
-
-      if (grid.classList.contains("ocs-highlight-row")) {
-        grid.style.fontWeight = "bold";
-      }
-    });
-
-    // Style signature section
-    const signatureSection = printArea.querySelector(".ocs-signature-section");
-    if (signatureSection) {
-      signatureSection.style.marginTop = "50px";
-
-      const signatureTitles = signatureSection.querySelectorAll(
-        ".ocs-signature-title"
-      );
-      signatureTitles.forEach((title) => {
-        title.style.fontSize = "11px";
-        title.style.textAlign = "center";
-        title.style.fontFamily =
-          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-      });
-    }
-
-    // Style footer text
-    const footerText = printArea.querySelector(".ocs-footer-text");
-    if (footerText) {
-      footerText.style.marginTop = "40px";
-      footerText.style.textAlign = "center";
-      footerText.style.fontSize = "10px";
-      footerText.style.fontFamily =
-        "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-    }
-
-    // Fix any oklch colors that html2pdf can't process
-    const convertOklchColors = (element) => {
-      // Replace any potential oklch color with standard hex
-      const colorProperties = [
-        "color",
-        "backgroundColor",
-        "borderColor",
-        "borderLeftColor",
-        "borderRightColor",
-        "borderTopColor",
-        "borderBottomColor",
-      ];
-
-      // Process all elements
+    /**
+     * More comprehensive solution to convert all oklch and other problematic color formats
+     * This uses three approaches:
+     * 1. Direct class name mapping to known hex values
+     * 2. Computed style analysis to find and replace problematic values
+     * 3. !important CSS overrides as a fallback
+     */
+    const convertAllProblemColors = (element) => {
+      // Step 1: Apply specific color overrides based on class names
       Array.from(element.querySelectorAll("*")).forEach((el) => {
-        // Apply specific color overrides to avoid tailwind oklch values
-        if (el.classList.contains("text-green-600")) {
-          el.style.color = "#16a34a"; // Standard hex for green-600
-        }
+        // Check all classes on the element
+        Array.from(el.classList).forEach((cls) => {
+          // If this class is in our map, apply the corresponding hex color
+          Object.keys(tailwindColorMap).forEach((colorClass) => {
+            if (cls === colorClass || el.classList.contains(colorClass)) {
+              // Extract the property type (text, bg, border)
+              if (colorClass.startsWith("text-")) {
+                el.style.color = tailwindColorMap[colorClass];
+              } else if (colorClass.startsWith("bg-")) {
+                el.style.backgroundColor = tailwindColorMap[colorClass];
+              } else if (colorClass.startsWith("border-")) {
+                el.style.borderColor = tailwindColorMap[colorClass];
+              }
+            }
+          });
+        });
 
-        if (el.classList.contains("bg-green-600")) {
-          el.style.backgroundColor = "#16a34a"; // Standard hex for green-600
-        }
-
-        if (el.classList.contains("border-green-600")) {
-          el.style.borderColor = "#16a34a"; // Standard hex for green-600
-        }
-
-        // Ensure all button backgrounds use standard colors
+        // Specific component styles based on semantic meaning
         if (el.classList.contains("ocs-btn-primary")) {
           el.style.backgroundColor = "#16a34a"; // Standard green
           el.style.color = "#ffffff"; // Standard white
         }
 
-        // Fix text colors
-        if (el.classList.contains("text-gray-600")) {
-          el.style.color = "#4b5563"; // Standard hex for gray-600
+        if (el.classList.contains("ocs-highlighted")) {
+          el.style.color = "#16a34a"; // Standard green
         }
 
-        if (el.classList.contains("text-gray-500")) {
-          el.style.color = "#6b7280"; // Standard hex for gray-500
+        if (el.classList.contains("ocs-warning-text")) {
+          el.style.color = "#dc2626"; // Standard red
+        }
+
+        if (el.classList.contains("ocs-label-cell")) {
+          el.style.backgroundColor = "#f9fafb"; // Standard gray-50
         }
       });
+
+      // Step 2: Look for inline styles with problematic values using computed styles
+      try {
+        Array.from(element.querySelectorAll("*")).forEach((el) => {
+          // Skip style and script tags
+          if (el.tagName === "STYLE" || el.tagName === "SCRIPT") return;
+
+          const computedStyle = window.getComputedStyle(el);
+          const colorProperties = [
+            "color",
+            "backgroundColor",
+            "borderColor",
+            "borderLeftColor",
+            "borderRightColor",
+            "borderTopColor",
+            "borderBottomColor",
+          ];
+
+          // Check each color property
+          colorProperties.forEach((prop) => {
+            const value = computedStyle[prop];
+            if (
+              value &&
+              (value.includes("oklch") ||
+                value.includes("rgb(var") ||
+                value.includes("hsl(") ||
+                value.includes("rgba(") ||
+                value.includes("hsla("))
+            ) {
+              // Found a problematic color format, replace with appropriate fallback
+              if (prop === "color") {
+                // For text colors, default to black unless it's a highlight
+                if (el.classList.contains("ocs-highlighted")) {
+                  el.style.color = "#16a34a";
+                } else if (el.classList.contains("ocs-warning-text")) {
+                  el.style.color = "#dc2626";
+                } else if (
+                  el.closest(".ocs-section-title.ocs-payment-title") ||
+                  el.classList.contains("ocs-payment-title")
+                ) {
+                  el.style.color = "#ffffff";
+                } else {
+                  el.style.color = "#000000";
+                }
+              } else if (prop === "backgroundColor") {
+                // For backgrounds, use appropriate contextual colors
+                if (
+                  el.classList.contains("ocs-btn-primary") ||
+                  el.classList.contains("ocs-payment-title") ||
+                  el.closest(".ocs-section-title.ocs-payment-title")
+                ) {
+                  el.style.backgroundColor = "#16a34a";
+                } else if (el.classList.contains("ocs-label-cell")) {
+                  el.style.backgroundColor = "#f9fafb";
+                } else if (el.classList.contains("ocs-total-price-row")) {
+                  el.style.backgroundColor = "#f9fafb";
+                } else if (el.classList.contains("ocs-highlight-row")) {
+                  el.style.backgroundColor = "#f3f4f6";
+                } else {
+                  el.style.backgroundColor = "#ffffff";
+                }
+              } else if (prop.includes("border")) {
+                // Default border color
+                el.style[prop] = "#e5e7eb";
+              }
+            }
+          });
+        });
+      } catch (e) {
+        console.warn("Error while analyzing computed styles:", e);
+        // Continue with other approaches if this fails
+      }
     };
 
     // Process all input elements in the document to replace with static content
@@ -379,111 +372,47 @@ const OCSCalculator = () => {
       });
     };
 
-    // First convert all oklch colors to standard hex
-    convertOklchColors(printArea);
+    // Apply our comprehensive color conversion
+    convertAllProblemColors(printArea);
 
-    // Then process all input elements
+    // Process all input elements
     processInputElements(printArea);
 
-    // Add direct styles to override any Tailwind styles that might use oklch
+    // Add direct styles to override any Tailwind styles as a final fallback
     const overrideStyles = document.createElement("style");
     overrideStyles.textContent = `
-      .ocs-pdf-content * {
-        color: #000000;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      }
-      .ocs-pdf-content .ocs-header-title {
-        padding-top: 30px !important;
-        margin-bottom: 30px !important;
-        text-align: center !important;
-        width: 100% !important;
-      }
-      .ocs-pdf-content .ocs-header-title h1 {
-        font-size: 24px !important;
-        margin-bottom: 10px !important;
-        color: #16a34a !important;
-        font-weight: bold !important;
-        text-align: center !important;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      }
-      .ocs-pdf-content .ocs-header-title h2 {
-        font-size: 18px !important;
-        margin-bottom: 20px !important;
-        color: #16a34a !important;
-        font-weight: 600 !important;
-        text-align: center !important;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-      }
-      .ocs-pdf-content h1, 
-      .ocs-pdf-content h2, 
-      .ocs-pdf-content .text-green-600, 
-      .ocs-pdf-content .ocs-highlighted {
-        color: #16a34a !important;
-      }
-      .ocs-pdf-content .ocs-section-title.ocs-payment-title,
-      .ocs-pdf-content .bg-green-600 {
-        background-color: #16a34a !important;
-        color: #ffffff !important;
-        padding: 10px !important;
-        font-size: 12px !important;
-        text-align: center !important;
-        font-weight: bold !important;
-      }
-      .ocs-pdf-content .ocs-warning-text {
-        color: #dc2626 !important;
-      }
-      .ocs-pdf-content .text-gray-500,
-      .ocs-pdf-content .ocs-footer-text {
-        color: #6b7280 !important;
-      }
-      .ocs-pdf-content .ocs-label-cell {
-        background-color: #f9fafb !important;
-        padding: 8px !important;
-        font-size: 11px !important;
-      }
-      .ocs-pdf-content .ocs-grid-cell {
-        padding: 8px !important;
-        font-size: 11px !important;
-      }
-      .ocs-pdf-content .ocs-section-title {
-        padding: 8px 12px !important;
-        margin-top: 15px !important;
-        margin-bottom: 8px !important;
-        font-size: 12px !important;
-      }
-      .ocs-pdf-content .ocs-info-table {
-        margin-bottom: 25px !important;
-        width: 100% !important;
-      }
-      .ocs-pdf-content .ocs-payment-grid {
-        padding: 8px 10px !important;
-        font-size: 11px !important;
-      }
-      .ocs-pdf-content .ocs-payment-grid.ocs-total-price-row {
-        font-weight: bold !important;
-      }
-      .ocs-pdf-content .ocs-payment-grid.ocs-highlight-row {
-        font-weight: bold !important;
-      }
-      .ocs-pdf-content .ocs-highlighted {
-        color: #16a34a !important;
-      }
-      .ocs-pdf-content .ocs-signature-section {
-        margin-top: 50px !important;
-      }
-      .ocs-pdf-content .ocs-signature-line {
-        margin-bottom: 5px !important;
-      }
-      .ocs-pdf-content .ocs-signature-title {
-        font-size: 11px !important;
-        text-align: center !important;
-      }
-      .ocs-pdf-content .ocs-footer-text {
-        margin-top: 40px !important;
-        text-align: center !important;
-        font-size: 10px !important;
-      }
-    `;
+    .ocs-pdf-content * {
+      color: #000000 !important;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    }
+    .ocs-pdf-content .ocs-header-title h1,
+    .ocs-pdf-content .ocs-header-title h2,
+    .ocs-pdf-content .text-green-600,
+    .ocs-pdf-content .ocs-highlighted {
+      color: #16a34a !important;
+    }
+    .ocs-pdf-content .ocs-section-title.ocs-payment-title,
+    .ocs-pdf-content .bg-green-600 {
+      background-color: #16a34a !important;
+      color: #ffffff !important;
+    }
+    .ocs-pdf-content .ocs-warning-text {
+      color: #dc2626 !important;
+    }
+    .ocs-pdf-content .text-gray-500,
+    .ocs-pdf-content .ocs-footer-text {
+      color: #6b7280 !important;
+    }
+    .ocs-pdf-content .ocs-label-cell {
+      background-color: #f9fafb !important;
+    }
+    .ocs-pdf-content .ocs-total-price-row {
+      background-color: #f9fafb !important;
+    }
+    .ocs-pdf-content .ocs-highlight-row {
+      background-color: #f3f4f6 !important;
+    }
+  `;
     printArea.appendChild(overrideStyles);
 
     // Create configuration for jsPDF
