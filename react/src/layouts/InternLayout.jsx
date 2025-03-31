@@ -10,14 +10,49 @@ import {
   Map,
   FileSpreadsheet,
   Calculator,
+  FolderOpen,
+  Menu as MenuIcon,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NavBar from "../components/NavBar";
 
 export default function InternLayout() {
   const { user, token } = useStateContext();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const location = useLocation();
+
+  // Track screen width for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      // Set mobile view when width is less than 768px
+      const mobileWidth = window.innerWidth < 768;
+      setIsMobileView(mobileWidth);
+
+      // Auto collapse sidebar when width is between 768px and 1024px
+      if (window.innerWidth < 1024 && window.innerWidth >= 768) {
+        setIsCollapsed(true);
+      } else if (window.innerWidth >= 1024) {
+        setIsCollapsed(false);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add listener for window resize
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Close mobile sidebar when navigation occurs
+  useEffect(() => {
+    setShowMobileSidebar(false);
+  }, [location.pathname]);
 
   // Redirect to login if not authenticated
   if (!token) {
@@ -41,6 +76,12 @@ export default function InternLayout() {
       name: "Tasks",
       icon: <FileText className="w-6 h-6" />,
       description: "Assigned tasks",
+    },
+    {
+      path: "/intern/file-manager-list",
+      name: "File Manager",
+      icon: <FolderOpen className="w-6 h-6" />,
+      description: "View files and folders",
     },
     {
       path: "/intern/land-management",
@@ -68,107 +109,224 @@ export default function InternLayout() {
     },
   ];
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div
-        className={`bg-white shadow-lg transition-all duration-300 ${
-          isCollapsed ? "w-20" : "w-64"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
-            <div className="flex items-center justify-between">
-              {!isCollapsed && (
-                <h2 className="text-xl font-bold text-white">Evergreen</h2>
-              )}
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
-              >
-                {isCollapsed ? (
-                  <ChevronRight className="w-5 h-5" />
-                ) : (
-                  <ChevronLeft className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="flex-1 overflow-y-auto py-4">
-            {menuItems.map((item) => {
-              const isActive =
-                location.pathname === item.path ||
-                (item.path !== "/intern" &&
-                  location.pathname.startsWith(item.path + "/"));
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
-                    ${
-                      isActive
-                        ? "bg-green-50 text-green-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }
-                  `}
-                >
-                  <div
-                    className={`${
-                      isActive ? "text-green-600" : "text-gray-500"
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  {!isCollapsed && (
-                    <div className="ml-3">
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.description}
-                      </p>
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User Info */}
-          <div className="p-4 border-t border-gray-200">
-            <Link to="/intern/profile">
-              <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
-                  {user?.first_name?.[0]?.toUpperCase() ||
-                    user?.name?.[0]?.toUpperCase() ||
-                    "I"}
-                </div>
-                {!isCollapsed && (
-                  <div className="ml-3">
-                    <p className="font-medium text-sm">
-                      {user?.first_name && user?.last_name
-                        ? `${user.first_name} ${user.last_name}`
-                        : user?.name || "Intern"}
-                    </p>
-                    <p className="text-xs text-gray-500">Real Estate Intern</p>
-                  </div>
-                )}
-              </div>
-            </Link>
-          </div>
+  // Sidebar component - with different versions for mobile and desktop
+  const DesktopSidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Sidebar Header */}
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
+        <div className="flex items-center justify-between">
+          {!isCollapsed && (
+            <h2 className="text-xl font-bold text-white">Evergreen</h2>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-5 h-5" />
+            ) : (
+              <ChevronLeft className="w-5 h-5" />
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Main Content Container */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Navbar with Notifications */}
-        <NavBar />
+      {/* Navigation Links */}
+      <nav className="flex-1 overflow-y-auto py-4">
+        {menuItems.map((item) => {
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== "/intern" &&
+              location.pathname.startsWith(item.path + "/"));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
+                ${
+                  isActive
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }
+              `}
+            >
+              <div
+                className={`${isActive ? "text-green-600" : "text-gray-500"}`}
+              >
+                {item.icon}
+              </div>
+              {!isCollapsed && (
+                <div className="ml-3">
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-xs text-gray-500">{item.description}</p>
+                </div>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="p-6">
-            <Outlet />
+      {/* User Info */}
+      <div className="p-4 border-t border-gray-200">
+        <Link to="/intern/profile">
+          <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
+              {user?.first_name?.[0]?.toUpperCase() ||
+                user?.name?.[0]?.toUpperCase() ||
+                "I"}
+            </div>
+            {!isCollapsed && (
+              <div className="ml-3">
+                <p className="font-medium text-sm">
+                  {user?.first_name && user?.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : user?.name || "Intern"}
+                </p>
+                <p className="text-xs text-gray-500">Real Estate Intern</p>
+              </div>
+            )}
+          </div>
+        </Link>
+      </div>
+    </div>
+  );
+
+  // Mobile sidebar is always expanded and doesn't have the collapse button
+  const MobileSidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Sidebar Header */}
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-white">Evergreen</h2>
+          <button
+            onClick={() => setShowMobileSidebar(false)}
+            className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation Links - always expanded in mobile */}
+      <nav className="flex-1 overflow-y-auto py-4">
+        {menuItems.map((item) => {
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== "/intern" &&
+              location.pathname.startsWith(item.path + "/"));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
+                ${
+                  isActive
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }
+              `}
+            >
+              <div
+                className={`${isActive ? "text-green-600" : "text-gray-500"}`}
+              >
+                {item.icon}
+              </div>
+              <div className="ml-3">
+                <p className="font-medium">{item.name}</p>
+                <p className="text-xs text-gray-500">{item.description}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User Info - always shows user details in mobile */}
+      <div className="p-4 border-t border-gray-200">
+        <Link to="/intern/profile">
+          <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
+              {user?.first_name?.[0]?.toUpperCase() ||
+                user?.name?.[0]?.toUpperCase() ||
+                "I"}
+            </div>
+            <div className="ml-3">
+              <p className="font-medium text-sm">
+                {user?.first_name && user?.last_name
+                  ? `${user.first_name} ${user.last_name}`
+                  : user?.name || "Intern"}
+              </p>
+              <p className="text-xs text-gray-500">Real Estate Intern</p>
+            </div>
+          </div>
+        </Link>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Custom top bar for mobile view */}
+      {isMobileView && (
+        <div className="bg-white shadow-md w-full flex items-center p-4 justify-between z-20">
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+              className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors mr-4"
+            >
+              {showMobileSidebar ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <MenuIcon className="w-6 h-6" />
+              )}
+            </button>
+            <h2 className="text-xl font-bold text-green-600">Evergreen</h2>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-1 h-0 overflow-hidden">
+        {/* Mobile Sidebar (overlay when shown) - Always expanded */}
+        {isMobileView && (
+          <div
+            className={`fixed inset-0 z-30 bg-black bg-opacity-30 transition-opacity duration-300 ${
+              showMobileSidebar
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none"
+            }`}
+            onClick={() => setShowMobileSidebar(false)}
+          >
+            <div
+              className={`absolute top-0 left-0 h-full bg-white shadow-xl transition-transform duration-300 w-64 transform ${
+                showMobileSidebar ? "translate-x-0" : "-translate-x-full"
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MobileSidebarContent />
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Sidebar (always visible, collapsible) */}
+        {!isMobileView && (
+          <div
+            className={`bg-white shadow-lg transition-all duration-300 flex-shrink-0 ${
+              isCollapsed ? "w-20" : "w-64"
+            }`}
+          >
+            <DesktopSidebarContent />
+          </div>
+        )}
+
+        {/* Main Content Container */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Navbar with Notifications (only on desktop) */}
+          {!isMobileView && <NavBar />}
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-x-hidden overflow-y-auto">
+            <div className="p-6">
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>
