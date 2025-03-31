@@ -31,13 +31,13 @@ import {
   FolderOutlined,
   FolderAddOutlined,
   UploadOutlined,
-  DownloadOutlined,
   SearchOutlined,
   MoreOutlined,
   ArrowLeftOutlined,
   EyeOutlined,
   InboxOutlined,
 } from "@ant-design/icons";
+// Removed DownloadOutlined icon import
 
 const { Search } = Input;
 const { Option } = Select;
@@ -432,20 +432,27 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
     e.target.value = null;
   };
 
-  // Download a file
-  const downloadFile = (file) => {
-    window.open(
-      `${import.meta.env.VITE_API_BASE_URL}/api/files/${file.id}/download`,
-      "_blank"
-    );
-  };
+  // Removed downloadFile function
 
-  // Preview a file
+  // Preview a file - simplest approach using current auth
   const previewFile = (file) => {
-    window.open(
-      `${import.meta.env.VITE_API_BASE_URL}/api/files/${file.id}/preview`,
-      "_blank"
-    );
+    const previewUrl = `/files/${file.id}/preview`;
+
+    // First check if we can preview directly
+    axiosClient
+      .get(previewUrl, { responseType: "blob" })
+      .then((response) => {
+        // For certain file types, we can display in a new window
+        const contentType = response.headers["content-type"];
+        const url = window.URL.createObjectURL(
+          new Blob([response.data], { type: contentType })
+        );
+        window.open(url, "_blank");
+      })
+      .catch((error) => {
+        console.error("Error previewing file:", error);
+        message.error("Failed to preview file");
+      });
   };
 
   // Reset search and sort
@@ -577,12 +584,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               onClick: () => previewFile(record),
             });
 
-            actionItems.push({
-              key: "download",
-              label: "Download",
-              icon: <DownloadOutlined />,
-              onClick: () => downloadFile(record),
-            });
+            // Removed download option from dropdown menu
           }
 
           const menu = <Menu items={actionItems} />;
@@ -628,16 +630,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
             >
               Rename
             </Button>
-            {record.type === "file" && (
-              <Button
-                type="primary"
-                icon={<DownloadOutlined />}
-                size="small"
-                onClick={() => downloadFile(record)}
-              >
-                Download
-              </Button>
-            )}
+            {/* Removed download button for files */}
             <Button
               danger
               icon={<DeleteOutlined />}
