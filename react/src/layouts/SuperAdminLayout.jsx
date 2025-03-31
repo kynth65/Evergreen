@@ -27,9 +27,9 @@ export default function SuperAdminLayout() {
   // Track screen width for responsive behavior
   useEffect(() => {
     const handleResize = () => {
-      // Set mobile view when width is less than 768px (typical tablet breakpoint)
-      const mobileViewActive = window.innerWidth < 768;
-      setIsMobileView(mobileViewActive);
+      // Set mobile view when width is less than 768px
+      const mobileWidth = window.innerWidth < 768;
+      setIsMobileView(mobileWidth);
 
       // Auto collapse sidebar when width is between 768px and 1024px
       if (window.innerWidth < 1024 && window.innerWidth >= 768) {
@@ -109,44 +109,27 @@ export default function SuperAdminLayout() {
     },
   ];
 
-  // Sidebar header with proper button depending on device type
-  const SidebarHeader = () => (
-    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
-      <div className="flex items-center justify-between">
-        {!isCollapsed && (
-          <h2 className="text-xl font-bold text-white">Evergreen</h2>
-        )}
-        <button
-          onClick={() => {
-            // In mobile view, close the sidebar entirely
-            if (isMobileView) {
-              setShowMobileSidebar(false);
-            } else {
-              // On desktop, toggle collapse state
-              setIsCollapsed(!isCollapsed);
-            }
-          }}
-          className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
-        >
-          {isMobileView ? (
-            // Show X to close on mobile
-            <X className="w-5 h-5" />
-          ) : // Show arrows for collapse/expand on desktop
-          isCollapsed ? (
-            <ChevronRight className="w-5 h-5" />
-          ) : (
-            <ChevronLeft className="w-5 h-5" />
-          )}
-        </button>
-      </div>
-    </div>
-  );
-
-  // Sidebar content component
-  const SidebarContent = () => (
+  // Sidebar component - with different versions for mobile and desktop
+  const DesktopSidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Sidebar Header */}
-      <SidebarHeader />
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
+        <div className="flex items-center justify-between">
+          {!isCollapsed && (
+            <h2 className="text-xl font-bold text-white">Evergreen</h2>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+          >
+            {isCollapsed ? (
+              <ChevronRight className="w-5 h-5" />
+            ) : (
+              <ChevronLeft className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto py-4">
@@ -208,6 +191,78 @@ export default function SuperAdminLayout() {
     </div>
   );
 
+  // Mobile sidebar is always expanded and doesn't have the collapse button
+  const MobileSidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Sidebar Header */}
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-white">Evergreen</h2>
+          <button
+            onClick={() => setShowMobileSidebar(false)}
+            className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Navigation Links - always expanded in mobile */}
+      <nav className="flex-1 overflow-y-auto py-4">
+        {menuItems.map((item) => {
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== "/superadmin" &&
+              location.pathname.startsWith(item.path + "/"));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
+                ${
+                  isActive
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }
+              `}
+            >
+              <div
+                className={`${isActive ? "text-green-600" : "text-gray-500"}`}
+              >
+                {item.icon}
+              </div>
+              <div className="ml-3">
+                <p className="font-medium">{item.name}</p>
+                <p className="text-xs text-gray-500">{item.description}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User Info - always shows user details in mobile */}
+      <div className="p-4 border-t border-gray-200">
+        <Link to="/superadmin/profile">
+          <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
+              {user?.first_name?.[0]?.toUpperCase() ||
+                user?.name?.[0]?.toUpperCase() ||
+                "A"}
+            </div>
+            <div className="ml-3">
+              <p className="font-medium text-sm">
+                {user?.first_name && user?.last_name
+                  ? `${user.first_name} ${user.last_name}`
+                  : user?.name || "Admin"}
+              </p>
+              <p className="text-xs text-gray-500">Super Administrator</p>
+            </div>
+          </div>
+        </Link>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* Custom top bar for mobile view */}
@@ -218,7 +273,11 @@ export default function SuperAdminLayout() {
               onClick={() => setShowMobileSidebar(!showMobileSidebar)}
               className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors mr-4"
             >
-              <MenuIcon className="w-6 h-6" />
+              {showMobileSidebar ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <MenuIcon className="w-6 h-6" />
+              )}
             </button>
             <h2 className="text-xl font-bold text-green-600">Evergreen</h2>
           </div>
@@ -226,7 +285,7 @@ export default function SuperAdminLayout() {
       )}
 
       <div className="flex flex-1 h-0 overflow-hidden">
-        {/* Mobile Sidebar (overlay when shown) */}
+        {/* Mobile Sidebar (overlay when shown) - Always expanded */}
         {isMobileView && (
           <div
             className={`fixed inset-0 z-30 bg-black bg-opacity-30 transition-opacity duration-300 ${
@@ -242,7 +301,7 @@ export default function SuperAdminLayout() {
               }`}
               onClick={(e) => e.stopPropagation()}
             >
-              <SidebarContent />
+              <MobileSidebarContent />
             </div>
           </div>
         )}
@@ -254,7 +313,7 @@ export default function SuperAdminLayout() {
               isCollapsed ? "w-20" : "w-64"
             }`}
           >
-            <SidebarContent />
+            <DesktopSidebarContent />
           </div>
         )}
 
