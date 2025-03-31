@@ -871,16 +871,6 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               }}
             />
 
-            {/* Mobile information note */}
-            {isMobile && (
-              <div style={{ marginTop: "16px", textAlign: "center" }}>
-                <Text type="secondary" style={{ fontSize: "12px" }}>
-                  Swipe left/right to see more details. Tap the menu icon to
-                  view actions.
-                </Text>
-              </div>
-            )}
-
             {/* Empty state for table */}
             {currentItems.length === 0 && !loading && !error && (
               <div
@@ -932,15 +922,6 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                 </Space>
               </div>
             )}
-          </div>
-
-          {/* Info tip for browser selection */}
-          <div style={{ marginTop: 8, marginBottom: 16, textAlign: "center" }}>
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              <a onClick={triggerFileUpload} style={{ color: colors.primary }}>
-                Click here to browse your computer for files to upload
-              </a>
-            </Text>
           </div>
         </Card>
 
