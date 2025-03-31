@@ -30,6 +30,7 @@ import LotView from "./components/Lot/LotView";
 import Register from "./pages/Register";
 import RFSForm from "./components/ResidentialSheet/RFSForm";
 import OCSCalculator from "./components/OCSCalculator/OCSCalculator";
+import FileManagerList from "./components/FileManager/FileManagerList";
 
 const router = createBrowserRouter([
   {
@@ -126,6 +127,10 @@ const router = createBrowserRouter([
       {
         path: "ocs-calculator",
         element: <OCSCalculator />,
+      },
+      {
+        path: "file-manager-list",
+        element: <FileManagerList />,
       },
     ],
   },
