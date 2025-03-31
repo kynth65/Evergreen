@@ -7,17 +7,52 @@ import {
   ChevronLeft,
   ChevronRight,
   Map,
+  FolderOpen,
   Grid,
   FileSpreadsheet,
   Calculator,
+  Menu as MenuIcon,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NavBar from "../components/NavBar";
 
 export default function SuperAdminLayout() {
   const { user, token } = useStateContext();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const location = useLocation();
+
+  // Track screen width for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      // Set mobile view when width is less than 768px (typical tablet breakpoint)
+      const mobileViewActive = window.innerWidth < 768;
+      setIsMobileView(mobileViewActive);
+
+      // Auto collapse sidebar when width is between 768px and 1024px
+      if (window.innerWidth < 1024 && window.innerWidth >= 768) {
+        setIsCollapsed(true);
+      } else if (window.innerWidth >= 1024) {
+        setIsCollapsed(false);
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add listener for window resize
+    window.addEventListener("resize", handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Close mobile sidebar when navigation occurs
+  useEffect(() => {
+    setShowMobileSidebar(false);
+  }, [location.pathname]);
 
   // Redirect to login if not authenticated
   if (!token) {
@@ -41,6 +76,12 @@ export default function SuperAdminLayout() {
       name: "Account Management",
       icon: <Users className="w-6 h-6" />,
       description: "Manage user accounts",
+    },
+    {
+      path: "/superadmin/file-manager-list",
+      name: "File Manager",
+      icon: <FolderOpen className="w-6 h-6" />,
+      description: "Manage files and folders",
     },
     {
       path: "/superadmin/land-management",
@@ -68,107 +109,165 @@ export default function SuperAdminLayout() {
     },
   ];
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <div
-        className={`bg-white shadow-lg transition-all duration-300 ${
-          isCollapsed ? "w-20" : "w-64"
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
-            <div className="flex items-center justify-between">
-              {!isCollapsed && (
-                <h2 className="text-xl font-bold text-white">Evergreen</h2>
-              )}
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+  // Sidebar header with proper button depending on device type
+  const SidebarHeader = () => (
+    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
+      <div className="flex items-center justify-between">
+        {!isCollapsed && (
+          <h2 className="text-xl font-bold text-white">Evergreen</h2>
+        )}
+        <button
+          onClick={() => {
+            // In mobile view, close the sidebar entirely
+            if (isMobileView) {
+              setShowMobileSidebar(false);
+            } else {
+              // On desktop, toggle collapse state
+              setIsCollapsed(!isCollapsed);
+            }
+          }}
+          className="p-2 rounded-lg cursor-pointer bg-opacity-20 text-white hover:bg-opacity-30 transition-colors"
+        >
+          {isMobileView ? (
+            // Show X to close on mobile
+            <X className="w-5 h-5" />
+          ) : // Show arrows for collapse/expand on desktop
+          isCollapsed ? (
+            <ChevronRight className="w-5 h-5" />
+          ) : (
+            <ChevronLeft className="w-5 h-5" />
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  // Sidebar content component
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      {/* Sidebar Header */}
+      <SidebarHeader />
+
+      {/* Navigation Links */}
+      <nav className="flex-1 overflow-y-auto py-4">
+        {menuItems.map((item) => {
+          const isActive =
+            location.pathname === item.path ||
+            (item.path !== "/superadmin" &&
+              location.pathname.startsWith(item.path + "/"));
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
+                ${
+                  isActive
+                    ? "bg-green-50 text-green-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                }
+              `}
+            >
+              <div
+                className={`${isActive ? "text-green-600" : "text-gray-500"}`}
               >
-                {isCollapsed ? (
-                  <ChevronRight className="w-5 h-5" />
-                ) : (
-                  <ChevronLeft className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="flex-1 overflow-y-auto py-4">
-            {menuItems.map((item) => {
-              const isActive =
-                location.pathname === item.path ||
-                (item.path !== "/superadmin" &&
-                  location.pathname.startsWith(item.path + "/"));
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center px-4 py-3 mb-1 transition-colors rounded-md mx-2
-                    ${
-                      isActive
-                        ? "bg-green-50 text-green-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }
-                  `}
-                >
-                  <div
-                    className={`${
-                      isActive ? "text-green-600" : "text-gray-500"
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  {!isCollapsed && (
-                    <div className="ml-3">
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.description}
-                      </p>
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User Info */}
-          <div className="p-4 border-t border-gray-200">
-            <Link to="/superadmin/profile">
-              <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
-                  {user?.first_name?.[0]?.toUpperCase() ||
-                    user?.name?.[0]?.toUpperCase() ||
-                    "A"}
-                </div>
-                {!isCollapsed && (
-                  <div className="ml-3">
-                    <p className="font-medium text-sm">
-                      {user?.first_name && user?.last_name
-                        ? `${user.first_name} ${user.last_name}`
-                        : user?.name || "Admin"}
-                    </p>
-                    <p className="text-xs text-gray-500">Super Administrator</p>
-                  </div>
-                )}
+                {item.icon}
               </div>
+              {!isCollapsed && (
+                <div className="ml-3">
+                  <p className="font-medium">{item.name}</p>
+                  <p className="text-xs text-gray-500">{item.description}</p>
+                </div>
+              )}
             </Link>
+          );
+        })}
+      </nav>
+
+      {/* User Info */}
+      <div className="p-4 border-t border-gray-200">
+        <Link to="/superadmin/profile">
+          <div className="flex items-center p-2 rounded-lg hover:bg-green-50 transition-colors">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white">
+              {user?.first_name?.[0]?.toUpperCase() ||
+                user?.name?.[0]?.toUpperCase() ||
+                "A"}
+            </div>
+            {!isCollapsed && (
+              <div className="ml-3">
+                <p className="font-medium text-sm">
+                  {user?.first_name && user?.last_name
+                    ? `${user.first_name} ${user.last_name}`
+                    : user?.name || "Admin"}
+                </p>
+                <p className="text-xs text-gray-500">Super Administrator</p>
+              </div>
+            )}
+          </div>
+        </Link>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Custom top bar for mobile view */}
+      {isMobileView && (
+        <div className="bg-white shadow-md w-full flex items-center p-4 justify-between z-20">
+          <div className="flex items-center">
+            <button
+              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+              className="p-2 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition-colors mr-4"
+            >
+              <MenuIcon className="w-6 h-6" />
+            </button>
+            <h2 className="text-xl font-bold text-green-600">Evergreen</h2>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Content Container */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Navbar with Notifications */}
-        <NavBar />
+      <div className="flex flex-1 h-0 overflow-hidden">
+        {/* Mobile Sidebar (overlay when shown) */}
+        {isMobileView && (
+          <div
+            className={`fixed inset-0 z-30 bg-black bg-opacity-30 transition-opacity duration-300 ${
+              showMobileSidebar
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none"
+            }`}
+            onClick={() => setShowMobileSidebar(false)}
+          >
+            <div
+              className={`absolute top-0 left-0 h-full bg-white shadow-xl transition-transform duration-300 w-64 transform ${
+                showMobileSidebar ? "translate-x-0" : "-translate-x-full"
+              }`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <SidebarContent />
+            </div>
+          </div>
+        )}
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="p-6">
-            <Outlet />
+        {/* Desktop Sidebar (always visible, collapsible) */}
+        {!isMobileView && (
+          <div
+            className={`bg-white shadow-lg transition-all duration-300 flex-shrink-0 ${
+              isCollapsed ? "w-20" : "w-64"
+            }`}
+          >
+            <SidebarContent />
+          </div>
+        )}
+
+        {/* Main Content Container */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Navbar with Notifications (only on desktop) */}
+          {!isMobileView && <NavBar />}
+
+          {/* Main Content */}
+          <div className="flex-1 overflow-x-hidden overflow-y-auto">
+            <div className="p-6">
+              <Outlet />
+            </div>
           </div>
         </div>
       </div>
