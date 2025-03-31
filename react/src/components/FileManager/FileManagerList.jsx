@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
@@ -15,10 +15,9 @@ import {
   Dropdown,
   Menu,
   Breadcrumb,
-  Tooltip,
   message,
   ConfigProvider,
-  Empty,
+  Progress,
 } from "antd";
 import {
   PlusOutlined,
@@ -30,15 +29,10 @@ import {
   UploadOutlined,
   DownloadOutlined,
   SearchOutlined,
-  SortAscendingOutlined,
-  SortDescendingOutlined,
   MoreOutlined,
   ArrowLeftOutlined,
-  FileImageOutlined,
-  FileTextOutlined,
-  FilePdfOutlined,
-  FileUnknownOutlined,
   EyeOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 
 const { Search } = Input;
@@ -49,90 +43,54 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Mock data structure - this would be replaced with API calls in production
-  const [fileSystem, setFileSystem] = useState([
-    {
-      id: "1",
-      name: "Documents",
-      type: "folder",
-      createdAt: "2025-03-15T09:00:00",
-      updatedAt: "2025-03-15T09:00:00",
-      size: null,
-      parent: null,
-    },
-    {
-      id: "2",
-      name: "Images",
-      type: "folder",
-      createdAt: "2025-03-15T09:30:00",
-      updatedAt: "2025-03-15T09:30:00",
-      size: null,
-      parent: null,
-    },
-    {
-      id: "3",
-      name: "Project Report.pdf",
-      type: "file",
-      fileType: "pdf",
-      createdAt: "2025-03-20T10:15:00",
-      updatedAt: "2025-03-20T10:15:00",
-      size: 2500000,
-      parent: "1",
-    },
-    {
-      id: "4",
-      name: "Contracts",
-      type: "folder",
-      createdAt: "2025-03-25T11:20:00",
-      updatedAt: "2025-03-25T11:20:00",
-      size: null,
-      parent: "1",
-    },
-    {
-      id: "5",
-      name: "Agreement.docx",
-      type: "file",
-      fileType: "doc",
-      createdAt: "2025-03-26T14:10:00",
-      updatedAt: "2025-03-26T14:10:00",
-      size: 350000,
-      parent: "4",
-    },
-  ]);
-
+  // State for file system data
+  const [fileSystem, setFileSystem] = useState([]);
   const [currentFolder, setCurrentFolder] = useState(null); // null means root
+  const [currentItems, setCurrentItems] = useState([]);
   const [breadcrumbPath, setBreadcrumbPath] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [sortField, setSortField] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc");
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalType] = useState("newFolder"); // "newFolder", "rename", "upload"
+  const [modalType, setModalType] = useState("newFolder"); // "newFolder", "rename"
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemForm] = Form.useForm();
+  const [loading, setLoading] = useState(false);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+
+  // File upload state and refs
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef(null);
 
   // Styling to match the existing component
   const colors = {
     primary: "#1da57a", // Primary green
-    secondary: "#52c41a", // Secondary lighter green
     warning: "#faad14",
     success: "#52c41a",
     error: "#f5222d",
-    lightBg: "#f6ffed", // Light green background
   };
 
-  // Responsive breakpoints to match existing component
+  // Responsive breakpoints
   const breakpoints = {
-    xs: 480, // Extra small devices
-    sm: 576, // Small devices
-    md: 768, // Medium devices
-    lg: 992, // Large devices
-    xl: 1200, // Extra large devices
-    xxl: 1600, // Extra extra large devices
+    xs: 480,
+    sm: 576,
+    md: 768,
+    lg: 992,
+    xl: 1200,
   };
 
   // Check if we're on a mobile device
   const isMobile = screenWidth < breakpoints.md;
+
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    showSizeChanger: true,
+    pageSizeOptions: ["10", "20", "50"],
+  });
 
   // Update screen width on window resize
   useEffect(() => {
@@ -144,107 +102,60 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Pagination state
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 10,
-    total: 0,
-    showSizeChanger: true,
-    pageSizeOptions: ["10", "20", "50"],
-    locale: { items_per_page: "/ page" },
-  });
-
   // Update breadcrumb path when changing folders
   useEffect(() => {
     if (currentFolder === null) {
       setBreadcrumbPath([]);
       return;
     }
+    fetchBreadcrumbPath(currentFolder);
+  }, [currentFolder]);
 
-    // Build the breadcrumb path by traversing parents
-    const buildPath = (folderId) => {
-      const folder = fileSystem.find((item) => item.id === folderId);
-      if (!folder) return [];
+  // Fetch data when folder changes or search/sort is applied
+  useEffect(() => {
+    fetchCurrentItems();
+  }, [currentFolder, searchText, sortField, sortOrder]);
 
-      if (folder.parent === null) {
-        return [{ id: folder.id, name: folder.name }];
-      } else {
-        return [
-          ...buildPath(folder.parent),
-          { id: folder.id, name: folder.name },
-        ];
-      }
-    };
+  // Placeholder for API call to fetch files/folders in current directory
+  const fetchCurrentItems = () => {
+    setLoading(true);
 
-    setBreadcrumbPath(buildPath(currentFolder));
-  }, [currentFolder, fileSystem]);
+    // This will be replaced with an actual API call
+    // Example: apiClient.get(`/files?parent=${currentFolder}&search=${searchText}`)
 
-  // Get the current displayed items based on current folder and search/sort
-  const getCurrentItems = () => {
-    // Filter items that are in the current folder
-    let items = fileSystem.filter((item) => item.parent === currentFolder);
+    // Simulate API call for now
+    setTimeout(() => {
+      setCurrentItems([]);
+      setLoading(false);
+    }, 500);
+  };
 
-    // Apply search if there's a search term
-    if (searchText) {
-      const lowerSearchText = searchText.toLowerCase();
-      items = items.filter((item) =>
-        item.name.toLowerCase().includes(lowerSearchText)
-      );
-    }
+  // Placeholder for API call to fetch breadcrumb path
+  const fetchBreadcrumbPath = (folderId) => {
+    // This will be replaced with an actual API call
+    // Example: apiClient.get(`/folders/${folderId}/path`)
 
-    // Sort the items
-    items = [...items].sort((a, b) => {
-      // Always sort folders before files
-      if (a.type === "folder" && b.type === "file") return -1;
-      if (a.type === "file" && b.type === "folder") return 1;
-
-      // Then sort by the selected field
-      if (sortField === "name") {
-        return sortOrder === "asc"
-          ? a.name.localeCompare(b.name)
-          : b.name.localeCompare(a.name);
-      } else if (sortField === "date") {
-        const dateA = new Date(a.updatedAt);
-        const dateB = new Date(b.updatedAt);
-        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-      } else if (sortField === "size") {
-        const sizeA = a.size || 0;
-        const sizeB = b.size || 0;
-        return sortOrder === "asc" ? sizeA - sizeB : sizeB - sizeA;
-      }
-      return 0;
-    });
-
-    return items;
+    // Simulate API call for now
+    setBreadcrumbPath([{ id: folderId, name: "Folder" }]);
   };
 
   // Handler for going to a folder
   const navigateToFolder = (folderId) => {
     setCurrentFolder(folderId);
-    setPagination({ ...pagination, current: 1 }); // Reset to first page
+    setPagination({ ...pagination, current: 1 });
   };
 
   // Handler for going up one level
   const navigateUp = () => {
     if (currentFolder === null) return;
-
-    const currentFolderData = fileSystem.find(
-      (item) => item.id === currentFolder
-    );
-    if (currentFolderData) {
-      setCurrentFolder(currentFolderData.parent);
-      setPagination({ ...pagination, current: 1 }); // Reset to first page
-    }
+    setCurrentFolder(null);
+    setPagination({ ...pagination, current: 1 });
   };
 
   // Handler for going to a specific level via breadcrumb
   const navigateToBreadcrumb = (folderId) => {
-    if (folderId === null) {
-      setCurrentFolder(null);
-    } else {
-      setCurrentFolder(folderId);
-    }
-    setPagination({ ...pagination, current: 1 }); // Reset to first page
+    setCurrentFolder(folderId);
+    setPagination({ ...pagination, current: 1 });
   };
 
   // Format file size for display
@@ -267,21 +178,8 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
   const getFileIcon = (item) => {
     if (item.type === "folder") {
       return <FolderOutlined style={{ color: colors.warning }} />;
-    }
-
-    switch (item.fileType) {
-      case "pdf":
-        return <FilePdfOutlined style={{ color: colors.error }} />;
-      case "doc":
-      case "docx":
-        return <FileTextOutlined style={{ color: "#2a5699" }} />;
-      case "jpg":
-      case "jpeg":
-      case "png":
-      case "gif":
-        return <FileImageOutlined style={{ color: colors.primary }} />;
-      default:
-        return <FileUnknownOutlined />;
+    } else {
+      return <FileOutlined />;
     }
   };
 
@@ -300,44 +198,30 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
 
   // Handler for creating a new folder
   const createFolder = (values) => {
-    const newFolder = {
-      id: Date.now().toString(), // In a real app, this would come from the server
-      name: values.name,
-      type: "folder",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      size: null,
-      parent: currentFolder,
-    };
+    // To be replaced with API call
+    // Example: apiClient.post('/folders', { name: values.name, parent: currentFolder })
 
-    setFileSystem([...fileSystem, newFolder]);
+    message.success(
+      `Folder "${values.name}" will be created (API integration pending)`
+    );
     setModalVisible(false);
-    message.success(`Folder "${values.name}" created successfully`);
   };
 
   // Handler for renaming an item
   const renameItem = (values) => {
     if (!selectedItem) return;
 
-    const updatedFileSystem = fileSystem.map((item) => {
-      if (item.id === selectedItem.id) {
-        return {
-          ...item,
-          name: values.name,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return item;
-    });
+    // To be replaced with API call
+    // Example: apiClient.put(`/${selectedItem.type}s/${selectedItem.id}`, { name: values.name })
 
-    setFileSystem(updatedFileSystem);
+    message.success(
+      `Item will be renamed to "${values.name}" (API integration pending)`
+    );
     setModalVisible(false);
-    message.success(`Item renamed successfully`);
   };
 
   // Handler for deleting an item
   const deleteItem = (item) => {
-    // In a real app, you'd need recursive deletion for folders
     Modal.confirm({
       title: `Delete ${item.type === "folder" ? "Folder" : "File"}`,
       content: `Are you sure you want to delete "${item.name}"? ${
@@ -347,59 +231,81 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
       okType: "danger",
       cancelText: "No",
       onOk: () => {
-        // First, get all IDs that need to be removed
-        // For a folder, that includes the folder itself and all items inside it (recursively)
-        const getAllItemsToDelete = (parentId) => {
-          // Get the item itself
-          const idsToRemove = [parentId];
+        // To be replaced with API call
+        // Example: apiClient.delete(`/${item.type}s/${item.id}`)
 
-          // If it's a folder, also get all items that have this folder as parent
-          if (item.type === "folder") {
-            // Find all items that have this folder as parent
-            const childItems = fileSystem.filter((i) => i.parent === parentId);
-
-            // For each child item, if it's a folder, recursively get its children
-            childItems.forEach((childItem) => {
-              if (childItem.type === "folder") {
-                idsToRemove.push(...getAllItemsToDelete(childItem.id));
-              } else {
-                idsToRemove.push(childItem.id);
-              }
-            });
-          }
-
-          return idsToRemove;
-        };
-
-        const idsToRemove = getAllItemsToDelete(item.id);
-        const newFileSystem = fileSystem.filter(
-          (i) => !idsToRemove.includes(i.id)
+        message.success(
+          `"${item.name}" will be deleted (API integration pending)`
         );
-
-        setFileSystem(newFileSystem);
-        message.success(`"${item.name}" deleted successfully`);
       },
     });
   };
 
-  // Mock upload function
-  const handleUpload = (values) => {
-    const fileType = values.name.split(".").pop().toLowerCase();
+  // File upload handling
+  const handleUpload = (file) => {
+    if (!file) {
+      message.error("Please select a file to upload");
+      return;
+    }
 
-    const newFile = {
-      id: Date.now().toString(), // In a real app, this would come from the server
-      name: values.name,
-      type: "file",
-      fileType: fileType,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      size: Math.floor(Math.random() * 5000000), // Random size for demo
-      parent: currentFolder,
-    };
+    setUploading(true);
+    setUploadProgress(0);
 
-    setFileSystem([...fileSystem, newFile]);
-    setModalVisible(false);
-    message.success(`File "${values.name}" uploaded successfully`);
+    const fileName = file.name;
+
+    message.loading({
+      content: `Uploading ${fileName}...`,
+      key: "upload",
+      duration: 0,
+    });
+
+    // To be replaced with API call
+    // Example:
+    // const formData = new FormData();
+    // formData.append('file', file);
+    // formData.append('parent', currentFolder);
+    // apiClient.post('/files', formData, {
+    //   onUploadProgress: (progressEvent) => {
+    //     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+    //     setUploadProgress(percentCompleted);
+    //   }
+    // })
+
+    // Simulate upload progress
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 10) + 5;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+
+        setUploading(false);
+        message.success({
+          content: `${fileName} upload will be implemented with API`,
+          key: "upload",
+          duration: 2,
+        });
+
+        fetchCurrentItems();
+      }
+      setUploadProgress(progress);
+    }, 200);
+  };
+
+  // Trigger file input click
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle file change from input
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleUpload(file);
+    }
+    e.target.value = null;
   };
 
   // Reset search and sort
@@ -432,12 +338,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
         dataIndex: "type",
         key: "type",
         responsive: ["md"],
-        render: (type, record) =>
-          type === "folder"
-            ? "Folder"
-            : record.fileType
-            ? record.fileType.toUpperCase()
-            : "File",
+        render: (type) => (type === "folder" ? "Folder" : "File"),
       },
     ];
 
@@ -587,13 +488,11 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
       title: <a onClick={() => navigateToBreadcrumb(null)}>Home</a>,
       key: "home",
     },
-    ...breadcrumbPath.map((item, index) => ({
+    ...breadcrumbPath.map((item) => ({
       title: <a onClick={() => navigateToBreadcrumb(item.id)}>{item.name}</a>,
       key: item.id,
     })),
   ];
-
-  const currentItems = getCurrentItems();
 
   return (
     <ConfigProvider
@@ -648,10 +547,18 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                 backgroundColor: colors.primary,
                 borderColor: colors.primary,
               }}
-              onClick={() => showModal("upload")}
+              onClick={triggerFileUpload}
             >
-              Upload
+              Upload Files
             </Button>
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+              accept="*/*"
+            />
           </Space>
         </div>
 
@@ -678,7 +585,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
             <Breadcrumb items={breadcrumbItems} />
           </div>
 
-          {/* Filters and Search Section - Responsive */}
+          {/* Filters and Search Section */}
           <div style={{ marginBottom: 20, flex: "0 0 auto" }}>
             <Row gutter={[16, 16]} align="middle">
               <Col xs={24} sm={24} md={12} lg={8}>
@@ -742,6 +649,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               rowKey="id"
               scroll={{ x: "max-content" }}
               size={isMobile ? "small" : "middle"}
+              loading={loading}
               pagination={{
                 position: ["bottomRight"],
                 showSizeChanger: true,
@@ -750,89 +658,121 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                   `${range[0]}-${range[1]} of ${total} items`,
                 size: isMobile ? "small" : "default",
                 locale: { items_per_page: "/ page" },
-                itemRender: (page, type, originalElement) => {
-                  if (type === "prev") {
-                    return (
-                      <Button
-                        icon={<span>&lt;</span>}
-                        type="text"
-                        size="small"
-                      />
-                    );
-                  }
-                  if (type === "next") {
-                    return (
-                      <Button
-                        icon={<span>&gt;</span>}
-                        type="text"
-                        size="small"
-                      />
-                    );
-                  }
-                  return originalElement;
-                },
                 onChange: (page, pageSize) => {
                   setPagination({
                     ...pagination,
                     current: page,
                     pageSize: pageSize,
-                    total: currentItems.length,
                   });
                 },
                 onShowSizeChange: (current, size) => {
                   setPagination({
                     ...pagination,
-                    current: 1, // Reset to first page when changing page size
+                    current: 1,
                     pageSize: size,
-                    total: currentItems.length,
                   });
                 },
               }}
               locale={{
-                emptyText: (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={
-                      <div>
-                        <p>No files or folders found</p>
-                        <Space>
-                          <Button
-                            type="primary"
-                            onClick={() => showModal("newFolder")}
-                          >
-                            Create Folder
-                          </Button>
-                          <Button onClick={() => showModal("upload")}>
-                            Upload File
-                          </Button>
-                        </Space>
-                      </div>
-                    }
-                  />
-                ),
+                emptyText: " ",
               }}
             />
+
+            {/* Mobile information note */}
+            {isMobile && (
+              <div style={{ marginTop: "16px", textAlign: "center" }}>
+                <Text type="secondary" style={{ fontSize: "12px" }}>
+                  Swipe left/right to see more details. Tap the menu icon to
+                  view actions.
+                </Text>
+              </div>
+            )}
+
+            {/* Empty state for table */}
+            {currentItems.length === 0 && !loading && (
+              <div
+                style={{
+                  margin: "40px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "40px 20px",
+                  border: "2px dashed #d9d9d9",
+                  borderRadius: "8px",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                }}
+                onClick={triggerFileUpload}
+              >
+                <InboxOutlined
+                  style={{
+                    fontSize: 48,
+                    color: colors.primary,
+                    marginBottom: 16,
+                  }}
+                />
+                <p style={{ fontSize: 16, marginBottom: 8 }}>
+                  No files or folders found
+                </p>
+                <p style={{ color: "#888", marginBottom: 16 }}>
+                  Click to browse your files
+                </p>
+                <Space>
+                  <Button
+                    type="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showModal("newFolder");
+                    }}
+                  >
+                    Create Folder
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerFileUpload();
+                    }}
+                  >
+                    Browse Files
+                  </Button>
+                </Space>
+              </div>
+            )}
           </div>
 
-          {/* Mobile information note */}
-          {isMobile && (
-            <div style={{ marginTop: "16px", textAlign: "center" }}>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
-                Swipe left/right to see more details. Tap the menu icon to view
-                actions.
-              </Text>
-            </div>
-          )}
+          {/* Info tip for browser selection */}
+          <div style={{ marginTop: 8, marginBottom: 16, textAlign: "center" }}>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              <a onClick={triggerFileUpload} style={{ color: colors.primary }}>
+                Click here to browse your computer for files to upload
+              </a>
+            </Text>
+          </div>
         </Card>
 
-        {/* Modal for Create Folder / Rename / Upload */}
+        {/* Upload Progress Modal */}
+        {uploading && (
+          <Modal
+            title="Uploading File"
+            open={uploading}
+            footer={null}
+            closable={false}
+            maskClosable={false}
+          >
+            <div style={{ marginBottom: 20 }}>
+              <Progress percent={Math.round(uploadProgress)} status="active" />
+            </div>
+            <p style={{ textAlign: "center" }}>
+              Please wait while your file is being uploaded...
+            </p>
+          </Modal>
+        )}
+
+        {/* Modal for Create Folder / Rename */}
         <Modal
           title={
-            modalType === "newFolder"
-              ? "Create New Folder"
-              : modalType === "rename"
-              ? "Rename Item"
-              : "Upload File"
+            modalType === "newFolder" ? "Create New Folder" : "Rename Item"
           }
           open={modalVisible}
           onCancel={() => setModalVisible(false)}
@@ -846,14 +786,12 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                 createFolder(values);
               } else if (modalType === "rename") {
                 renameItem(values);
-              } else if (modalType === "upload") {
-                handleUpload(values);
               }
             }}
           >
             <Form.Item
               name="name"
-              label={modalType === "upload" ? "File Name" : "Name"}
+              label="Name"
               rules={[
                 { required: true, message: "Please input a name!" },
                 {
@@ -882,31 +820,16 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                 placeholder={
                   modalType === "newFolder"
                     ? "Enter folder name"
-                    : modalType === "rename"
-                    ? "Enter new name"
-                    : "Enter file name with extension (e.g., document.pdf)"
+                    : "Enter new name"
                 }
               />
             </Form.Item>
-
-            {modalType === "upload" && (
-              <div style={{ marginBottom: 16 }}>
-                <Text type="secondary">
-                  Note: In a real implementation, a file upload component would
-                  be here. For this demo, just enter a file name with extension.
-                </Text>
-              </div>
-            )}
 
             <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
               <Space>
                 <Button onClick={() => setModalVisible(false)}>Cancel</Button>
                 <Button type="primary" htmlType="submit">
-                  {modalType === "newFolder"
-                    ? "Create"
-                    : modalType === "rename"
-                    ? "Rename"
-                    : "Upload"}
+                  {modalType === "newFolder" ? "Create" : "Rename"}
                 </Button>
               </Space>
             </Form.Item>
@@ -947,11 +870,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
             margin-left: 16px;
           }
 
-          .file-manager .ant-pagination-options-size-changer.ant-select {
-            margin-right: 0;
-          }
-
-          @media (max-width: ${breakpoints.md}px) {
+          @media (max-width: 768px) {
             .file-manager .ant-table {
               font-size: 13px;
             }
@@ -961,18 +880,14 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               padding: 0 8px;
             }
 
-            .file-manager .ant-table-pagination {
-              flex-wrap: wrap;
-            }
-          }
-
-          @media (max-width: ${breakpoints.sm}px) {
-            .file-manager .ant-pagination-options {
-              display: none;
+            .file-manager .ant-pagination {
+              font-size: 12px;
             }
 
-            .file-manager .ant-table-pagination-right {
-              justify-content: center;
+            .file-manager .ant-pagination-item {
+              min-width: 24px;
+              height: 24px;
+              line-height: 22px;
             }
           }
         `}</style>
