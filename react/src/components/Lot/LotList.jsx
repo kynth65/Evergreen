@@ -1,18 +1,14 @@
-// src/components/Lot/LotList.jsx
-import React, { useState, useEffect } from "react";
-import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import axiosClient from "../../axios.client";
-import { useStateContext } from "../../context/ContextProvider";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import axiosClient from "../../axios.client"; // Import axiosClient instead of creating a new axios instance
+import { useStateContext } from "../../context/ContextProvider"; // Import context if you're using it
 import {
   Table,
   Button,
-  Tag,
   Space,
-  Tooltip,
-  Popconfirm,
-  Skeleton,
-  message,
   Input,
+  Modal,
+  Form,
   Select,
   Row,
   Col,
@@ -20,63 +16,86 @@ import {
   Typography,
   Dropdown,
   Menu,
+  Breadcrumb,
+  Tooltip,
+  message,
   ConfigProvider,
-  theme,
+  Progress,
+  Skeleton,
 } from "antd";
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   FileOutlined,
+  FolderOutlined,
+  FolderAddOutlined,
+  UploadOutlined,
+  DownloadOutlined,
   SearchOutlined,
-  FilterOutlined,
-  SortAscendingOutlined,
-  SortDescendingOutlined,
   MoreOutlined,
+  ArrowLeftOutlined,
   EyeOutlined,
+  InboxOutlined,
 } from "@ant-design/icons";
 
 const { Search } = Input;
 const { Option } = Select;
 const { Title, Text } = Typography;
 
-const LotList = ({ role: propRole }) => {
-  const { user: contextUser } = useStateContext();
-  const [lots, setLots] = useState([]);
-  const [filteredLots, setFilteredLots] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [priceSort, setPriceSort] = useState(null);
-  const [searchText, setSearchText] = useState("");
-  const [userRole, setUserRole] = useState(propRole);
-  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+const FileManagerList = ({ role: propRole = "admin" }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: contextUser } = useStateContext(); // Access user from context if needed
 
+  // State for file system data
+  const [currentFolder, setCurrentFolder] = useState(null); // null means root
+  const [currentItems, setCurrentItems] = useState([]);
+  const [breadcrumbPath, setBreadcrumbPath] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [sortField, setSortField] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalType] = useState("newFolder"); // "newFolder", "rename"
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [itemForm] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [userRole, setUserRole] = useState(propRole);
+
+  // File upload state and refs
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef(null);
+
+  // Styling to match the existing component
   const colors = {
     primary: "#1da57a", // Primary green
-    secondary: "#52c41a", // Secondary lighter green
     warning: "#faad14",
     success: "#52c41a",
     error: "#f5222d",
-    lightBg: "#f6ffed", // Light green background
   };
 
   // Responsive breakpoints
   const breakpoints = {
-    xs: 480, // Extra small devices
-    sm: 576, // Small devices
-    md: 768, // Medium devices
-    lg: 992, // Large devices
-    xl: 1200, // Extra large devices
-    xxl: 1600, // Extra extra large devices
+    xs: 480,
+    sm: 576,
+    md: 768,
+    lg: 992,
+    xl: 1200,
   };
 
+  // Check if we're on a mobile device
+  const isMobile = screenWidth < breakpoints.md;
+
+  // Pagination state
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
+    showSizeChanger: true,
+    pageSizeOptions: ["10", "20", "50"],
   });
 
   // Update screen width on window resize
@@ -89,22 +108,18 @@ const LotList = ({ role: propRole }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Fetch user data to verify role - happens in parallel with other data loading
+  // Fetch user data to verify role (if your app uses role-based permissions)
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const response = await axiosClient.get("/user");
-
-        // Update user role with data from API
         if (response.data && response.data.role) {
           setUserRole(response.data.role);
         } else if (contextUser && contextUser.role) {
-          // Fallback to context if API doesn't return role
           setUserRole(contextUser.role);
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
-        // If API call fails, fallback to the role from props or context
         if (contextUser && contextUser.role) {
           setUserRole(contextUser.role);
         }
@@ -114,187 +129,419 @@ const LotList = ({ role: propRole }) => {
     fetchUserData();
   }, [contextUser]);
 
-  // Fetch lots data
+  // Update breadcrumb path when changing folders
   useEffect(() => {
-    fetchLots();
-  }, []);
-
-  // Effect to handle filtering and sorting
-  useEffect(() => {
-    if (lots.length > 0) {
-      let result = [...lots];
-
-      // Apply status filter
-      if (statusFilter !== "ALL") {
-        result = result.filter((lot) => lot.status === statusFilter);
-      }
-
-      // Apply search filter
-      if (searchText) {
-        const lowerSearchText = searchText.toLowerCase();
-        result = result.filter(
-          (lot) =>
-            lot.property_name?.toLowerCase().includes(lowerSearchText) ||
-            lot.block_lot_no?.toLowerCase().includes(lowerSearchText) ||
-            lot.client?.toLowerCase().includes(lowerSearchText) ||
-            String(lot.lot_area).includes(lowerSearchText) ||
-            String(lot.total_contract_price).includes(lowerSearchText)
-        );
-      }
-
-      // Apply price sorting
-      if (priceSort === "asc") {
-        result.sort((a, b) => {
-          const priceA = a.total_contract_price || 0;
-          const priceB = b.total_contract_price || 0;
-          return priceA - priceB;
-        });
-      } else if (priceSort === "desc") {
-        result.sort((a, b) => {
-          const priceA = a.total_contract_price || 0;
-          const priceB = b.total_contract_price || 0;
-          return priceB - priceA;
-        });
-      }
-
-      setFilteredLots(result);
+    if (currentFolder === null) {
+      setBreadcrumbPath([]);
+      return;
     }
-  }, [lots, statusFilter, priceSort, searchText]);
+    fetchBreadcrumbPath(currentFolder);
+  }, [currentFolder]);
 
-  const fetchLots = () => {
+  // Fetch data when folder changes or search/sort is applied
+  useEffect(() => {
+    fetchCurrentItems();
+  }, [currentFolder, searchText, sortField, sortOrder]);
+
+  // Fetch files/folders from the API
+  const fetchCurrentItems = () => {
     setLoading(true);
+    setError(null);
+
     axiosClient
-      .get("/lots")
+      .get("/file-browser", {
+        params: {
+          folder_id: currentFolder,
+          search: searchText,
+          sort: sortField,
+          order: sortOrder,
+        },
+      })
       .then((response) => {
-        setLots(response.data);
-        setFilteredLots(response.data);
+        setCurrentItems(response.data.items || []);
+
+        // If we're getting breadcrumb info from this endpoint too
+        if (response.data.breadcrumb && currentFolder !== null) {
+          setBreadcrumbPath(response.data.breadcrumb);
+        }
+
+        setPagination((prev) => ({
+          ...prev,
+          total: response.data.items?.length || 0,
+        }));
+
         setLoading(false);
       })
       .catch((err) => {
-        setError("Failed to load lots data");
-        setLoading(false);
-        console.error("Error fetching lots:", err);
+        console.error("Error fetching files:", err);
+        setError("Failed to load files and folders");
         message.error(
-          "Failed to load lots: " + (err.response?.data?.message || err.message)
+          "Failed to load files: " +
+            (err.response?.data?.message || err.message)
         );
+        setLoading(false);
+        setCurrentItems([]);
       });
   };
 
-  const deleteLot = (id) => {
+  // Fetch breadcrumb path from the API
+  const fetchBreadcrumbPath = (folderId) => {
     axiosClient
-      .delete(`/lots/${id}`)
-      .then(() => {
-        message.success("Lot deleted successfully");
-        fetchLots();
+      .get(`/folders/${folderId}/path`)
+      .then((response) => {
+        setBreadcrumbPath(response.data || []);
       })
       .catch((err) => {
-        console.error("Error deleting lot:", err);
-        message.error("Failed to delete lot");
+        console.error("Error fetching path:", err);
+        message.error("Failed to load folder path");
+        setBreadcrumbPath([{ id: folderId, name: "Unknown Folder" }]);
       });
   };
 
-  // Determine if we should show the main list view based on the current URL pathname
-  const basePath = `/${userRole}/lot-management`;
-  const showMainList = location.pathname === basePath;
-
-  // Reset all filters
-  const resetFilters = () => {
-    setStatusFilter("ALL");
-    setPriceSort(null);
-    setSearchText("");
+  // Handler for going to a folder
+  const navigateToFolder = (folderId) => {
+    setCurrentFolder(folderId);
+    setPagination({ ...pagination, current: 1 });
   };
 
-  // Check if the user is an intern
-  const isIntern = userRole === "intern";
+  // Handler for going up one level
+  const navigateUp = () => {
+    if (currentFolder === null) return;
 
-  // Check if we're on a mobile device
-  const isMobile = screenWidth < breakpoints.md;
+    // If we have breadcrumb path with parent info
+    if (breadcrumbPath.length > 1) {
+      // Navigate to parent folder (second last item in the path)
+      const parentFolder = breadcrumbPath[breadcrumbPath.length - 2];
+      setCurrentFolder(parentFolder.id);
+    } else {
+      // If no parent info or at root level child, go to root
+      setCurrentFolder(null);
+    }
 
-  // Responsive columns logic
-  const getResponsiveColumns = () => {
-    // Base columns for all screen sizes
+    setPagination({ ...pagination, current: 1 });
+  };
+
+  // Handler for going to a specific level via breadcrumb
+  const navigateToBreadcrumb = (folderId) => {
+    setCurrentFolder(folderId);
+    setPagination({ ...pagination, current: 1 });
+  };
+
+  // Format file size for display
+  const formatFileSize = (bytes) => {
+    if (bytes === null || bytes === undefined) return "-";
+
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    if (bytes === 0) return "0 Byte";
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+  };
+
+  // Get icon based on file type
+  const getFileIcon = (item) => {
+    if (item.type === "folder") {
+      return <FolderOutlined style={{ color: colors.warning }} />;
+    } else {
+      return <FileOutlined />;
+    }
+  };
+
+  // Handler for opening the modal
+  const showModal = (type, item = null) => {
+    setModalType(type);
+    setSelectedItem(item);
+    setModalVisible(true);
+
+    if (type === "rename" && item) {
+      itemForm.setFieldsValue({ name: item.name });
+    } else {
+      itemForm.resetFields();
+    }
+  };
+
+  // Handler for creating a new folder
+  const createFolder = (values) => {
+    axiosClient
+      .post("/folders", {
+        name: values.name,
+        parent_id: currentFolder,
+      })
+      .then((response) => {
+        message.success(`Folder "${values.name}" created successfully`);
+        setModalVisible(false);
+        fetchCurrentItems(); // Refresh the list
+      })
+      .catch((err) => {
+        console.error("Error creating folder:", err);
+
+        if (err.response && err.response.data && err.response.data.errors) {
+          // Show validation errors
+          const firstError = Object.values(err.response.data.errors)[0][0];
+          message.error(firstError || "Failed to create folder");
+        } else {
+          message.error("Failed to create folder");
+        }
+      });
+  };
+
+  // Handler for renaming an item
+  const renameItem = (values) => {
+    if (!selectedItem) return;
+
+    const endpoint =
+      selectedItem.type === "folder"
+        ? `/folders/${selectedItem.id}`
+        : `/files/${selectedItem.id}`;
+
+    axiosClient
+      .put(endpoint, {
+        name: values.name,
+      })
+      .then((response) => {
+        message.success(`Item renamed successfully to "${values.name}"`);
+        setModalVisible(false);
+        fetchCurrentItems(); // Refresh the list
+      })
+      .catch((err) => {
+        console.error("Error renaming item:", err);
+
+        if (err.response && err.response.data && err.response.data.errors) {
+          const firstError = Object.values(err.response.data.errors)[0][0];
+          message.error(firstError || "Failed to rename item");
+        } else {
+          message.error("Failed to rename item");
+        }
+      });
+  };
+
+  // Handler for deleting an item
+  const deleteItem = (item) => {
+    Modal.confirm({
+      title: `Delete ${item.type === "folder" ? "Folder" : "File"}`,
+      content: `Are you sure you want to delete "${item.name}"? ${
+        item.type === "folder" ? "All contents inside will be deleted too." : ""
+      }`,
+      okText: "Yes",
+      okType: "danger",
+      cancelText: "No",
+      onOk: () => {
+        const endpoint =
+          item.type === "folder" ? `/folders/${item.id}` : `/files/${item.id}`;
+
+        axiosClient
+          .delete(endpoint)
+          .then(() => {
+            message.success(`"${item.name}" deleted successfully`);
+            fetchCurrentItems(); // Refresh the list
+          })
+          .catch((err) => {
+            console.error("Error deleting item:", err);
+            message.error(`Failed to delete "${item.name}"`);
+          });
+      },
+    });
+  };
+
+  // File upload handling
+  const handleUpload = (file) => {
+    if (!file) {
+      message.error("Please select a file to upload");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    const fileName = file.name;
+
+    // Show upload progress message
+    message.loading({
+      content: `Uploading ${fileName}...`,
+      key: "upload",
+      duration: 0,
+    });
+
+    // Create form data for the file upload
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder_id", currentFolder);
+
+    // Upload the file with progress tracking
+    axiosClient
+      .post("/files", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+        },
+      })
+      .then((response) => {
+        setUploading(false);
+        message.success({
+          content: `${fileName} uploaded successfully`,
+          key: "upload",
+          duration: 2,
+        });
+
+        // Refresh the file list
+        fetchCurrentItems();
+      })
+      .catch((err) => {
+        console.error("Error uploading file:", err);
+        setUploading(false);
+
+        if (err.response && err.response.data && err.response.data.message) {
+          message.error({
+            content: err.response.data.message,
+            key: "upload",
+            duration: 4,
+          });
+        } else {
+          message.error({
+            content: `Failed to upload ${fileName}`,
+            key: "upload",
+            duration: 4,
+          });
+        }
+      });
+  };
+
+  // Trigger file input click
+  const triggerFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Handle file change from input
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleUpload(file);
+    }
+    e.target.value = null;
+  };
+
+  // Download a file
+  const downloadFile = (file) => {
+    window.open(
+      `${process.env.REACT_APP_API_BASE_URL || ""}/files/${file.id}/download`,
+      "_blank"
+    );
+  };
+
+  // Preview a file
+  const previewFile = (file) => {
+    window.open(
+      `${process.env.REACT_APP_API_BASE_URL || ""}/files/${file.id}/preview`,
+      "_blank"
+    );
+  };
+
+  // Reset search and sort
+  const resetFilters = () => {
+    setSearchText("");
+    setSortField("name");
+    setSortOrder("asc");
+  };
+
+  // Custom skeleton row for loading state
+  const SkeletonRow = () => (
+    <tr className="ant-table-row">
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 40 }} />
+      </td>
+      <td>
+        <Space>
+          <Skeleton.Avatar active size="small" shape="square" />
+          <Skeleton.Input active size="small" style={{ width: 150 }} />
+        </Space>
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 80 }} />
+      </td>
+      {screenWidth >= breakpoints.md && (
+        <>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 80 }} />
+          </td>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 100 }} />
+          </td>
+        </>
+      )}
+      <td>
+        <Space>
+          {isMobile ? (
+            <Skeleton.Button active size="small" shape="circle" />
+          ) : (
+            <>
+              <Skeleton.Button active size="small" shape="square" />
+              <Skeleton.Button active size="small" shape="square" />
+              <Skeleton.Button active size="small" shape="square" />
+            </>
+          )}
+        </Space>
+      </td>
+    </tr>
+  );
+
+  // Table columns
+  const getColumns = () => {
     const baseColumns = [
       {
-        title: "#",
-        key: "index",
-        width: 60,
-        render: (text, record, index) => {
-          // Calculate the continuous row number based on pagination
-          return (pagination.current - 1) * pagination.pageSize + index + 1;
-        },
-      },
-      {
-        title: "Property Name",
-        dataIndex: "property_name",
-        key: "property_name",
+        title: "Name",
+        dataIndex: "name",
+        key: "name",
         render: (text, record) => (
-          <Tooltip title="Click to view details">
-            <a
-              onClick={() =>
-                navigate(`/${userRole}/lot-management/${record.id}/view`)
-              }
-            >
-              {text}
-            </a>
-          </Tooltip>
+          <Space>
+            {getFileIcon(record)}
+            {record.type === "folder" ? (
+              <Tooltip title="Click to open folder">
+                <a onClick={() => navigateToFolder(record.id)}>{text}</a>
+              </Tooltip>
+            ) : (
+              <span>{text}</span>
+            )}
+          </Space>
         ),
       },
       {
-        title: "Status",
-        dataIndex: "status",
-        key: "status",
-        render: (status) => {
-          let color = "default";
-          switch (status) {
-            case "AVAILABLE":
-              color = "success";
-              break;
-            case "SOLD":
-              color = "error";
-              break;
-            case "EXCLUDED":
-              color = "warning";
-              break;
-            default:
-              break;
-          }
-          return <Tag color={color}>{status}</Tag>;
-        },
+        title: "Type",
+        dataIndex: "type",
+        key: "type",
+        responsive: ["md"],
+        render: (type) => (type === "folder" ? "Folder" : "File"),
       },
     ];
 
-    // Desktop-only columns
     const desktopColumns = [
       {
-        title: "Block & Lot No.",
-        dataIndex: "block_lot_no",
-        key: "block_lot_no",
+        title: "Size",
+        dataIndex: "size",
+        key: "size",
         responsive: ["md"],
+        render: formatFileSize,
       },
       {
-        title: "Lot Area (Sqm)",
-        dataIndex: "lot_area",
-        key: "lot_area",
-        responsive: ["md"],
-      },
-      {
-        title: "Total Contract Price",
-        dataIndex: "total_contract_price",
-        key: "total_contract_price",
+        title: "Last Modified",
+        dataIndex: "updatedAt",
+        key: "updatedAt",
         responsive: ["lg"],
-        render: (price) =>
-          price ? new Intl.NumberFormat().format(price) : "-",
-      },
-      {
-        title: "Client",
-        dataIndex: "client",
-        key: "client",
-        responsive: ["lg"],
-        render: (client) => client || "-",
+        render: formatDate,
       },
     ];
 
-    // Actions column with dropdown for mobile
     const actionsColumn = {
       title: "Actions",
       key: "actions",
@@ -304,39 +551,40 @@ const LotList = ({ role: propRole }) => {
         if (isMobile) {
           const actionItems = [
             {
-              key: "view",
-              label: "View",
-              icon: <EyeOutlined />,
-              onClick: () =>
-                navigate(`/${userRole}/lot-management/${record.id}/view`),
+              key: "rename",
+              label: "Rename",
+              icon: <EditOutlined />,
+              onClick: () => showModal("rename", record),
             },
             {
-              key: "edit",
-              label: "Edit",
-              icon: <EditOutlined />,
-              onClick: () =>
-                navigate(`/${userRole}/lot-management/${record.id}/edit`),
+              key: "delete",
+              label: "Delete",
+              icon: <DeleteOutlined />,
+              danger: true,
+              onClick: () => deleteItem(record),
             },
           ];
 
-          // Only add delete option if not an intern
-          if (!isIntern) {
+          if (record.type === "folder") {
+            actionItems.unshift({
+              key: "open",
+              label: "Open",
+              icon: <FolderOutlined />,
+              onClick: () => navigateToFolder(record.id),
+            });
+          } else {
+            actionItems.unshift({
+              key: "view",
+              label: "View",
+              icon: <EyeOutlined />,
+              onClick: () => previewFile(record),
+            });
+
             actionItems.push({
-              key: "delete",
-              danger: true,
-              label: "Delete",
-              icon: <DeleteOutlined />,
-              onClick: () => {
-                // Confirm deletion
-                Modal.confirm({
-                  title: "Delete Confirmation",
-                  content: "Are you sure you want to delete this lot?",
-                  okText: "Yes",
-                  okType: "danger",
-                  cancelText: "No",
-                  onOk: () => deleteLot(record.id),
-                });
-              },
+              key: "download",
+              label: "Download",
+              icon: <DownloadOutlined />,
+              onClick: () => downloadFile(record),
             });
           }
 
@@ -356,97 +604,70 @@ const LotList = ({ role: propRole }) => {
         // For desktop: render all action buttons
         return (
           <Space size="small">
-            <Button
-              type="primary"
-              icon={<FileOutlined />}
-              size="small"
-              onClick={() =>
-                navigate(`/${userRole}/lot-management/${record.id}/view`)
-              }
-            >
-              View
-            </Button>
+            {record.type === "folder" ? (
+              <Button
+                type="primary"
+                icon={<FolderOutlined />}
+                size="small"
+                onClick={() => navigateToFolder(record.id)}
+              >
+                Open
+              </Button>
+            ) : (
+              <Button
+                type="primary"
+                icon={<EyeOutlined />}
+                size="small"
+                onClick={() => previewFile(record)}
+              >
+                View
+              </Button>
+            )}
             <Button
               type="primary"
               icon={<EditOutlined />}
               size="small"
-              onClick={() =>
-                navigate(`/${userRole}/lot-management/${record.id}/edit`)
-              }
+              onClick={() => showModal("rename", record)}
             >
-              Edit
+              Rename
             </Button>
-            {/* Only render delete button if the user is NOT an intern */}
-            {!isIntern && (
-              <Popconfirm
-                title="Are you sure you want to delete this lot?"
-                onConfirm={() => deleteLot(record.id)}
-                okText="Yes"
-                cancelText="No"
+            {record.type === "file" && (
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                size="small"
+                onClick={() => downloadFile(record)}
               >
-                <Button danger icon={<DeleteOutlined />} size="small">
-                  Delete
-                </Button>
-              </Popconfirm>
+                Download
+              </Button>
             )}
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              onClick={() => deleteItem(record)}
+            >
+              Delete
+            </Button>
           </Space>
         );
       },
     };
 
-    // Combine columns based on screen size
     return [...baseColumns, ...desktopColumns, actionsColumn];
   };
 
-  // Custom skeleton row for loading state
-  const SkeletonRow = () => (
-    <tr className="ant-table-row">
-      <td>
-        <Skeleton.Input active size="small" style={{ width: 40 }} />
-      </td>
-      <td>
-        <Skeleton.Input active size="small" style={{ width: 150 }} />
-      </td>
-      <td>
-        <Skeleton.Input active size="small" style={{ width: 80 }} />
-      </td>
-      {screenWidth >= breakpoints.md && (
-        <>
-          <td>
-            <Skeleton.Input active size="small" style={{ width: 80 }} />
-          </td>
-          <td>
-            <Skeleton.Input active size="small" style={{ width: 100 }} />
-          </td>
-        </>
-      )}
-      {screenWidth >= breakpoints.lg && (
-        <>
-          <td>
-            <Skeleton.Input active size="small" style={{ width: 100 }} />
-          </td>
-          <td>
-            <Skeleton.Input active size="small" style={{ width: 100 }} />
-          </td>
-        </>
-      )}
-      <td>
-        <Space>
-          {isMobile ? (
-            <Skeleton.Button active size="small" shape="circle" />
-          ) : (
-            <>
-              <Skeleton.Button active size="small" shape="square" />
-              <Skeleton.Button active size="small" shape="square" />
-              {!isIntern && (
-                <Skeleton.Button active size="small" shape="square" />
-              )}
-            </>
-          )}
-        </Space>
-      </td>
-    </tr>
-  );
+  // Generate the current breadcrumb
+  const breadcrumbItems = [
+    {
+      title: <a onClick={() => navigateToBreadcrumb(null)}>Home</a>,
+      key: "home",
+    },
+    ...breadcrumbPath.map((item) => ({
+      title: <a onClick={() => navigateToBreadcrumb(item.id)}>{item.name}</a>,
+      key: item.id,
+    })),
+  ];
 
   return (
     <ConfigProvider
@@ -457,8 +678,13 @@ const LotList = ({ role: propRole }) => {
       }}
     >
       <div
-        className="lot-management"
-        style={{ padding: isMobile ? "0px" : "0px" }}
+        className="file-manager"
+        style={{
+          padding: isMobile ? "0px" : "0px",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
         <div
           className="header-section"
@@ -475,132 +701,176 @@ const LotList = ({ role: propRole }) => {
             level={isMobile ? 4 : 3}
             style={{ margin: 0, fontWeight: 700 }}
           >
-            Lot Management
+            File Manager
           </Title>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            style={{
-              backgroundColor: colors.primary,
-              borderColor: colors.primary,
-            }}
-            onClick={() => navigate(`/${userRole}/lot-management/new`)}
-          >
-            Add Lot
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              icon={<FolderAddOutlined />}
+              style={{
+                backgroundColor: colors.primary,
+                borderColor: colors.primary,
+              }}
+              onClick={() => showModal("newFolder")}
+            >
+              New Folder
+            </Button>
+            <Button
+              type="primary"
+              icon={<UploadOutlined />}
+              style={{
+                backgroundColor: colors.primary,
+                borderColor: colors.primary,
+              }}
+              onClick={triggerFileUpload}
+            >
+              Upload Files
+            </Button>
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+              accept="*/*"
+            />
+          </Space>
         </div>
 
-        {/* Display table of lots if on main list view */}
-        {showMainList ? (
-          <Card bodyStyle={{ padding: isMobile ? "12px" : "24px" }}>
-            {/* Filters and Search Section - Responsive */}
-            <div style={{ marginBottom: 20 }}>
-              <Row gutter={[16, 16]} align="middle">
-                <Col xs={24} sm={24} md={12} lg={8}>
-                  <Search
-                    placeholder="Search property, lot, client..."
-                    allowClear
-                    enterButton={<SearchOutlined />}
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    onSearch={(value) => setSearchText(value)}
-                  />
-                </Col>
-
-                <Col xs={12} sm={8} md={6} lg={4}>
-                  <Select
-                    placeholder="Filter by Status"
-                    style={{ width: "100%" }}
-                    value={statusFilter}
-                    onChange={setStatusFilter}
-                  >
-                    <Option value="ALL">All Status</Option>
-                    <Option value="AVAILABLE">Available</Option>
-                    <Option value="SOLD">Sold</Option>
-                    <Option value="EXCLUDED">Excluded</Option>
-                  </Select>
-                </Col>
-
-                <Col xs={12} sm={8} md={6} lg={4}>
-                  <Select
-                    placeholder="Sort by Price"
-                    style={{ width: "100%" }}
-                    value={priceSort}
-                    onChange={setPriceSort}
-                  >
-                    <Option value={null}>Original Order</Option>
-                    <Option value="asc">Price: Low to High</Option>
-                    <Option value="desc">Price: High to Low</Option>
-                  </Select>
-                </Col>
-
-                <Col xs={24} sm={8} md={6} lg={4}>
-                  <Button
-                    onClick={resetFilters}
-                    style={{ width: isMobile ? "100%" : "auto" }}
-                  >
-                    Reset Filters
-                  </Button>
-                </Col>
-              </Row>
-            </div>
-
-            <div
-              className="responsive-table-container"
-              style={{ overflowX: "auto" }}
-            >
-              <Table
-                columns={getResponsiveColumns()}
-                dataSource={filteredLots}
-                rowKey="id"
-                loading={false}
-                scroll={{ x: "max-content" }}
-                size={isMobile ? "small" : "middle"}
-                pagination={{
-                  position: ["bottomRight"],
-                  showSizeChanger: true,
-                  pageSizeOptions: ["10", "20", "50", "100"],
-                  showTotal: (total, range) =>
-                    `${range[0]}-${range[1]} of ${total} lots`,
-                  size: isMobile ? "small" : "default",
-                  onChange: (page, pageSize) => {
-                    setPagination({
-                      ...pagination,
-                      current: page,
-                      pageSize: pageSize,
-                      total: filteredLots.length,
-                    });
-                  },
-                  onShowSizeChange: (current, size) => {
-                    setPagination({
-                      ...pagination,
-                      current: 1, // Reset to first page when changing page size
-                      pageSize: size,
-                      total: filteredLots.length,
-                    });
-                  },
-                }}
-                components={{
-                  body: {
-                    wrapper: (props) => {
-                      // Add skeleton rows if loading
-                      if (loading) {
-                        return (
-                          <tbody {...props}>
-                            {Array(5)
-                              .fill(null)
-                              .map((_, index) => (
-                                <SkeletonRow key={index} />
-                              ))}
-                          </tbody>
-                        );
-                      }
-                      return <tbody {...props} />;
-                    },
-                  },
-                }}
+        <Card
+          bodyStyle={{ padding: isMobile ? "12px" : "24px" }}
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {/* Breadcrumb navigation */}
+          <div
+            style={{ marginBottom: 16, display: "flex", alignItems: "center" }}
+          >
+            {currentFolder !== null && (
+              <Button
+                icon={<ArrowLeftOutlined />}
+                style={{ marginRight: 8 }}
+                onClick={navigateUp}
               />
-            </div>
+            )}
+            <Breadcrumb items={breadcrumbItems} />
+          </div>
+
+          {/* Filters and Search Section */}
+          <div style={{ marginBottom: 20, flex: "0 0 auto" }}>
+            <Row gutter={[16, 16]} align="middle">
+              <Col xs={24} sm={24} md={12} lg={8}>
+                <Search
+                  placeholder="Search files and folders..."
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onSearch={(value) => setSearchText(value)}
+                />
+              </Col>
+
+              <Col xs={12} sm={8} md={6} lg={4}>
+                <Select
+                  placeholder="Sort by"
+                  style={{ width: "100%" }}
+                  value={sortField}
+                  onChange={setSortField}
+                >
+                  <Option value="name">Name</Option>
+                  <Option value="created_at">Date</Option>
+                  <Option value="size">Size</Option>
+                </Select>
+              </Col>
+
+              <Col xs={12} sm={8} md={6} lg={4}>
+                <Select
+                  placeholder="Sort order"
+                  style={{ width: "100%" }}
+                  value={sortOrder}
+                  onChange={setSortOrder}
+                >
+                  <Option value="asc">Ascending</Option>
+                  <Option value="desc">Descending</Option>
+                </Select>
+              </Col>
+
+              <Col xs={24} sm={8} md={6} lg={4}>
+                <Button
+                  onClick={resetFilters}
+                  style={{ width: isMobile ? "100%" : "auto" }}
+                >
+                  Reset Filters
+                </Button>
+              </Col>
+            </Row>
+          </div>
+
+          <div
+            className="responsive-table-container"
+            style={{
+              overflowX: "auto",
+              height: "calc(100vh - 300px)",
+              minHeight: "400px",
+            }}
+          >
+            <Table
+              columns={getColumns()}
+              dataSource={currentItems}
+              rowKey="id"
+              scroll={{ x: "max-content" }}
+              size={isMobile ? "small" : "middle"}
+              loading={false} // We'll handle loading state with custom skeleton
+              pagination={{
+                position: ["bottomRight"],
+                showSizeChanger: true,
+                pageSizeOptions: ["10", "20", "50"],
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} of ${total} items`,
+                size: isMobile ? "small" : "default",
+                locale: { items_per_page: "/ page" },
+                onChange: (page, pageSize) => {
+                  setPagination({
+                    ...pagination,
+                    current: page,
+                    pageSize: pageSize,
+                  });
+                },
+                onShowSizeChange: (current, size) => {
+                  setPagination({
+                    ...pagination,
+                    current: 1,
+                    pageSize: size,
+                  });
+                },
+              }}
+              locale={{
+                emptyText: " ",
+              }}
+              components={{
+                body: {
+                  wrapper: (props) => {
+                    // Add skeleton rows if loading
+                    if (loading) {
+                      return (
+                        <tbody {...props}>
+                          {Array(5)
+                            .fill(null)
+                            .map((_, index) => (
+                              <SkeletonRow key={index} />
+                            ))}
+                        </tbody>
+                      );
+                    }
+                    return <tbody {...props} />;
+                  },
+                },
+              }}
+            />
 
             {/* Mobile information note */}
             {isMobile && (
@@ -611,39 +881,214 @@ const LotList = ({ role: propRole }) => {
                 </Text>
               </div>
             )}
-          </Card>
-        ) : (
-          // Outlet for child routes (LotForm, LotView)
-          <Outlet context={{ refreshLots: fetchLots, userRole }} />
+
+            {/* Empty state for table */}
+            {currentItems.length === 0 && !loading && (
+              <div
+                style={{
+                  margin: "40px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "40px 20px",
+                  border: "2px dashed #d9d9d9",
+                  borderRadius: "8px",
+                  background: "#fafafa",
+                  cursor: "pointer",
+                }}
+                onClick={triggerFileUpload}
+              >
+                <InboxOutlined
+                  style={{
+                    fontSize: 48,
+                    color: colors.primary,
+                    marginBottom: 16,
+                  }}
+                />
+                <p style={{ fontSize: 16, marginBottom: 8 }}>
+                  No files or folders found
+                </p>
+                <p style={{ color: "#888", marginBottom: 16 }}>
+                  Click to browse your files
+                </p>
+                <Space>
+                  <Button
+                    type="primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showModal("newFolder");
+                    }}
+                  >
+                    Create Folder
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerFileUpload();
+                    }}
+                  >
+                    Browse Files
+                  </Button>
+                </Space>
+              </div>
+            )}
+          </div>
+
+          {/* Info tip for browser selection */}
+          <div style={{ marginTop: 8, marginBottom: 16, textAlign: "center" }}>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              <a onClick={triggerFileUpload} style={{ color: colors.primary }}>
+                Click here to browse your computer for files to upload
+              </a>
+            </Text>
+          </div>
+        </Card>
+
+        {/* Upload Progress Modal */}
+        {uploading && (
+          <Modal
+            title="Uploading File"
+            open={uploading}
+            footer={null}
+            closable={false}
+            maskClosable={false}
+          >
+            <div style={{ marginBottom: 20 }}>
+              <Progress percent={Math.round(uploadProgress)} status="active" />
+            </div>
+            <p style={{ textAlign: "center" }}>
+              Please wait while your file is being uploaded...
+            </p>
+          </Modal>
         )}
+
+        {/* Modal for Create Folder / Rename */}
+        <Modal
+          title={
+            modalType === "newFolder" ? "Create New Folder" : "Rename Item"
+          }
+          open={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          footer={null}
+        >
+          <Form
+            form={itemForm}
+            layout="vertical"
+            onFinish={(values) => {
+              if (modalType === "newFolder") {
+                createFolder(values);
+              } else if (modalType === "rename") {
+                renameItem(values);
+              }
+            }}
+          >
+            <Form.Item
+              name="name"
+              label="Name"
+              rules={[
+                { required: true, message: "Please input a name!" },
+                {
+                  validator: (_, value) => {
+                    if (
+                      value &&
+                      currentItems.some(
+                        (item) =>
+                          item.name === value &&
+                          (modalType !== "rename" ||
+                            item.id !== selectedItem?.id)
+                      )
+                    ) {
+                      return Promise.reject(
+                        new Error(
+                          "This name already exists in the current folder"
+                        )
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+            >
+              <Input
+                placeholder={
+                  modalType === "newFolder"
+                    ? "Enter folder name"
+                    : "Enter new name"
+                }
+              />
+            </Form.Item>
+
+            <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+              <Space>
+                <Button onClick={() => setModalVisible(false)}>Cancel</Button>
+                <Button type="primary" htmlType="submit">
+                  {modalType === "newFolder" ? "Create" : "Rename"}
+                </Button>
+              </Space>
+            </Form.Item>
+          </Form>
+        </Modal>
 
         {/* Add responsive styles */}
         <style jsx="true">{`
-          .lot-management .ant-table-thead > tr > th {
+          .file-manager .ant-table-thead > tr > th {
             white-space: nowrap;
+            background-color: #fafafa;
           }
 
-          @media (max-width: ${breakpoints.md}px) {
-            .lot-management .ant-table {
+          .file-manager .ant-pagination {
+            display: flex;
+            align-items: center;
+          }
+
+          .file-manager .ant-pagination-item {
+            border-radius: 4px;
+            border-color: #1da57a;
+          }
+
+          .file-manager .ant-pagination-item-active {
+            background-color: #1da57a;
+            border-color: #1da57a;
+          }
+
+          .file-manager .ant-pagination-item-active a {
+            color: white;
+          }
+
+          .file-manager .ant-select-selection-item {
+            color: #333;
+          }
+
+          .file-manager .ant-pagination-options {
+            margin-left: 16px;
+          }
+
+          @media (max-width: 768px) {
+            .file-manager .ant-table {
               font-size: 13px;
             }
 
-            .lot-management .ant-btn-sm {
+            .file-manager .ant-btn-sm {
               font-size: 12px;
               padding: 0 8px;
             }
 
-            .lot-management .ant-table-pagination {
-              flex-wrap: wrap;
+            .file-manager .ant-pagination {
+              font-size: 12px;
             }
-          }
 
-          @media (max-width: ${breakpoints.sm}px) {
-            .lot-management .ant-pagination-options {
+            .file-manager .ant-pagination-item {
+              min-width: 24px;
+              height: 24px;
+              line-height: 22px;
+            }
+
+            .file-manager .ant-pagination-options {
               display: none;
             }
 
-            .lot-management .ant-table-pagination-right {
+            .file-manager .ant-table-pagination-right {
               justify-content: center;
             }
           }
@@ -653,4 +1098,4 @@ const LotList = ({ role: propRole }) => {
   );
 };
 
-export default LotList;
+export default FileManagerList;

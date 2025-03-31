@@ -9,6 +9,8 @@ use App\Http\Controllers\AccountManagementController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\InternTaskController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\FolderController;
+use App\Http\Controllers\FileController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -45,6 +47,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
             'roles' => ['superadmin', 'admin', 'agent', 'intern']
         ]);
     });
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    // File Browser (combined files and folders)
+    Route::get('/file-browser', [FileController::class, 'browser']);
+    
+    // Folders
+    Route::apiResource('folders', FolderController::class);
+    Route::get('/folders/{folder}/path', [FolderController::class, 'path']);
+    Route::put('/folders/{folder}/move', [FolderController::class, 'move']);
+    
+    // Files
+    Route::apiResource('files', FileController::class);
+    Route::get('/files/{file}/download', [FileController::class, 'download'])->name('files.download');
+    Route::get('/files/{file}/preview', [FileController::class, 'preview'])->name('files.preview');
+    Route::put('/files/{file}/move', [FileController::class, 'move']);
 });
 
 //Admin Routes

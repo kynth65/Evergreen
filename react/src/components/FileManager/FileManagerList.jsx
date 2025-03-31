@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axiosClient from "../../axios.client"; // Use your existing axios client
+import { useStateContext } from "../../context/ContextProvider";
 import {
   Table,
   Button,
@@ -15,9 +17,11 @@ import {
   Dropdown,
   Menu,
   Breadcrumb,
+  Tooltip,
   message,
   ConfigProvider,
   Progress,
+  Skeleton,
 } from "antd";
 import {
   PlusOutlined,
@@ -42,9 +46,9 @@ const { Title, Text } = Typography;
 const FileManagerList = ({ role: propRole = "admin" }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user: contextUser } = useStateContext();
 
   // State for file system data
-  const [fileSystem, setFileSystem] = useState([]);
   const [currentFolder, setCurrentFolder] = useState(null); // null means root
   const [currentItems, setCurrentItems] = useState([]);
   const [breadcrumbPath, setBreadcrumbPath] = useState([]);
@@ -56,7 +60,9 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [userRole, setUserRole] = useState(propRole);
 
   // File upload state and refs
   const [uploading, setUploading] = useState(false);
@@ -102,6 +108,13 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Fetch user data to verify role (if needed)
+  useEffect(() => {
+    if (contextUser && contextUser.role) {
+      setUserRole(contextUser.role);
+    }
+  }, [contextUser]);
+
   // Update breadcrumb path when changing folders
   useEffect(() => {
     if (currentFolder === null) {
@@ -116,27 +129,70 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
     fetchCurrentItems();
   }, [currentFolder, searchText, sortField, sortOrder]);
 
-  // Placeholder for API call to fetch files/folders in current directory
+  // Fetch files/folders from the API
   const fetchCurrentItems = () => {
     setLoading(true);
+    setError(null);
 
-    // This will be replaced with an actual API call
-    // Example: apiClient.get(`/files?parent=${currentFolder}&search=${searchText}`)
+    axiosClient
+      .get("/file-browser", {
+        params: {
+          folder_id: currentFolder,
+          search: searchText,
+          sort: sortField,
+          order: sortOrder,
+        },
+      })
+      .then((response) => {
+        // Check if response has the expected structure
+        if (response.data && response.data.items) {
+          setCurrentItems(response.data.items);
 
-    // Simulate API call for now
-    setTimeout(() => {
-      setCurrentItems([]);
-      setLoading(false);
-    }, 500);
+          // If we're getting breadcrumb info from this endpoint too
+          if (response.data.breadcrumb && currentFolder !== null) {
+            setBreadcrumbPath(response.data.breadcrumb);
+          }
+
+          setPagination((prev) => ({
+            ...prev,
+            total: response.data.items.length || 0,
+          }));
+        } else {
+          // If the API returns a different structure, try to adapt
+          const items = Array.isArray(response.data) ? response.data : [];
+          setCurrentItems(items);
+          setPagination((prev) => ({
+            ...prev,
+            total: items.length || 0,
+          }));
+        }
+
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching files:", err);
+        setError("Failed to load files and folders");
+        message.error(
+          "Failed to load files: " +
+            (err.response?.data?.message || err.message)
+        );
+        setLoading(false);
+        setCurrentItems([]);
+      });
   };
 
-  // Placeholder for API call to fetch breadcrumb path
+  // Fetch breadcrumb path from the API
   const fetchBreadcrumbPath = (folderId) => {
-    // This will be replaced with an actual API call
-    // Example: apiClient.get(`/folders/${folderId}/path`)
-
-    // Simulate API call for now
-    setBreadcrumbPath([{ id: folderId, name: "Folder" }]);
+    axiosClient
+      .get(`/folders/${folderId}/path`)
+      .then((response) => {
+        setBreadcrumbPath(response.data || []);
+      })
+      .catch((err) => {
+        console.error("Error fetching path:", err);
+        message.error("Failed to load folder path");
+        setBreadcrumbPath([{ id: folderId, name: "Unknown Folder" }]);
+      });
   };
 
   // Handler for going to a folder
@@ -148,7 +204,17 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
   // Handler for going up one level
   const navigateUp = () => {
     if (currentFolder === null) return;
-    setCurrentFolder(null);
+
+    // If we have breadcrumb path with parent info
+    if (breadcrumbPath.length > 1) {
+      // Navigate to parent folder (second last item in the path)
+      const parentFolder = breadcrumbPath[breadcrumbPath.length - 2];
+      setCurrentFolder(parentFolder.id);
+    } else {
+      // If no parent info or at root level child, go to root
+      setCurrentFolder(null);
+    }
+
     setPagination({ ...pagination, current: 1 });
   };
 
@@ -170,6 +236,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
 
   // Format date for display
   const formatDate = (dateString) => {
+    if (!dateString) return "-";
     const date = new Date(dateString);
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
@@ -198,26 +265,57 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
 
   // Handler for creating a new folder
   const createFolder = (values) => {
-    // To be replaced with API call
-    // Example: apiClient.post('/folders', { name: values.name, parent: currentFolder })
+    axiosClient
+      .post("/folders", {
+        name: values.name,
+        parent_id: currentFolder,
+      })
+      .then((response) => {
+        message.success(`Folder "${values.name}" created successfully`);
+        setModalVisible(false);
+        fetchCurrentItems(); // Refresh the list
+      })
+      .catch((err) => {
+        console.error("Error creating folder:", err);
 
-    message.success(
-      `Folder "${values.name}" will be created (API integration pending)`
-    );
-    setModalVisible(false);
+        if (err.response && err.response.data && err.response.data.errors) {
+          // Show validation errors
+          const firstError = Object.values(err.response.data.errors)[0][0];
+          message.error(firstError || "Failed to create folder");
+        } else {
+          message.error("Failed to create folder");
+        }
+      });
   };
 
   // Handler for renaming an item
   const renameItem = (values) => {
     if (!selectedItem) return;
 
-    // To be replaced with API call
-    // Example: apiClient.put(`/${selectedItem.type}s/${selectedItem.id}`, { name: values.name })
+    const endpoint =
+      selectedItem.type === "folder"
+        ? `/folders/${selectedItem.id}`
+        : `/files/${selectedItem.id}`;
 
-    message.success(
-      `Item will be renamed to "${values.name}" (API integration pending)`
-    );
-    setModalVisible(false);
+    axiosClient
+      .put(endpoint, {
+        name: values.name,
+      })
+      .then((response) => {
+        message.success(`Item renamed successfully to "${values.name}"`);
+        setModalVisible(false);
+        fetchCurrentItems(); // Refresh the list
+      })
+      .catch((err) => {
+        console.error("Error renaming item:", err);
+
+        if (err.response && err.response.data && err.response.data.errors) {
+          const firstError = Object.values(err.response.data.errors)[0][0];
+          message.error(firstError || "Failed to rename item");
+        } else {
+          message.error("Failed to rename item");
+        }
+      });
   };
 
   // Handler for deleting an item
@@ -231,12 +329,19 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
       okType: "danger",
       cancelText: "No",
       onOk: () => {
-        // To be replaced with API call
-        // Example: apiClient.delete(`/${item.type}s/${item.id}`)
+        const endpoint =
+          item.type === "folder" ? `/folders/${item.id}` : `/files/${item.id}`;
 
-        message.success(
-          `"${item.name}" will be deleted (API integration pending)`
-        );
+        axiosClient
+          .delete(endpoint)
+          .then(() => {
+            message.success(`"${item.name}" deleted successfully`);
+            fetchCurrentItems(); // Refresh the list
+          })
+          .catch((err) => {
+            console.error("Error deleting item:", err);
+            message.error(`Failed to delete "${item.name}"`);
+          });
       },
     });
   };
@@ -253,43 +358,62 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
 
     const fileName = file.name;
 
+    // Show upload progress message
     message.loading({
       content: `Uploading ${fileName}...`,
       key: "upload",
       duration: 0,
     });
 
-    // To be replaced with API call
-    // Example:
-    // const formData = new FormData();
-    // formData.append('file', file);
-    // formData.append('parent', currentFolder);
-    // apiClient.post('/files', formData, {
-    //   onUploadProgress: (progressEvent) => {
-    //     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-    //     setUploadProgress(percentCompleted);
-    //   }
-    // })
+    // Create form data for the file upload
+    const formData = new FormData();
+    formData.append("file", file);
+    if (currentFolder !== null) {
+      formData.append("folder_id", currentFolder);
+    }
 
-    // Simulate upload progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 10) + 5;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-
+    // Upload the file with progress tracking
+    axiosClient
+      .post("/files", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+        },
+      })
+      .then((response) => {
         setUploading(false);
         message.success({
-          content: `${fileName} upload will be implemented with API`,
+          content: `${fileName} uploaded successfully`,
           key: "upload",
           duration: 2,
         });
 
+        // Refresh the file list
         fetchCurrentItems();
-      }
-      setUploadProgress(progress);
-    }, 200);
+      })
+      .catch((err) => {
+        console.error("Error uploading file:", err);
+        setUploading(false);
+
+        if (err.response && err.response.data && err.response.data.message) {
+          message.error({
+            content: err.response.data.message,
+            key: "upload",
+            duration: 4,
+          });
+        } else {
+          message.error({
+            content: `Failed to upload ${fileName}`,
+            key: "upload",
+            duration: 4,
+          });
+        }
+      });
   };
 
   // Trigger file input click
@@ -308,12 +432,66 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
     e.target.value = null;
   };
 
+  // Download a file
+  const downloadFile = (file) => {
+    window.open(
+      `${import.meta.env.VITE_API_BASE_URL}/api/files/${file.id}/download`,
+      "_blank"
+    );
+  };
+
+  // Preview a file
+  const previewFile = (file) => {
+    window.open(
+      `${import.meta.env.VITE_API_BASE_URL}/api/files/${file.id}/preview`,
+      "_blank"
+    );
+  };
+
   // Reset search and sort
   const resetFilters = () => {
     setSearchText("");
     setSortField("name");
     setSortOrder("asc");
   };
+
+  // Custom skeleton row for loading state
+  const SkeletonRow = () => (
+    <tr className="ant-table-row">
+      <td>
+        <Space>
+          <Skeleton.Avatar active size="small" shape="square" />
+          <Skeleton.Input active size="small" style={{ width: 150 }} />
+        </Space>
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 80 }} />
+      </td>
+      {screenWidth >= breakpoints.md && (
+        <>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 80 }} />
+          </td>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 100 }} />
+          </td>
+        </>
+      )}
+      <td>
+        <Space>
+          {isMobile ? (
+            <Skeleton.Button active size="small" shape="circle" />
+          ) : (
+            <>
+              <Skeleton.Button active size="small" shape="square" />
+              <Skeleton.Button active size="small" shape="square" />
+              <Skeleton.Button active size="small" shape="square" />
+            </>
+          )}
+        </Space>
+      </td>
+    </tr>
+  );
 
   // Table columns
   const getColumns = () => {
@@ -326,7 +504,9 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
           <Space>
             {getFileIcon(record)}
             {record.type === "folder" ? (
-              <a onClick={() => navigateToFolder(record.id)}>{text}</a>
+              <Tooltip title="Click to open folder">
+                <a onClick={() => navigateToFolder(record.id)}>{text}</a>
+              </Tooltip>
             ) : (
               <span>{text}</span>
             )}
@@ -394,16 +574,14 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               key: "view",
               label: "View",
               icon: <EyeOutlined />,
-              onClick: () =>
-                message.info("View functionality would be implemented here"),
+              onClick: () => previewFile(record),
             });
 
             actionItems.push({
               key: "download",
               label: "Download",
               icon: <DownloadOutlined />,
-              onClick: () =>
-                message.info(`Download for "${record.name}" would happen here`),
+              onClick: () => downloadFile(record),
             });
           }
 
@@ -437,9 +615,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                 type="primary"
                 icon={<EyeOutlined />}
                 size="small"
-                onClick={() =>
-                  message.info("View functionality would be implemented here")
-                }
+                onClick={() => previewFile(record)}
               >
                 View
               </Button>
@@ -457,11 +633,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                 type="primary"
                 icon={<DownloadOutlined />}
                 size="small"
-                onClick={() =>
-                  message.info(
-                    `Download for "${record.name}" would happen here`
-                  )
-                }
+                onClick={() => downloadFile(record)}
               >
                 Download
               </Button>
@@ -607,7 +779,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
                   onChange={setSortField}
                 >
                   <Option value="name">Name</Option>
-                  <Option value="date">Date</Option>
+                  <Option value="created_at">Date</Option>
                   <Option value="size">Size</Option>
                 </Select>
               </Col>
@@ -643,13 +815,22 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               minHeight: "400px",
             }}
           >
+            {/* Display error message if there is one */}
+            {error && (
+              <div
+                style={{ marginBottom: 16, color: "red", textAlign: "center" }}
+              >
+                {error}
+              </div>
+            )}
+
             <Table
               columns={getColumns()}
               dataSource={currentItems}
               rowKey="id"
               scroll={{ x: "max-content" }}
               size={isMobile ? "small" : "middle"}
-              loading={loading}
+              loading={false} // We'll handle loading state with custom skeleton
               pagination={{
                 position: ["bottomRight"],
                 showSizeChanger: true,
@@ -676,6 +857,25 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               locale={{
                 emptyText: " ",
               }}
+              components={{
+                body: {
+                  wrapper: (props) => {
+                    // Add skeleton rows if loading
+                    if (loading) {
+                      return (
+                        <tbody {...props}>
+                          {Array(5)
+                            .fill(null)
+                            .map((_, index) => (
+                              <SkeletonRow key={index} />
+                            ))}
+                        </tbody>
+                      );
+                    }
+                    return <tbody {...props} />;
+                  },
+                },
+              }}
             />
 
             {/* Mobile information note */}
@@ -689,7 +889,7 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
             )}
 
             {/* Empty state for table */}
-            {currentItems.length === 0 && !loading && (
+            {currentItems.length === 0 && !loading && !error && (
               <div
                 style={{
                   margin: "40px 0",
@@ -888,6 +1088,14 @@ const FileManagerList = ({ role: propRole = "admin" }) => {
               min-width: 24px;
               height: 24px;
               line-height: 22px;
+            }
+
+            .file-manager .ant-pagination-options {
+              display: none;
+            }
+
+            .file-manager .ant-table-pagination-right {
+              justify-content: center;
             }
           }
         `}</style>
