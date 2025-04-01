@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Eye, Download, ArrowLeft, Calculator } from "lucide-react";
 import html2pdf from "html2pdf.js";
-import "./OCSStyle.css"; // Import the scoped CSS file
+import "./OCSStyle.css";
+import Logo from "../../assets/Logo/evergreen logo.png";
 
 const OCSCalculator = () => {
   // View management state
@@ -421,12 +422,14 @@ const OCSCalculator = () => {
       filename: `EVERGREEN_OCS_${
         formData.clientName.replace(/\s+/g, "_") || "FORM"
       }.pdf`,
-      image: { type: "jpeg", quality: 0.98 }, // High quality for clear text
+      image: { type: "png", quality: 1.0 }, // High quality for clear images and text
       html2canvas: {
         scale: 2, // Higher scale for better quality
         letterRendering: true,
         useCORS: true,
+        allowTaint: true, // Allow images from the same origin
         logging: false,
+        imageTimeout: 15000, // Increased timeout for image loading
         ignoreElements: (element) => {
           // Ignore any elements that might cause problems with color functions
           return (
@@ -436,7 +439,7 @@ const OCSCalculator = () => {
       },
       jsPDF: {
         unit: "mm",
-        format: "a4",
+        format: "legal",
         orientation: "portrait",
         compress: true,
       },
@@ -483,7 +486,9 @@ const OCSCalculator = () => {
           </div>
         </div>
         <div className="ocs-payment-grid">
-          <div>Reservation Fee (Deductible from Downpayment)</div>
+          <div>
+            Reservation Fee (Deductible from Downpayment but non refundable)
+          </div>
           <div className="ocs-text-right">₱ 20,000.00</div>
         </div>
 
@@ -996,7 +1001,13 @@ const OCSCalculator = () => {
           ref={pdfContentRef}
           className="ocs-pdf-content p-8 bg-white"
         >
+          <div className="ocs-logo-watermark">
+            <img src={Logo} alt="" />
+          </div>
           <div className="ocs-header-title text-center mb-8 pt-4">
+            <div className="ocs-logo-container mb-3">
+              <img src={Logo} alt="Evergreen Logo" className="ocs-logo" />
+            </div>
             <h1 className="text-2xl font-bold text-green-600 mb-3">
               Evergreen Realty Philippines
             </h1>
