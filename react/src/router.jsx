@@ -32,6 +32,10 @@ import RFSForm from "./components/ResidentialSheet/RFSForm";
 import OCSCalculator from "./components/OCSCalculator/OCSCalculator";
 import FileManagerList from "./components/FileManager/FileManagerList";
 
+import ClientPaymentList from "./components/ClientPayment/ClientPaymentList";
+import ClientPaymentAddForm from "./components/ClientPayment/ClientPaymentAddForm";
+import ClientPaymentEditForm from "./components/ClientPayment/ClientPaymentEditForm";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -131,6 +135,19 @@ const router = createBrowserRouter([
       {
         path: "file-manager-list",
         element: <FileManagerList />,
+      },
+
+      {
+        path: "client-payments",
+        element: <ClientPaymentList />,
+      },
+      {
+        path: "client-payment/new",
+        element: <ClientPaymentAddForm />,
+      },
+      {
+        path: "client-payment/:id/edit",
+        element: <ClientPaymentEditForm />,
       },
     ],
   },

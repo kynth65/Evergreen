@@ -11,6 +11,8 @@ use App\Http\Controllers\InternTaskController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\ClientPaymentController;
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -64,6 +66,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/files/{file}/preview', [FileController::class, 'preview'])->name('files.preview');
     Route::put('/files/{file}/move', [FileController::class, 'move']);
 });
+
+Route::apiResource('client-payments', ClientPaymentController::class);
+Route::post('/client-payments/{id}/pay', [ClientPaymentController::class, 'processPayment']);
 
 //Admin Routes
 //Task Management Routes
