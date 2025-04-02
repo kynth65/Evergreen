@@ -61,30 +61,36 @@ class ClientPaymentController extends Controller
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'lot_id' => 'required|exists:lots,id',
-            'installment_years' => 'required|integer|min:1',
+            'payment_type' => 'required|in:installment,spot_cash',
             'start_date' => 'required|date',
             'next_payment_date' => 'nullable|date',
-            'completed_payments' => 'required|integer|min:0',
             'payment_notes' => 'nullable|string',
-            'payment_type' => 'required|in:installment,spot_cash',
-
         ]);
         
-        // Calculate total payments based on installment years
-        $validated['total_payments'] = $validated['payment_type'] === 'spot_cash' 
-        ? 1 
-        : ($validated['installment_years'] * 12);
-    
-        
-        // Ensure completed payments don't exceed total payments
-        if ($validated['payment_type'] === 'spot_cash') {
-            $validated['completed_payments'] = 0;
+        // Modify validation for installment years
+        if ($validated['payment_type'] === 'installment') {
+            $validated = array_merge($validated, $request->validate([
+                'installment_years' => 'required|integer|min:1',
+                'completed_payments' => 'required|integer|min:0',
+            ]));
+            $validated['total_payments'] = $validated['installment_years'] * 12;
+        } else {
+            // For spot cash
             $validated['installment_years'] = 1;
+            $validated['total_payments'] = 1;
+            $validated['completed_payments'] = 1;
         }
         
-        // Set payment status based on completed payments
+        // Set payment status based on type
+        $validated['payment_status'] = $validated['payment_type'] === 'spot_cash' 
+            ? 'COMPLETED' 
+            : ($validated['completed_payments'] === 0 
+                ? 'NOT_STARTED' 
+                : ($validated['completed_payments'] >= $validated['total_payments'] 
+                    ? 'COMPLETED' 
+                    : 'IN_PROGRESS'));
+        
         $clientPayment = new ClientPayment($validated);
-        $clientPayment->updatePaymentStatus();
         $clientPayment->save();
         
         return response()->json([
@@ -92,7 +98,6 @@ class ClientPaymentController extends Controller
             'client_payment' => $clientPayment
         ], 201);
     }
-
     /**
      * Display the specified client payment.
      *

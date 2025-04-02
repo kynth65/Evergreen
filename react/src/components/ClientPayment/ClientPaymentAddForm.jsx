@@ -107,11 +107,11 @@ const ClientPaymentAddForm = () => {
           payment_number: 1,
           due_date: startDate.format("YYYY-MM-DD"),
           amount: selectedLotData.total_contract_price,
-          status: "PAID", // Immediately set as PAID for spot cash
+          status: "PAID",
         },
       ]);
 
-      // Set installment years to 1 for spot cash
+      // Set minimal values for installment-related fields
       setInstallmentYears(1);
       form.setFieldValue("installment_years", 1);
     } else {
@@ -152,21 +152,11 @@ const ClientPaymentAddForm = () => {
           : values.next_payment_date
           ? values.next_payment_date.format("YYYY-MM-DD")
           : null,
-      total_payments:
-        values.payment_type === "spot_cash" ? 1 : installmentYears * 12,
-      completed_payments:
-        values.payment_type === "spot_cash"
-          ? 1 // Automatically set to completed for spot cash
-          : values.completed_payments || 0,
+      total_payments: 1, // Always 1 for spot cash
+      completed_payments: 1, // Always completed for spot cash
+      installment_years: 1, // Default to 1 for spot cash
       payment_schedule: paymentSchedule,
-      payment_status:
-        values.payment_type === "spot_cash"
-          ? "COMPLETED" // Spot cash is immediately completed
-          : values.completed_payments === 0
-          ? "NOT_STARTED"
-          : values.completed_payments >= installmentYears * 12
-          ? "COMPLETED"
-          : "IN_PROGRESS",
+      payment_status: "COMPLETED", // Spot cash is always completed
     };
 
     axiosClient
@@ -260,10 +250,10 @@ const ClientPaymentAddForm = () => {
           layout="vertical"
           onFinish={onFinish}
           initialValues={{
-            completed_payments: 0,
-            installment_years: 1,
+            completed_payments: 1, // Default to 1 for spot cash
+            installment_years: 1, // Keep this, but make it optional
             start_date: dayjs(), // Default to current date
-            payment_type: "installment",
+            payment_type: "spot_cash", // Default to spot cash
           }}
         >
           <Row gutter={[16, 16]}>
@@ -455,12 +445,6 @@ const ClientPaymentAddForm = () => {
                       <Form.Item
                         name="installment_years"
                         label="Installment Period (Years)"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Please specify installment years",
-                          },
-                        ]}
                       >
                         <InputNumber
                           min={1}
@@ -596,16 +580,17 @@ const ClientPaymentAddForm = () => {
                         },
                       ]}
                     >
-                      <InputNumber
-                        min={0}
-                        max={
+                      <Input
+                        value={
                           form.getFieldValue("payment_type") === "spot_cash"
-                            ? 1
-                            : installmentYears * 12
+                            ? "1"
+                            : `${installmentYears * 12}`
                         }
-                        style={{ width: "100%" }}
-                        disabled={
+                        readOnly
+                        addonAfter={
                           form.getFieldValue("payment_type") === "spot_cash"
+                            ? "payment"
+                            : "months"
                         }
                       />
                     </Form.Item>
@@ -619,9 +604,15 @@ const ClientPaymentAddForm = () => {
                       }
                     >
                       {({ getFieldValue }) => {
+                        const paymentType = getFieldValue("payment_type");
                         const completed =
-                          getFieldValue("completed_payments") || 0;
-                        const total = installmentYears * 12;
+                          paymentType === "spot_cash"
+                            ? 1
+                            : getFieldValue("completed_payments") || 0;
+                        const total =
+                          paymentType === "spot_cash"
+                            ? 1
+                            : installmentYears * 12;
                         const percent = Math.round((completed / total) * 100);
                         let strokeColor = colors.success;
                         if (percent < 30) {
