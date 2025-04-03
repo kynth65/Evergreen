@@ -1,5 +1,6 @@
 <?php
 
+// database/migrations/YYYY_MM_DD_create_client_payments_table.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,14 +17,14 @@ return new class extends Migration
             $table->string('client_name');
             $table->string('contact_number');
             $table->string('email')->nullable();
-            $table->string('address')->nullable();
-            $table->foreignId('lot_id')->constrained('lots')->onDelete('cascade');
+            $table->text('address')->nullable();
+            $table->enum('payment_type', ['spot_cash', 'installment']);
             $table->integer('installment_years');
-            $table->integer('total_payments');
-            $table->integer('completed_payments')->default(0);
-            $table->enum('payment_status', ['COMPLETED', 'IN_PROGRESS', 'OVERDUE', 'NOT_STARTED'])->default('NOT_STARTED');
             $table->date('start_date');
             $table->date('next_payment_date')->nullable();
+            $table->integer('completed_payments')->default(0);
+            $table->decimal('total_amount', 12, 2)->default(0);
+            $table->enum('payment_status', ['PENDING', 'ONGOING', 'COMPLETED'])->default('PENDING');
             $table->text('payment_notes')->nullable();
             $table->timestamps();
         });

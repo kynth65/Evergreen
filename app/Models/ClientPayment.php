@@ -1,9 +1,11 @@
 <?php
 
+// app/Models/ClientPayment.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class ClientPayment extends Model
 {
@@ -14,15 +16,14 @@ class ClientPayment extends Model
         'contact_number',
         'email',
         'address',
-        'lot_id',
+        'payment_type',
         'installment_years',
-        'total_payments',
-        'completed_payments',
-        'payment_status',
         'start_date',
         'next_payment_date',
+        'completed_payments',
+        'total_amount',
+        'payment_status',
         'payment_notes',
-        'payment_type', // Add this new field
     ];
 
     protected $casts = [
@@ -31,45 +32,72 @@ class ClientPayment extends Model
     ];
 
     /**
-     * Get the lot that the client payment belongs to.
+     * Get the lots associated with this payment.
      */
-    public function lot()
+    public function lots()
     {
-        return $this->belongsTo(Lot::class);
+        return $this->belongsToMany(Lot::class, 'client_lots')
+            ->withPivot('custom_price')
+            ->withTimestamps();
     }
 
     /**
-     * Get payment history for this client payment.
+     * Get the payment schedules for this payment.
      */
-    public function paymentHistory()
+    public function paymentSchedules()
     {
-        return $this->hasMany(PaymentHistory::class);
+        return $this->hasMany(PaymentSchedule::class);
     }
 
     /**
-     * Update payment status based on completed payments and payment type.
+     * Get the payment transactions for this payment.
      */
-    public function updatePaymentStatus()
+    public function paymentTransactions()
     {
-        // For spot cash, handle status differently
-        if ($this->payment_type === 'spot_cash') {
-            $this->payment_status = $this->completed_payments > 0 
-                ? 'COMPLETED' 
-                : 'NOT_STARTED';
-            return $this;
+        return $this->hasMany(PaymentTransaction::class);
+    }
+
+    /**
+     * Check if payment is late.
+     */
+    public function getIsLateAttribute()
+    {
+        if ($this->payment_status === 'COMPLETED' || $this->payment_type === 'spot_cash') {
+            return false;
         }
 
-        // Existing installment logic
-        if ($this->completed_payments >= $this->total_payments) {
-            $this->payment_status = 'COMPLETED';
-        } elseif ($this->completed_payments > 0) {
-            $this->payment_status = 'IN_PROGRESS';
-        } elseif ($this->next_payment_date && $this->next_payment_date < now()) {
-            $this->payment_status = 'OVERDUE';
-        } else {
-            $this->payment_status = 'NOT_STARTED';
+        if (!$this->next_payment_date) {
+            return false;
         }
-        
-        return $this;
+
+        return Carbon::now()->gt($this->next_payment_date);
+    }
+
+    /**
+     * Get days late.
+     */
+    public function getDaysLateAttribute()
+    {
+        if (!$this->is_late) {
+            return 0;
+        }
+
+        return Carbon::now()->diffInDays($this->next_payment_date);
+    }
+
+    /**
+     * Get payment status with late indicator.
+     */
+    public function getPaymentStatusWithLateIndicatorAttribute()
+    {
+        if ($this->payment_status === 'COMPLETED') {
+            return 'COMPLETED';
+        }
+
+        if ($this->is_late) {
+            return $this->days_late > 30 ? 'SUPER LATE' : 'LATE';
+        }
+
+        return 'CURRENT';
     }
 }

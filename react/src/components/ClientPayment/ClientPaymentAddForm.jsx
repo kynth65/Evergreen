@@ -21,6 +21,8 @@ import {
   Tag,
   message,
   Radio,
+  Table,
+  Empty,
 } from "antd";
 import {
   SaveOutlined,
@@ -30,6 +32,8 @@ import {
   DollarOutlined,
   UserOutlined,
   HomeOutlined,
+  DeleteOutlined,
+  QuestionCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -37,7 +41,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-const ClientPaymentAddForm = () => {
+const ClientPaymentAddForm = ({ onSuccess }) => {
   const navigate = useNavigate();
   const { user } = useStateContext();
   const userRole = user?.role;
@@ -45,10 +49,11 @@ const ClientPaymentAddForm = () => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [lots, setLots] = useState([]);
-  const [selectedLot, setSelectedLot] = useState(null);
+  const [selectedLots, setSelectedLots] = useState([]);
   const [installmentYears, setInstallmentYears] = useState(1);
   const [paymentSchedule, setPaymentSchedule] = useState([]);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [customPrices, setCustomPrices] = useState({});
 
   const colors = {
     primary: "#1da57a",
@@ -96,17 +101,32 @@ const ClientPaymentAddForm = () => {
     fetchLots();
   }, []);
 
-  // Generate payment schedule
-  const generatePaymentSchedule = (lotId, years, startDate) => {
-    if (form.getFieldValue("payment_type") === "spot_cash") {
-      const selectedLotData = lots.find((lot) => lot.id === lotId);
-      if (!selectedLotData || !selectedLotData.total_contract_price) return;
+  // Calculate total price of selected lots
+  const calculateTotalPrice = () => {
+    return selectedLots.reduce((total, lotId) => {
+      const lot = lots.find((l) => l.id === lotId);
+      // Use custom price if set, otherwise use the lot's contract price
+      const price = customPrices[lotId] || (lot ? lot.total_contract_price : 0);
+      return total + parseInt(price || 0);
+    }, 0);
+  };
 
+  // Generate payment schedule
+  const generatePaymentSchedule = () => {
+    const paymentType = form.getFieldValue("payment_type");
+    const startDate = form.getFieldValue("start_date");
+
+    if (!startDate || selectedLots.length === 0) return;
+
+    const totalPrice = calculateTotalPrice();
+
+    if (paymentType === "spot_cash") {
+      // For spot cash, just one payment
       setPaymentSchedule([
         {
           payment_number: 1,
           due_date: startDate.format("YYYY-MM-DD"),
-          amount: selectedLotData.total_contract_price,
+          amount: totalPrice,
           status: "PAID",
         },
       ]);
@@ -114,57 +134,102 @@ const ClientPaymentAddForm = () => {
       // Set minimal values for installment-related fields
       setInstallmentYears(1);
       form.setFieldValue("installment_years", 1);
+      form.setFieldValue("completed_payments", 1);
     } else {
-      // Existing installment logic
-      if (!lotId || !years || !startDate) return;
-      const selectedLotData = lots.find((lot) => lot.id === lotId);
-      if (!selectedLotData || !selectedLotData.total_contract_price) return;
-
+      // For installment
+      const years = form.getFieldValue("installment_years") || 1;
       const totalMonths = years * 12;
-      const monthlyPayment = selectedLotData.total_contract_price / totalMonths;
+      const monthlyPayment = Math.floor(totalPrice / totalMonths);
+
       const schedule = [];
       let currentDate = startDate.clone();
+      let remainingAmount = totalPrice;
 
       for (let i = 0; i < totalMonths; i++) {
+        // For the last payment, use the remaining amount to avoid rounding issues
+        const paymentAmount =
+          i === totalMonths - 1 ? remainingAmount : monthlyPayment;
+
+        remainingAmount -= monthlyPayment;
+
         schedule.push({
           payment_number: i + 1,
           due_date: currentDate.format("YYYY-MM-DD"),
-          amount: monthlyPayment,
+          amount: paymentAmount,
           status: i === 0 ? "PAID" : "PENDING",
         });
+
         currentDate = currentDate.add(1, "month");
       }
+
       setPaymentSchedule(schedule);
+      form.setFieldValue("completed_payments", 1); // Default to first payment completed
     }
   };
 
+  // Effect to regenerate payment schedule when relevant fields change
+  useEffect(() => {
+    if (selectedLots.length > 0 && form.getFieldValue("start_date")) {
+      generatePaymentSchedule();
+    }
+  }, [
+    selectedLots,
+    installmentYears,
+    customPrices,
+    form.getFieldValue("payment_type"),
+  ]);
+
   // Handle form submission
   const onFinish = (values) => {
+    if (selectedLots.length === 0) {
+      message.error("Please select at least one property/lot");
+      return;
+    }
+
     setSubmitting(true);
+
+    // Prepare lot details with custom prices if applicable
+    const lotDetails = selectedLots.map((lotId) => {
+      const lot = lots.find((l) => l.id === lotId);
+      return {
+        lot_id: lotId,
+        custom_price: customPrices[lotId] || lot.total_contract_price,
+      };
+    });
+
     const formattedValues = {
       ...values,
+      lots: lotDetails,
       start_date: values.start_date
         ? values.start_date.format("YYYY-MM-DD")
         : null,
       next_payment_date:
         values.payment_type === "spot_cash"
           ? values.start_date.format("YYYY-MM-DD")
-          : values.next_payment_date
-          ? values.next_payment_date.format("YYYY-MM-DD")
+          : paymentSchedule.length > 1
+          ? paymentSchedule[1].due_date
           : null,
-      total_payments: 1, // Always 1 for spot cash
-      completed_payments: 1, // Always completed for spot cash
-      installment_years: 1, // Default to 1 for spot cash
-      payment_schedule: paymentSchedule,
-      payment_status: "COMPLETED", // Spot cash is always completed
+      completed_payments:
+        values.payment_type === "spot_cash"
+          ? 1
+          : values.completed_payments || 1,
+      installment_years:
+        values.payment_type === "spot_cash" ? 1 : values.installment_years,
+      total_amount: calculateTotalPrice(),
     };
 
+    // Make the actual API call to save the client payment
     axiosClient
       .post("/client-payments", formattedValues)
       .then((response) => {
         setSubmitting(false);
         message.success("Client payment record created successfully");
-        navigate(`/${userRole}/client-payments`);
+
+        if (onSuccess) {
+          onSuccess();
+        } else if (navigate) {
+          navigate(`/${userRole}/client-payments`);
+        }
       })
       .catch((error) => {
         setSubmitting(false);
@@ -176,49 +241,137 @@ const ClientPaymentAddForm = () => {
       });
   };
 
-  // Lot change handler
-  const handleLotChange = (lotId) => {
-    setSelectedLot(lotId);
-    form.setFieldValue("completed_payments", 0);
-    const startDate = form.getFieldValue("start_date");
-    if (lotId && installmentYears && startDate) {
-      generatePaymentSchedule(lotId, installmentYears, startDate);
-    }
+  // Handle lot selection
+  const handleLotSelect = (lotId) => {
+    setSelectedLots((prev) => {
+      const newSelection = [...prev, lotId];
+
+      // Update form and regenerate schedule with the new selection
+      setTimeout(() => {
+        generatePaymentSchedule();
+      }, 0);
+
+      return newSelection;
+    });
+  };
+
+  // Handle lot removal
+  const handleLotRemove = (lotId) => {
+    setSelectedLots((prev) => {
+      const newSelection = prev.filter((id) => id !== lotId);
+
+      // Clean up custom price if exists
+      if (customPrices[lotId]) {
+        const newCustomPrices = { ...customPrices };
+        delete newCustomPrices[lotId];
+        setCustomPrices(newCustomPrices);
+      }
+
+      // Update form and regenerate schedule with the new selection
+      setTimeout(() => {
+        generatePaymentSchedule();
+      }, 0);
+
+      return newSelection;
+    });
+  };
+
+  // Handle custom price change
+  const handleCustomPriceChange = (lotId, value) => {
+    setCustomPrices((prev) => {
+      const newPrices = { ...prev, [lotId]: value };
+
+      // Regenerate payment schedule with new prices
+      setTimeout(() => {
+        generatePaymentSchedule();
+      }, 0);
+
+      return newPrices;
+    });
   };
 
   // Installment years change handler
   const handleYearsChange = (years) => {
     setInstallmentYears(years);
-    form.setFieldValue("completed_payments", 0);
-    const lotId = form.getFieldValue("lot_id");
-    const startDate = form.getFieldValue("start_date");
-    if (lotId && years && startDate) {
-      generatePaymentSchedule(lotId, years, startDate);
-    }
+    form.setFieldValue("completed_payments", 1); // Reset completed payments
+
+    // Regenerate payment schedule
+    setTimeout(() => {
+      generatePaymentSchedule();
+    }, 0);
   };
 
   // Start date change handler
   const handleStartDateChange = (date) => {
-    const lotId = form.getFieldValue("lot_id");
-    if (lotId && installmentYears && date) {
-      generatePaymentSchedule(lotId, installmentYears, date);
+    if (date && selectedLots.length > 0) {
+      setTimeout(() => {
+        generatePaymentSchedule();
+      }, 0);
     }
   };
 
   // Calculate monthly payment
   const calculateMonthlyPayment = () => {
-    if (!selectedLot) return null;
-    const selectedLotData = lots.find((lot) => lot.id === selectedLot);
-    if (
-      !selectedLotData ||
-      !selectedLotData.total_contract_price ||
-      !installmentYears
-    )
-      return null;
-    return selectedLotData.total_contract_price / (installmentYears * 12);
+    const totalPrice = calculateTotalPrice();
+    if (totalPrice <= 0 || !installmentYears) return null;
+    return Math.floor(totalPrice / (installmentYears * 12));
   };
 
   const monthlyPayment = calculateMonthlyPayment();
+
+  // Selected lots columns for the table
+  const selectedLotsColumns = [
+    {
+      title: "Property Name",
+      dataIndex: "property_name",
+      key: "property_name",
+    },
+    {
+      title: "Block & Lot No",
+      dataIndex: "block_lot_no",
+      key: "block_lot_no",
+    },
+    {
+      title: "Lot Area",
+      dataIndex: "lot_area",
+      key: "lot_area",
+      render: (text) => `${text} sqm`,
+    },
+    {
+      title: "Default Price",
+      dataIndex: "total_contract_price",
+      key: "total_contract_price",
+      render: (text) => new Intl.NumberFormat().format(text),
+    },
+    {
+      title: "Custom Price",
+      key: "custom_price",
+      render: (_, record) => (
+        <InputNumber
+          style={{ width: "100%" }}
+          value={customPrices[record.id] || undefined}
+          onChange={(value) => handleCustomPriceChange(record.id, value)}
+          formatter={(value) =>
+            `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+          }
+          parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+          placeholder="Enter custom price"
+        />
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      render: (_, record) => (
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleLotRemove(record.id)}
+        />
+      ),
+    },
+  ];
 
   return (
     <ConfigProvider
@@ -231,30 +384,33 @@ const ClientPaymentAddForm = () => {
       <Card
         title={
           <Space>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(`/${userRole}/client-payments`)}
-              style={{ marginRight: 16 }}
-            >
-              Back
-            </Button>
+            {navigate && (
+              <Button
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate(`/${userRole}/client-payments`)}
+                style={{ marginRight: 16 }}
+              >
+                Back
+              </Button>
+            )}
             <Title level={isMobile ? 4 : 3} style={{ margin: 0 }}>
               Add New Client Payment
             </Title>
           </Space>
         }
-        style={{ marginBottom: 24 }}
+        style={{ marginBottom: 24, width: "100%" }}
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
           initialValues={{
-            completed_payments: 1, // Default to 1 for spot cash
-            installment_years: 1, // Keep this, but make it optional
-            start_date: dayjs(), // Default to current date
-            payment_type: "spot_cash", // Default to spot cash
+            completed_payments: 1,
+            installment_years: 1,
+            start_date: dayjs(),
+            payment_type: "spot_cash",
           }}
+          style={{ width: "100%" }}
         >
           <Row gutter={[16, 16]}>
             {/* Client Information */}
@@ -327,63 +483,68 @@ const ClientPaymentAddForm = () => {
                 style={{ marginBottom: 16 }}
               >
                 <Form.Item
-                  name="lot_id"
                   label="Select Property/Lot"
-                  rules={[
-                    {
-                      required: true,
-                      message: "Please select a property/lot",
-                    },
-                  ]}
+                  extra="You can select multiple lots for a single payment plan"
                 >
                   <Select
-                    placeholder="Select a property/lot"
-                    onChange={handleLotChange}
+                    placeholder="Select a property/lot to add"
                     optionFilterProp="children"
                     showSearch
+                    value={null}
+                    onChange={handleLotSelect}
+                    filterOption={(input, option) =>
+                      option.children
+                        .toLowerCase()
+                        .indexOf(input.toLowerCase()) >= 0
+                    }
                   >
-                    {lots.map((lot) => (
-                      <Option key={lot.id} value={lot.id}>
-                        {lot.property_name} - {lot.block_lot_no} ({lot.status})
-                      </Option>
-                    ))}
+                    {lots
+                      .filter((lot) => !selectedLots.includes(lot.id))
+                      .map((lot) => (
+                        <Option key={lot.id} value={lot.id}>
+                          {lot.property_name} - {lot.block_lot_no} ({lot.status}
+                          )
+                        </Option>
+                      ))}
                   </Select>
                 </Form.Item>
 
-                {selectedLot && (
-                  <div className="lot-details">
-                    {lots
-                      .filter((lot) => lot.id === selectedLot)
-                      .map((lot) => (
-                        <div key={lot.id}>
-                          <Row gutter={[16, 8]}>
-                            <Col span={12}>
-                              <Text strong>Block & Lot No:</Text>
-                            </Col>
-                            <Col span={12}>
-                              <Text>{lot.block_lot_no}</Text>
-                            </Col>
-                            <Col span={12}>
-                              <Text strong>Lot Area:</Text>
-                            </Col>
-                            <Col span={12}>
-                              <Text>{lot.lot_area} sqm</Text>
-                            </Col>
-                            <Col span={12}>
-                              <Text strong>Total Contract Price:</Text>
-                            </Col>
-                            <Col span={12}>
-                              <Text>
-                                {new Intl.NumberFormat().format(
-                                  lot.total_contract_price
-                                )}
-                              </Text>
-                            </Col>
-                          </Row>
-                        </div>
-                      ))}
-                  </div>
-                )}
+                <Card
+                  title="Selected Properties/Lots"
+                  size="small"
+                  extra={
+                    <Tooltip title="You can select multiple lots and customize the price for each">
+                      <QuestionCircleOutlined />
+                    </Tooltip>
+                  }
+                >
+                  {selectedLots.length === 0 ? (
+                    <Empty description="No properties selected yet" />
+                  ) : (
+                    <Table
+                      columns={selectedLotsColumns}
+                      dataSource={lots.filter((lot) =>
+                        selectedLots.includes(lot.id)
+                      )}
+                      rowKey="id"
+                      pagination={false}
+                      size="small"
+                    />
+                  )}
+                </Card>
+
+                <Divider />
+
+                <div style={{ marginTop: 16 }}>
+                  <Text strong>Total Selected Properties: </Text>
+                  <Text>{selectedLots.length}</Text>
+                </div>
+                <div>
+                  <Text strong>Total Contract Price: </Text>
+                  <Text>
+                    ₱{new Intl.NumberFormat().format(calculateTotalPrice())}
+                  </Text>
+                </div>
               </Card>
             </Col>
 
@@ -426,10 +587,13 @@ const ClientPaymentAddForm = () => {
                             // Reset for installment
                             form.setFieldsValue({
                               installment_years: 1,
-                              completed_payments: 0,
+                              completed_payments: 1,
                               next_payment_date: null,
                             });
                           }
+                          setTimeout(() => {
+                            generatePaymentSchedule();
+                          }, 0);
                         }}
                       >
                         <Radio.Button value="installment">
@@ -439,22 +603,6 @@ const ClientPaymentAddForm = () => {
                       </Radio.Group>
                     </Form.Item>
                   </Col>
-
-                  {form.getFieldValue("payment_type") === "installment" && (
-                    <Col xs={24} md={8}>
-                      <Form.Item
-                        name="installment_years"
-                        label="Installment Period (Years)"
-                      >
-                        <InputNumber
-                          min={1}
-                          max={30}
-                          style={{ width: "100%" }}
-                          onChange={handleYearsChange}
-                        />
-                      </Form.Item>
-                    </Col>
-                  )}
 
                   <Col xs={24} md={8}>
                     <Form.Item
@@ -470,7 +618,7 @@ const ClientPaymentAddForm = () => {
                     >
                       <InputNumber
                         min={1}
-                        max={30}
+                        max={4} // As per requirement, max 4 years
                         style={{ width: "100%" }}
                         onChange={handleYearsChange}
                         disabled={
@@ -479,6 +627,7 @@ const ClientPaymentAddForm = () => {
                       />
                     </Form.Item>
                   </Col>
+
                   <Col xs={24} md={8}>
                     <Form.Item
                       name="start_date"
@@ -495,7 +644,6 @@ const ClientPaymentAddForm = () => {
                         format="YYYY-MM-DD"
                         onChange={(date) => {
                           handleStartDateChange(date);
-
                           // If spot cash, automatically set next payment date and completed payments
                           if (
                             form.getFieldValue("payment_type") === "spot_cash"
@@ -509,152 +657,152 @@ const ClientPaymentAddForm = () => {
                       />
                     </Form.Item>
                   </Col>
-                  <Col xs={24} md={8}>
-                    <Form.Item
-                      name="next_payment_date"
-                      label="Next Payment Date"
-                    >
-                      <DatePicker
-                        style={{ width: "100%" }}
-                        format="YYYY-MM-DD"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} md={8}>
-                    <Form.Item
-                      label={
-                        <span>
-                          Total Payments
-                          <Tooltip title="Total number of installments based on the years selected">
-                            <InfoCircleOutlined style={{ marginLeft: 8 }} />
-                          </Tooltip>
-                        </span>
-                      }
-                    >
-                      <Input
-                        value={installmentYears * 12}
-                        readOnly
-                        addonAfter="months"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} md={8}>
-                    <Form.Item
-                      label={
-                        <span>
-                          Monthly Payment
-                          <Tooltip title="Monthly payment amount based on the total contract price and installment period">
-                            <InfoCircleOutlined style={{ marginLeft: 8 }} />
-                          </Tooltip>
-                        </span>
-                      }
-                    >
-                      <Input
-                        value={
-                          monthlyPayment
-                            ? new Intl.NumberFormat().format(
-                                monthlyPayment.toFixed(2)
-                              )
-                            : "-"
-                        }
-                        readOnly
-                        prefix="₱"
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24} md={8}>
-                    <Form.Item
-                      name="completed_payments"
-                      label={
-                        <span>
-                          Completed Payments
-                          <Tooltip title="Number of payments already made">
-                            <InfoCircleOutlined style={{ marginLeft: 8 }} />
-                          </Tooltip>
-                        </span>
-                      }
-                      rules={[
-                        {
-                          required: true,
-                          message: "Please enter completed payments",
-                        },
-                      ]}
-                    >
-                      <Input
-                        value={
-                          form.getFieldValue("payment_type") === "spot_cash"
-                            ? "1"
-                            : `${installmentYears * 12}`
-                        }
-                        readOnly
-                        addonAfter={
-                          form.getFieldValue("payment_type") === "spot_cash"
-                            ? "payment"
-                            : "months"
-                        }
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col xs={24}>
-                    <Form.Item
-                      label="Payment Progress"
-                      shouldUpdate={(prevValues, currentValues) =>
-                        prevValues.completed_payments !==
-                        currentValues.completed_payments
-                      }
-                    >
-                      {({ getFieldValue }) => {
-                        const paymentType = getFieldValue("payment_type");
-                        const completed =
-                          paymentType === "spot_cash"
-                            ? 1
-                            : getFieldValue("completed_payments") || 0;
-                        const total =
-                          paymentType === "spot_cash"
-                            ? 1
-                            : installmentYears * 12;
-                        const percent = Math.round((completed / total) * 100);
-                        let strokeColor = colors.success;
-                        if (percent < 30) {
-                          strokeColor = colors.error;
-                        } else if (percent < 70) {
-                          strokeColor = colors.warning;
-                        }
-                        let status = "Not Started";
-                        if (percent === 100) {
-                          status = "Completed";
-                        } else if (percent > 0) {
-                          status = "In Progress";
-                        }
-                        return (
-                          <div>
-                            <Progress
-                              percent={percent}
-                              strokeColor={strokeColor}
-                              format={() => `${completed}/${total}`}
-                            />
-                            <div style={{ marginTop: 8 }}>
-                              <Tag
-                                color={
-                                  percent === 100
-                                    ? "success"
-                                    : percent > 0
-                                    ? "processing"
-                                    : "default"
-                                }
-                              >
-                                {status}
-                              </Tag>
-                              <Text style={{ marginLeft: 8 }}>
-                                {completed} of {total} payments completed (
-                                {percent}%)
-                              </Text>
-                            </div>
-                          </div>
-                        );
-                      }}
-                    </Form.Item>
-                  </Col>
+
+                  {form.getFieldValue("payment_type") === "installment" && (
+                    <>
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          name="next_payment_date"
+                          label="Next Payment Date"
+                        >
+                          <DatePicker
+                            style={{ width: "100%" }}
+                            format="YYYY-MM-DD"
+                            disabled // Auto-calculated based on start date + 1 month
+                            value={
+                              paymentSchedule.length > 1
+                                ? dayjs(paymentSchedule[1].due_date)
+                                : null
+                            }
+                          />
+                        </Form.Item>
+                      </Col>
+
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          label={
+                            <span>
+                              Total Payments
+                              <Tooltip title="Total number of installments based on the years selected">
+                                <InfoCircleOutlined style={{ marginLeft: 8 }} />
+                              </Tooltip>
+                            </span>
+                          }
+                        >
+                          <Input
+                            value={installmentYears * 12}
+                            readOnly
+                            addonAfter="months"
+                          />
+                        </Form.Item>
+                      </Col>
+
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          label={
+                            <span>
+                              Monthly Payment
+                              <Tooltip title="Monthly payment amount based on the total contract price and installment period">
+                                <InfoCircleOutlined style={{ marginLeft: 8 }} />
+                              </Tooltip>
+                            </span>
+                          }
+                        >
+                          <Input
+                            value={
+                              monthlyPayment
+                                ? new Intl.NumberFormat().format(monthlyPayment)
+                                : "-"
+                            }
+                            readOnly
+                            prefix="₱"
+                          />
+                        </Form.Item>
+                      </Col>
+
+                      <Col xs={24} md={8}>
+                        <Form.Item
+                          name="completed_payments"
+                          label={
+                            <span>
+                              Completed Payments
+                              <Tooltip title="Number of payments already made">
+                                <InfoCircleOutlined style={{ marginLeft: 8 }} />
+                              </Tooltip>
+                            </span>
+                          }
+                          rules={[
+                            {
+                              required: true,
+                              message: "Please enter completed payments",
+                            },
+                          ]}
+                        >
+                          <InputNumber
+                            min={0}
+                            max={installmentYears * 12}
+                            style={{ width: "100%" }}
+                            addonAfter="payments"
+                          />
+                        </Form.Item>
+                      </Col>
+
+                      <Col xs={24}>
+                        <Form.Item label="Payment Progress">
+                          {({ getFieldValue }) => {
+                            const completed =
+                              getFieldValue("completed_payments") || 0;
+                            const total = installmentYears * 12;
+                            const percent = Math.round(
+                              (completed / total) * 100
+                            );
+
+                            let strokeColor = colors.success;
+                            if (percent < 30) {
+                              strokeColor = colors.error;
+                            } else if (percent < 70) {
+                              strokeColor = colors.warning;
+                            }
+
+                            let status = "Not Started";
+                            if (percent === 100) {
+                              status = "Completed";
+                            } else if (percent > 0) {
+                              status = "In Progress";
+                            }
+
+                            return (
+                              <div>
+                                <Progress
+                                  percent={percent}
+                                  strokeColor={strokeColor}
+                                  format={() => `${completed}/${total}`}
+                                />
+                                <div style={{ marginTop: 8 }}>
+                                  <Tag
+                                    color={
+                                      percent === 100
+                                        ? "success"
+                                        : percent > 0
+                                        ? "processing"
+                                        : "default"
+                                    }
+                                  >
+                                    {status}
+                                  </Tag>
+                                  <Text style={{ marginLeft: 8 }}>
+                                    {completed} of {total} payments completed (
+                                    {percent}%)
+                                  </Text>
+                                </div>
+                              </div>
+                            );
+                          }}
+                        </Form.Item>
+                      </Col>
+                    </>
+                  )}
+
                   <Col xs={24}>
                     <Form.Item name="payment_notes" label="Payment Notes">
                       <TextArea
@@ -667,12 +815,20 @@ const ClientPaymentAddForm = () => {
               </Card>
             </Col>
           </Row>
+
           <Divider />
+
           <Row justify="end" gutter={[16, 16]}>
             <Col>
               <Button
                 icon={<CloseOutlined />}
-                onClick={() => navigate(`/${userRole}/client-payments`)}
+                onClick={() => {
+                  if (onSuccess) {
+                    onSuccess();
+                  } else if (navigate) {
+                    navigate(`/${userRole}/client-payments`);
+                  }
+                }}
               >
                 Cancel
               </Button>
@@ -683,6 +839,7 @@ const ClientPaymentAddForm = () => {
                 htmlType="submit"
                 icon={<SaveOutlined />}
                 loading={submitting}
+                disabled={selectedLots.length === 0}
               >
                 Save Client Payment
               </Button>

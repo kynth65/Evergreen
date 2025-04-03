@@ -67,8 +67,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/files/{file}/move', [FileController::class, 'move']);
 });
 
-Route::apiResource('client-payments', ClientPaymentController::class);
-Route::post('/client-payments/{id}/pay', [ClientPaymentController::class, 'processPayment']);
+Route::prefix('client-payments')->group(function () {
+    // Get all client payments
+    Route::get('/', [ClientPaymentController::class, 'index']);
+    
+    // Create a new client payment
+    Route::post('/', [ClientPaymentController::class, 'store']);
+    
+    // Get a specific client payment
+    Route::get('/{id}', [ClientPaymentController::class, 'show']);
+    
+    // Update a client payment
+    Route::put('/{id}', [ClientPaymentController::class, 'update']);
+    
+    // Delete a client payment
+    Route::delete('/{id}', [ClientPaymentController::class, 'destroy']);
+    
+    // Record a payment for an installment plan
+    Route::post('/{id}/record-payment', [ClientPaymentController::class, 'recordPayment']);
+});
 
 //Admin Routes
 //Task Management Routes
