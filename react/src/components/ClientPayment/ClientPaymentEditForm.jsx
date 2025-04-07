@@ -269,10 +269,10 @@ const ClientPaymentEditForm = () => {
           <Space>
             <Button
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate(`/${userRole}/client-payments`)}
+              onClick={() => navigate(`/${userRole}/client-payment`)}
               style={{ marginRight: 16 }}
             >
-              Back
+              Back to List
             </Button>
             <Title level={isMobile ? 4 : 3} style={{ margin: 0 }}>
               Edit Client Payment

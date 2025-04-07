@@ -83,6 +83,10 @@ const ClientPaymentList = () => {
     navigate(`/${userRole}/client-payment/${id}/view`);
   };
 
+  const handleViewEdit = (id) => {
+    navigate(`/${userRole}/client-payment/${id}/edit`);
+  };
+
   // Handle delete payment
   const handleDelete = async (id) => {
     try {
@@ -446,9 +450,7 @@ const ClientPaymentList = () => {
             <Button
               type="text"
               icon={<EditOutlined />}
-              onClick={() => {
-                // Navigate to edit page
-              }}
+              onClick={() => handleViewEdit(record.id)}
             />
           </Tooltip>
           <Tooltip title="Record Payment">
