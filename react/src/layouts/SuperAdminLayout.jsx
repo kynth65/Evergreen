@@ -9,6 +9,7 @@ import {
   Map,
   FolderOpen,
   Grid,
+  PhilippinePeso,
   FileSpreadsheet,
   Calculator,
   Menu as MenuIcon,
@@ -106,6 +107,12 @@ export default function SuperAdminLayout() {
       name: "OCS Calculator",
       icon: <Calculator className="w-6 h-6" />,
       description: "Create OCS for Client",
+    },
+    {
+      path: "/superadmin/client-payment", // Add the new path
+      name: "Client Payment", // Add the new name
+      icon: <PhilippinePeso className="w-6 h-6" />, // Add the DollarSign icon
+      description: "Manage client payments", // Add the new description
     },
   ];
 

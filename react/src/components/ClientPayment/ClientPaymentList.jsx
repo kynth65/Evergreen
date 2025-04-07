@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../../axios.client";
 import { useStateContext } from "../../context/ContextProvider";
 import {
@@ -16,11 +16,10 @@ import {
   Col,
   Badge,
   Tooltip,
-  Drawer,
+  Modal,
   ConfigProvider,
   message,
   Popconfirm,
-  Modal,
   Form,
   Radio,
   InputNumber,
@@ -46,6 +45,7 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const ClientPaymentList = () => {
+  const navigate = useNavigate();
   const { user } = useStateContext();
   const userRole = user?.role;
   const [payments, setPayments] = useState([]);
@@ -53,7 +53,7 @@ const ClientPaymentList = () => {
   const [searchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [dateRange, setDateRange] = useState(null);
-  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [addFormVisible, setAddFormVisible] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [recordPaymentModalVisible, setRecordPaymentModalVisible] =
     useState(false);
@@ -77,6 +77,11 @@ const ClientPaymentList = () => {
 
     fetchPayments();
   }, [refreshKey]);
+
+  // Handle viewing payment details
+  const handleViewDetails = (id) => {
+    navigate(`/${userRole}/client-payment/${id}/view`);
+  };
 
   // Handle delete payment
   const handleDelete = async (id) => {
@@ -130,6 +135,11 @@ const ClientPaymentList = () => {
       console.error("Error recording payment:", error);
       message.error("Failed to record payment");
     }
+  };
+
+  // Handle add new client payment
+  const handleAddClientPayment = () => {
+    setAddFormVisible(true);
   };
 
   // Calculate payment status and color
@@ -429,9 +439,7 @@ const ClientPaymentList = () => {
             <Button
               type="text"
               icon={<EyeOutlined />}
-              onClick={() => {
-                // Navigate to details page
-              }}
+              onClick={() => handleViewDetails(record.id)}
             />
           </Tooltip>
           <Tooltip title="Edit">
@@ -489,7 +497,7 @@ const ClientPaymentList = () => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => setDrawerVisible(true)}
+              onClick={handleAddClientPayment}
             >
               Add Client Payment
             </Button>
@@ -544,81 +552,26 @@ const ClientPaymentList = () => {
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} payments`,
           }}
-          summary={(pageData) => {
-            // Calculate summary data
-            const totalAmount = pageData.reduce((sum, record) => {
-              // Use total_amount from the record if available
-              if (record.total_amount) {
-                return sum + parseInt(record.total_amount);
-              }
-
-              // Otherwise calculate from lots
-              const recordTotal = record.lots
-                ? record.lots.reduce((lotSum, lot) => {
-                    const price =
-                      lot.pivot?.custom_price || lot.total_contract_price || 0;
-                    return lotSum + parseInt(price);
-                  }, 0)
-                : 0;
-              return sum + recordTotal;
-            }, 0);
-
-            const latePayments = pageData.filter((record) => {
-              const { status } = getPaymentStatus(record);
-              return ["LATE", "SUPER LATE"].includes(status);
-            }).length;
-
-            return (
-              <>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell colSpan={3}>
-                    <Text strong>Summary</Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell>
-                    <Text strong>
-                      ₱{new Intl.NumberFormat().format(totalAmount)}
-                    </Text>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell colSpan={2}>
-                    {latePayments > 0 && (
-                      <Text type="danger">
-                        <ExclamationCircleOutlined /> {latePayments} late
-                        payment(s)
-                      </Text>
-                    )}
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell colSpan={2}></Table.Summary.Cell>
-                </Table.Summary.Row>
-              </>
-            );
-          }}
+          // Summary row removed as requested
         />
 
-        {/* Drawer for adding new payment */}
-        <Drawer
+        {/* Modal for adding new payment */}
+        <Modal
           title="Add New Client Payment"
-          placement="right"
-          onClose={() => setDrawerVisible(false)}
-          open={drawerVisible}
-          width={window.innerWidth > 768 ? 720 : "100%"}
-          footer={
-            <div style={{ textAlign: "right" }}>
-              <Button
-                onClick={() => setDrawerVisible(false)}
-                style={{ marginRight: 8 }}
-              >
-                Cancel
-              </Button>
-            </div>
-          }
+          open={addFormVisible}
+          onCancel={() => setAddFormVisible(false)}
+          width="90%"
+          style={{ top: 20 }}
+          footer={null}
+          bodyStyle={{ padding: "0" }}
         >
           <ClientPaymentAddForm
             onSuccess={() => {
-              setDrawerVisible(false);
+              setAddFormVisible(false);
               setRefreshKey((prev) => prev + 1); // Refresh data
             }}
           />
-        </Drawer>
+        </Modal>
 
         {/* Modal for recording a payment */}
         <Modal

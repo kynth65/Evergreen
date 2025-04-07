@@ -35,6 +35,7 @@ import FileManagerList from "./components/FileManager/FileManagerList";
 import ClientPaymentList from "./components/ClientPayment/ClientPaymentList";
 import ClientPaymentAddForm from "./components/ClientPayment/ClientPaymentAddForm";
 import ClientPaymentEditForm from "./components/ClientPayment/ClientPaymentEditForm";
+import ClientPaymentDetails from "./components/ClientPayment/ClientPaymentDetails";
 
 const router = createBrowserRouter([
   {
@@ -138,7 +139,7 @@ const router = createBrowserRouter([
       },
 
       {
-        path: "client-payments",
+        path: "client-payment",
         element: <ClientPaymentList />,
       },
       {
@@ -148,6 +149,10 @@ const router = createBrowserRouter([
       {
         path: "client-payment/:id/edit",
         element: <ClientPaymentEditForm />,
+      },
+      {
+        path: "client-payment/:id/view",
+        element: <ClientPaymentDetails />,
       },
     ],
   },

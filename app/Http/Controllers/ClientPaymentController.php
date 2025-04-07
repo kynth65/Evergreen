@@ -381,4 +381,19 @@ class ClientPaymentController extends Controller
             return response()->json(['error' => 'Failed to record payment', 'message' => $e->getMessage()], 500);
         }
     }
+    
+    public function getTransactions(string $id)
+    {
+        // Find payment to ensure it exists
+        $clientPayment = ClientPayment::findOrFail($id);
+        
+        // Get the transactions directly from the database
+        $transactions = PaymentTransaction::where('client_payment_id', $id)
+            ->orderBy('payment_number')
+            ->get();
+        
+        return response()->json($transactions);
+    }
+
+    
 }

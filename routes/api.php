@@ -85,6 +85,10 @@ Route::prefix('client-payments')->group(function () {
     
     // Record a payment for an installment plan
     Route::post('/{id}/record-payment', [ClientPaymentController::class, 'recordPayment']);
+
+    // get all payment transactions for a specific client payment
+    Route::get('/{id}/transactions', [ClientPaymentController::class, 'getTransactions']);
+
 });
 
 //Admin Routes

@@ -381,25 +381,7 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
         },
       }}
     >
-      <Card
-        title={
-          <Space>
-            {navigate && (
-              <Button
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate(`/${userRole}/client-payments`)}
-                style={{ marginRight: 16 }}
-              >
-                Back
-              </Button>
-            )}
-            <Title level={isMobile ? 4 : 3} style={{ margin: 0 }}>
-              Add New Client Payment
-            </Title>
-          </Space>
-        }
-        style={{ marginBottom: 24, width: "100%" }}
-      >
+      <div style={{ padding: "20px", maxWidth: "100%" }}>
         <Form
           form={form}
           layout="vertical"
@@ -412,7 +394,7 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
           }}
           style={{ width: "100%" }}
         >
-          <Row gutter={[16, 16]}>
+          <Row gutter={[24, 24]}>
             {/* Client Information */}
             <Col xs={24} md={12}>
               <Card
@@ -423,7 +405,6 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                     Client Information
                   </span>
                 }
-                style={{ marginBottom: 16 }}
               >
                 <Form.Item
                   name="client_name"
@@ -480,7 +461,6 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                     Property Information
                   </span>
                 }
-                style={{ marginBottom: 16 }}
               >
                 <Form.Item
                   label="Select Property/Lot"
@@ -497,6 +477,7 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                         .toLowerCase()
                         .indexOf(input.toLowerCase()) >= 0
                     }
+                    style={{ width: "100%" }}
                   >
                     {lots
                       .filter((lot) => !selectedLots.includes(lot.id))
@@ -558,9 +539,8 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                     Payment Information
                   </span>
                 }
-                style={{ marginBottom: 16 }}
               >
-                <Row gutter={[16, 16]}>
+                <Row gutter={[24, 16]}>
                   <Col xs={24} md={8}>
                     <Form.Item
                       name="payment_type"
@@ -825,8 +805,6 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                 onClick={() => {
                   if (onSuccess) {
                     onSuccess();
-                  } else if (navigate) {
-                    navigate(`/${userRole}/client-payments`);
                   }
                 }}
               >
@@ -846,7 +824,7 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
             </Col>
           </Row>
         </Form>
-      </Card>
+      </div>
     </ConfigProvider>
   );
 };
