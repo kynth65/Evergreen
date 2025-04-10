@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosClient from "../../axios.client";
+import html2pdf from "html2pdf.js";
+import AcknowledgementReceiptPDF from "./AcknowledgementReceiptPDF";
 import { useStateContext } from "../../context/ContextProvider";
 import {
   Card,
@@ -15,12 +17,6 @@ import {
   Divider,
   Statistic,
   Progress,
-  Timeline,
-  Tooltip,
-  Badge,
-  Tabs,
-  ConfigProvider,
-  message,
   Empty,
   Modal,
   Form,
@@ -28,18 +24,17 @@ import {
   InputNumber,
   Input,
   Radio,
+  message,
+  ConfigProvider,
 } from "antd";
 import {
   ArrowLeftOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
   DollarOutlined,
-  CalendarOutlined,
   FileTextOutlined,
   UserOutlined,
   HomeOutlined,
   EditOutlined,
-  ExclamationCircleOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
@@ -47,7 +42,6 @@ import isBetween from "dayjs/plugin/isBetween";
 dayjs.extend(isBetween);
 
 const { Title, Text, Paragraph } = Typography;
-const { TabPane } = Tabs;
 const { TextArea } = Input;
 
 const ClientPaymentDetails = () => {
@@ -62,8 +56,16 @@ const ClientPaymentDetails = () => {
     useState(false);
   const [recordPaymentForm] = Form.useForm();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [lastPaymentDataForReceipt, setLastPaymentDataForReceipt] =
+    useState(null);
 
-  // Fetch payment data
+  // Create a stable ref that won't change between renders
+  const acknowledgementReceiptRef = useRef(null);
+
+  // Track PDF generation attempts for debugging
+  const pdfGenerationAttempt = useRef(0);
+
   // Fetch payment data
   useEffect(() => {
     const fetchPaymentDetails = async () => {
@@ -95,7 +97,9 @@ const ClientPaymentDetails = () => {
         // Sort paymentTransactions if they exist
         if (paymentData.paymentTransactions) {
           paymentData.paymentTransactions.sort(
-            (a, b) => a.payment_number - b.payment_number
+            (a, b) =>
+              new Date(a.payment_date || 0) - new Date(b.payment_date || 0) ||
+              a.id - b.id
           );
         }
 
@@ -108,23 +112,123 @@ const ClientPaymentDetails = () => {
       }
     };
 
-    // Actually call the function to fetch data
     fetchPaymentDetails();
   }, [id, refreshKey]);
+
+  // More reliable PDF generation function
+  const generateAcknowledgementReceiptPDF = (receiptData) => {
+    // Safety checks
+    if (!acknowledgementReceiptRef.current) {
+      message.error("Receipt template not ready. Please try again.");
+      console.error("AcknowledgementReceiptPDF ref is not available.");
+      setIsGeneratingPdf(false);
+      return;
+    }
+
+    if (!receiptData) {
+      message.error("No payment data available for receipt generation.");
+      console.error("receiptData is null or undefined.");
+      setIsGeneratingPdf(false);
+      return;
+    }
+
+    // Increment attempt counter
+    pdfGenerationAttempt.current += 1;
+    console.log(`PDF Generation Attempt #${pdfGenerationAttempt.current}`);
+
+    const element = acknowledgementReceiptRef.current;
+    const clientName =
+      receiptData.clientName?.replace(/[^a-zA-Z0-9]/g, "_") || "Client";
+    const paymentDateShort = dayjs(receiptData.paymentDate).format("YYYYMMDD");
+    const filename = `AR_${clientName}_${paymentDateShort}_${receiptData.paymentNumber}.pdf`;
+
+    const options = {
+      filename: filename,
+      margin: [10, 10, 10, 10],
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        logging: true, // Enable logging for debug
+      },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    // Log current HTML content for debugging
+    console.log(
+      "PDF Element Content:",
+      element.innerHTML.substring(0, 100) + "..."
+    );
+
+    // Create a promise-based generation process
+    message.loading({
+      content: "Generating Acknowledgement Receipt...",
+      key: "pdfgen",
+      duration: 0,
+    });
+
+    // Use timeout to ensure DOM rendering is complete
+    setTimeout(() => {
+      html2pdf()
+        .from(element)
+        .set(options)
+        .save()
+        .then(() => {
+          message.success({
+            content: "Acknowledgement Receipt downloaded!",
+            key: "pdfgen",
+            duration: 3,
+          });
+          setIsGeneratingPdf(false);
+          setLastPaymentDataForReceipt(null);
+        })
+        .catch((error) => {
+          console.error("Error generating PDF:", error);
+          message.error({
+            content:
+              "Failed to generate PDF. Please check console for details.",
+            key: "pdfgen",
+            duration: 3,
+          });
+          setIsGeneratingPdf(false);
+        });
+    }, 500); // Give extra time for rendering
+  };
+
+  // Simplified PDF generation trigger useEffect
+  useEffect(() => {
+    if (lastPaymentDataForReceipt) {
+      console.log(
+        "PDF generation requested with data:",
+        lastPaymentDataForReceipt
+      );
+      setIsGeneratingPdf(true);
+
+      // Short delay to ensure component is rendered
+      setTimeout(() => {
+        generateAcknowledgementReceiptPDF(lastPaymentDataForReceipt);
+      }, 300);
+    }
+  }, [lastPaymentDataForReceipt]);
 
   // Calculate payment status and color
   const getPaymentStatus = (record) => {
     if (!record) return { status: "LOADING", color: "default" };
 
     if (record.payment_type === "spot_cash") {
-      return { status: "PAID", color: "success" };
+      const paidTransaction = record.paymentTransactions?.find(
+        (tx) => tx.amount >= record.total_amount
+      );
+      return {
+        status: paidTransaction ? "PAID" : "PENDING",
+        color: paidTransaction ? "success" : "default",
+      };
     }
 
-    const completedPercent = Math.round(
-      (record.completed_payments / (record.installment_years * 12)) * 100
-    );
+    const totalInstallments = record.installment_years * 12;
+    const completedPayments = record.completed_payments || 0;
 
-    if (completedPercent === 100) {
+    if (completedPayments >= totalInstallments) {
       return { status: "COMPLETED", color: "success" };
     }
 
@@ -150,41 +254,91 @@ const ClientPaymentDetails = () => {
 
   // Open record payment modal
   const openRecordPaymentModal = () => {
-    if (!payment) return;
+    if (!payment || isGeneratingPdf) return;
 
     setRecordPaymentModalVisible(true);
 
-    // Get next payment info from the payment schedule
+    // Get next payment info
     const nextPaymentNumber = payment.completed_payments + 1;
-    const nextPayment = payment.paymentSchedules?.find(
+    const nextScheduledPayment = payment.paymentSchedules?.find(
       (schedule) => schedule.payment_number === nextPaymentNumber
     );
 
-    if (nextPayment) {
-      recordPaymentForm.setFieldsValue({
-        amount: nextPayment.amount,
-        payment_date: dayjs(),
-        payment_method: "CASH",
-      });
-    }
+    // Calculate expected payment
+    const totalInstallments = payment.installment_years * 12;
+    const expectedMonthlyAmount =
+      totalInstallments > 0 ? payment.total_amount / totalInstallments : 0;
+
+    recordPaymentForm.setFieldsValue({
+      amount:
+        nextScheduledPayment?.amount ??
+        (payment.payment_type !== "spot_cash"
+          ? expectedMonthlyAmount
+          : payment.total_amount),
+      payment_date: dayjs(),
+      payment_method: "CASH",
+      reference_number: null,
+      payment_notes: null,
+    });
   };
 
   // Handle record payment
   const handleRecordPayment = async (values) => {
-    if (!payment) return;
+    if (!payment || isGeneratingPdf) return;
+
+    const paymentAmount = parseFloat(values.amount);
+    const paymentDate = values.payment_date;
+
+    // Prepare receipt data
+    const receiptData = {
+      clientName: payment.client_name,
+      paymentDate: paymentDate,
+      amount: paymentAmount,
+      paymentMethod: values.payment_method,
+      referenceNumber: values.reference_number,
+      paymentNotes: values.payment_notes,
+      propertyName:
+        payment.lots && payment.lots.length > 0
+          ? payment.lots[0].property_name
+          : "N/A",
+      blockLotNo:
+        payment.lots && payment.lots.length > 0
+          ? payment.lots[0].block_lot_no
+          : "N/A",
+      paymentNumber: (payment.completed_payments || 0) + 1,
+    };
 
     try {
+      // Record the payment in the API
       await axiosClient.post(`/client-payments/${payment.id}/record-payment`, {
         ...values,
-        payment_date: values.payment_date.format("YYYY-MM-DD"),
+        amount: paymentAmount,
+        payment_date: paymentDate.format("YYYY-MM-DD"),
       });
 
       message.success("Payment recorded successfully");
+
+      // Close modal before PDF generation
       setRecordPaymentModalVisible(false);
-      setRefreshKey((prev) => prev + 1); // Refresh data
+      recordPaymentForm.resetFields();
+
+      // Trigger PDF generation AFTER API call succeeds
+      setLastPaymentDataForReceipt(receiptData);
+
+      // Refresh data after a short delay (after PDF generation)
+      setTimeout(() => {
+        setRefreshKey((prev) => prev + 1);
+      }, 1000);
     } catch (error) {
       console.error("Error recording payment:", error);
-      message.error("Failed to record payment");
+      let errorMessage = "Failed to record payment";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      message.error(errorMessage);
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -201,12 +355,17 @@ const ClientPaymentDetails = () => {
     if (!payment) return { percent: 0, completed: 0, total: 0 };
 
     if (payment.payment_type === "spot_cash") {
-      return { percent: 100, completed: 1, total: 1 };
+      const paidTransaction = payment.paymentTransactions?.find(
+        (tx) => tx.amount >= payment.total_amount
+      );
+      const completed = paidTransaction ? 1 : 0;
+      return { percent: completed * 100, completed: completed, total: 1 };
     }
 
     const totalPayments = payment.installment_years * 12;
     const completed = payment.completed_payments || 0;
-    const percent = Math.round((completed / totalPayments) * 100);
+    const percent =
+      totalPayments > 0 ? Math.round((completed / totalPayments) * 100) : 0;
 
     return { percent, completed, total: totalPayments };
   };
@@ -218,16 +377,36 @@ const ClientPaymentDetails = () => {
     if (!payment) return { totalAmount: 0, paidAmount: 0, remainingAmount: 0 };
 
     const totalAmount = payment.total_amount;
+    let paidAmount = 0;
 
     if (payment.payment_type === "spot_cash") {
-      return { totalAmount, paidAmount: totalAmount, remainingAmount: 0 };
+      paidAmount =
+        payment.paymentTransactions?.reduce(
+          (sum, tx) => sum + parseFloat(tx.amount || 0),
+          0
+        ) || 0;
+      paidAmount = Math.min(paidAmount, totalAmount);
+      return {
+        totalAmount,
+        paidAmount: paidAmount,
+        remainingAmount: Math.max(0, totalAmount - paidAmount),
+      };
     }
 
-    // For installment, calculate based on completed payments
-    const totalPayments = payment.installment_years * 12;
-    const monthlyPayment = totalAmount / totalPayments;
-    const paidAmount = payment.completed_payments * monthlyPayment;
-    const remainingAmount = totalAmount - paidAmount;
+    if (payment.paymentTransactions && payment.paymentTransactions.length > 0) {
+      paidAmount = payment.paymentTransactions.reduce(
+        (sum, tx) => sum + parseFloat(tx.amount || 0),
+        0
+      );
+    } else {
+      const totalInstallments = payment.installment_years * 12;
+      const monthlyPayment =
+        totalInstallments > 0 ? totalAmount / totalInstallments : 0;
+      paidAmount = (payment.completed_payments || 0) * monthlyPayment;
+    }
+
+    paidAmount = Math.min(paidAmount, totalAmount);
+    const remainingAmount = Math.max(0, totalAmount - paidAmount);
 
     return {
       totalAmount,
@@ -238,24 +417,35 @@ const ClientPaymentDetails = () => {
 
   const { totalAmount, paidAmount, remainingAmount } = calculateTotalAmounts();
 
-  // Transaction columns for the table
+  // Transaction columns
   const transactionColumns = [
     {
       title: "Payment #",
       dataIndex: "payment_number",
       key: "payment_number",
+      sorter: (a, b) => a.payment_number - b.payment_number,
     },
     {
       title: "Date",
       dataIndex: "payment_date",
       key: "payment_date",
-      render: (text) => dayjs(text).format("MMM D, YYYY"),
+      render: (text) => (text ? dayjs(text).format("MMM D, YYYY") : "N/A"),
+      sorter: (a, b) =>
+        dayjs(a.payment_date).unix() - dayjs(b.payment_date).unix(),
     },
     {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      render: (text) => <Text>₱{new Intl.NumberFormat().format(text)}</Text>,
+      render: (text) => (
+        <Text>
+          ₱
+          {new Intl.NumberFormat("en-PH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(text || 0)}
+        </Text>
+      ),
     },
     {
       title: "Method",
@@ -267,13 +457,20 @@ const ClientPaymentDetails = () => {
           CHECK: "blue",
           BANK_TRANSFER: "purple",
           ONLINE: "cyan",
-          // Add default case for when payment_method might be null
           undefined: "default",
+          null: "default",
         };
         return (
           <Tag color={methodColors[text] || "default"}>{text || "N/A"}</Tag>
         );
       },
+      filters: [
+        { text: "Cash", value: "CASH" },
+        { text: "Check", value: "CHECK" },
+        { text: "Bank Transfer", value: "BANK_TRANSFER" },
+        { text: "Online", value: "ONLINE" },
+      ],
+      onFilter: (value, record) => record.payment_method === value,
     },
     {
       title: "Reference #",
@@ -289,7 +486,7 @@ const ClientPaymentDetails = () => {
     },
   ];
 
-  // Schedule columns for the table
+  // Schedule columns
   const scheduleColumns = [
     {
       title: "Payment #",
@@ -306,26 +503,36 @@ const ClientPaymentDetails = () => {
       title: "Amount",
       dataIndex: "amount",
       key: "amount",
-      render: (text) => <Text>₱{new Intl.NumberFormat().format(text)}</Text>,
+      render: (text) => (
+        <Text>
+          ₱
+          {new Intl.NumberFormat("en-PH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(text || 0)}
+        </Text>
+      ),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
       render: (text, record) => {
+        const correspondingTransaction = payment?.paymentTransactions?.find(
+          (tx) => tx.payment_number === record.payment_number
+        );
         const today = dayjs();
         const dueDate = dayjs(record.due_date);
         let color = "default";
-        let statusText = text;
+        let statusText = "PENDING";
 
-        if (text === "PAID") {
+        if (correspondingTransaction) {
+          statusText = "PAID";
           color = "success";
-        } else if (text === "PENDING") {
-          if (today.isAfter(dueDate)) {
-            const daysDiff = today.diff(dueDate, "day");
-            statusText = daysDiff > 30 ? "SUPER LATE" : "LATE";
-            color = daysDiff > 30 ? "error" : "warning";
-          }
+        } else if (today.isAfter(dueDate, "day")) {
+          const daysDiff = today.diff(dueDate, "day");
+          statusText = daysDiff > 30 ? "SUPER LATE" : "LATE";
+          color = daysDiff > 30 ? "error" : "warning";
         }
 
         return <Tag color={color}>{statusText}</Tag>;
@@ -333,6 +540,7 @@ const ClientPaymentDetails = () => {
     },
   ];
 
+  // Loading state UI
   if (loading) {
     return (
       <Card loading={true}>
@@ -341,10 +549,11 @@ const ClientPaymentDetails = () => {
     );
   }
 
+  // Not found state UI
   if (!payment) {
     return (
       <Card>
-        <Empty description="Payment not found" />
+        <Empty description="Payment not found or failed to load." />
         <div style={{ textAlign: "center", marginTop: 20 }}>
           <Button type="primary" onClick={handleBackToList}>
             Back to List
@@ -354,6 +563,7 @@ const ClientPaymentDetails = () => {
     );
   }
 
+  // Main component render
   return (
     <ConfigProvider
       theme={{
@@ -374,7 +584,9 @@ const ClientPaymentDetails = () => {
                 <Title level={4} style={{ margin: 0 }}>
                   Payment Details
                 </Title>
-                <Tag color={paymentStatus.color}>{paymentStatus.status}</Tag>
+                {paymentStatus && (
+                  <Tag color={paymentStatus.color}>{paymentStatus.status}</Tag>
+                )}
               </Space>
             </Col>
             <Col>
@@ -382,17 +594,19 @@ const ClientPaymentDetails = () => {
                 <Button
                   icon={<EditOutlined />}
                   onClick={() => {
-                    // Navigate to edit page
+                    navigate(`/${userRole}/client-payment/edit/${id}`);
                   }}
                 >
                   Edit
                 </Button>
                 {payment.payment_type !== "spot_cash" &&
-                  paymentStatus.status !== "COMPLETED" && (
+                  paymentStatus?.status !== "COMPLETED" && (
                     <Button
                       type="primary"
                       icon={<DollarOutlined />}
                       onClick={openRecordPaymentModal}
+                      disabled={isGeneratingPdf}
+                      loading={isGeneratingPdf}
                     >
                       Record Payment
                     </Button>
@@ -410,8 +624,7 @@ const ClientPaymentDetails = () => {
             <Card
               title={
                 <Space>
-                  <UserOutlined />
-                  <span>Client Information</span>
+                  <UserOutlined /> <span>Client Information</span>
                 </Space>
               }
               style={{ marginBottom: 16 }}
@@ -438,8 +651,7 @@ const ClientPaymentDetails = () => {
             <Card
               title={
                 <Space>
-                  <HomeOutlined />
-                  <span>Property Information</span>
+                  <HomeOutlined /> <span>Property Information</span>
                 </Space>
               }
               style={{ marginBottom: 16 }}
@@ -448,7 +660,7 @@ const ClientPaymentDetails = () => {
                 <div>
                   {payment.lots.map((lot, index) => (
                     <div
-                      key={index}
+                      key={lot.id || index}
                       style={{
                         marginBottom:
                           index !== payment.lots.length - 1 ? 16 : 0,
@@ -466,20 +678,22 @@ const ClientPaymentDetails = () => {
                         </Descriptions.Item>
                         <Descriptions.Item label="Contract Price">
                           ₱
-                          {new Intl.NumberFormat().format(
-                            lot.total_contract_price
-                          )}
+                          {new Intl.NumberFormat("en-PH", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }).format(lot.total_contract_price || 0)}
                         </Descriptions.Item>
-                        {lot.pivot &&
-                          lot.pivot.custom_price &&
-                          lot.pivot.custom_price !==
-                            lot.total_contract_price && (
-                            <Descriptions.Item label="Custom Price">
+                        {/* Display custom price if different */}
+                        {lot.pivot?.custom_price &&
+                          parseFloat(lot.pivot.custom_price) !==
+                            parseFloat(lot.total_contract_price) && (
+                            <Descriptions.Item label="Agreed Price">
                               <Text type="success">
                                 ₱
-                                {new Intl.NumberFormat().format(
-                                  lot.pivot.custom_price
-                                )}
+                                {new Intl.NumberFormat("en-PH", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }).format(lot.pivot.custom_price)}
                               </Text>
                             </Descriptions.Item>
                           )}
@@ -491,19 +705,19 @@ const ClientPaymentDetails = () => {
                   ))}
                 </div>
               ) : (
-                <Empty description="No property information" />
+                <Empty description="No property information associated" />
               )}
             </Card>
           </Col>
 
           {/* Right column: Payment info and details */}
           <Col xs={24} lg={16}>
-            {/* Payment Summary Card */}
+            {/* Payment Summary Card (existing) */}
             <Card
               title={
                 <Space>
-                  <DollarOutlined />
-                  <span>Payment Summary</span>
+                  {" "}
+                  <DollarOutlined /> <span>Payment Summary</span>{" "}
                 </Space>
               }
               style={{ marginBottom: 16 }}
@@ -515,31 +729,40 @@ const ClientPaymentDetails = () => {
                     value={totalAmount}
                     precision={2}
                     formatter={(value) =>
-                      `₱${new Intl.NumberFormat().format(value)}`
+                      `₱${new Intl.NumberFormat("en-PH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }).format(value)}`
                     }
                   />
                 </Col>
                 <Col xs={24} sm={8}>
                   <Statistic
-                    title="Paid Amount"
+                    title="Total Paid"
                     value={paidAmount}
                     precision={2}
                     valueStyle={{ color: "#3f8600" }}
                     formatter={(value) =>
-                      `₱${new Intl.NumberFormat().format(value)}`
+                      `₱${new Intl.NumberFormat("en-PH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }).format(value)}`
                     }
                   />
                 </Col>
                 <Col xs={24} sm={8}>
                   <Statistic
-                    title="Remaining Amount"
+                    title="Remaining Balance"
                     value={remainingAmount}
                     precision={2}
                     valueStyle={{
                       color: remainingAmount > 0 ? "#cf1322" : "#3f8600",
                     }}
                     formatter={(value) =>
-                      `₱${new Intl.NumberFormat().format(value)}`
+                      `₱${new Intl.NumberFormat("en-PH", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      }).format(value)}`
                     }
                   />
                 </Col>
@@ -562,7 +785,9 @@ const ClientPaymentDetails = () => {
                           </Tag>
                         </Descriptions.Item>
                         <Descriptions.Item label="Start Date">
-                          {dayjs(payment.start_date).format("MMMM D, YYYY")}
+                          {payment.start_date
+                            ? dayjs(payment.start_date).format("MMMM D, YYYY")
+                            : "N/A"}
                         </Descriptions.Item>
                         {payment.payment_type !== "spot_cash" && (
                           <>
@@ -571,15 +796,24 @@ const ClientPaymentDetails = () => {
                               {payment.installment_years > 1 ? "years" : "year"}{" "}
                               ({payment.installment_years * 12} months)
                             </Descriptions.Item>
-                            <Descriptions.Item label="Monthly Payment">
-                              ₱
-                              {new Intl.NumberFormat().format(
-                                (
-                                  totalAmount /
-                                  (payment.installment_years * 12)
-                                ).toFixed(2)
-                              )}
-                            </Descriptions.Item>
+                            {/* Calculate monthly payment based on total amount and period */}
+                            {(() => {
+                              const totalInstallments =
+                                payment.installment_years * 12;
+                              const monthly =
+                                totalInstallments > 0
+                                  ? payment.total_amount / totalInstallments
+                                  : 0;
+                              return (
+                                <Descriptions.Item label="Expected Monthly">
+                                  ₱
+                                  {new Intl.NumberFormat("en-PH", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }).format(monthly)}
+                                </Descriptions.Item>
+                              );
+                            })()}
                           </>
                         )}
                       </Descriptions>
@@ -588,12 +822,18 @@ const ClientPaymentDetails = () => {
                       {payment.payment_type !== "spot_cash" && (
                         <>
                           <div style={{ marginBottom: 8 }}>
-                            <Text strong>Payment Progress</Text>
+                            {" "}
+                            <Text strong>Payment Progress</Text>{" "}
                           </div>
                           <Progress
                             percent={progress.percent}
                             status={
-                              progress.percent === 100 ? "success" : "active"
+                              progress.percent === 100
+                                ? "success"
+                                : paymentStatus?.status === "LATE" ||
+                                  paymentStatus?.status === "SUPER LATE"
+                                ? "exception"
+                                : "active"
                             }
                             strokeColor={
                               progress.percent < 30
@@ -605,19 +845,21 @@ const ClientPaymentDetails = () => {
                           />
                           <div style={{ marginTop: 8 }}>
                             <Text>
+                              {" "}
                               {progress.completed} of {progress.total} payments
-                              completed ({progress.percent}%)
+                              completed ({progress.percent}%){" "}
                             </Text>
                           </div>
 
+                          {/* Show next payment due date */}
                           {payment.next_payment_date &&
-                            paymentStatus.status !== "COMPLETED" && (
+                            paymentStatus?.status !== "COMPLETED" && (
                               <div style={{ marginTop: 16 }}>
-                                <Text strong>Next Payment:</Text>{" "}
+                                <Text strong>Next Payment Due:</Text>{" "}
                                 <Text
                                   type={
-                                    paymentStatus.status === "LATE" ||
-                                    paymentStatus.status === "SUPER LATE"
+                                    paymentStatus?.status === "LATE" ||
+                                    paymentStatus?.status === "SUPER LATE"
                                       ? "danger"
                                       : undefined
                                   }
@@ -625,8 +867,8 @@ const ClientPaymentDetails = () => {
                                   {dayjs(payment.next_payment_date).format(
                                     "MMMM D, YYYY"
                                   )}
-                                  {(paymentStatus.status === "LATE" ||
-                                    paymentStatus.status === "SUPER LATE") && (
+                                  {(paymentStatus?.status === "LATE" ||
+                                    paymentStatus?.status === "SUPER LATE") && (
                                     <Text type="danger"> (Overdue)</Text>
                                   )}
                                 </Text>
@@ -640,76 +882,127 @@ const ClientPaymentDetails = () => {
               </Row>
             </Card>
 
-            {/* Tabs for Payment Schedule and Transactions */}
+            {/* Transaction History Table (using existing logic but refined columns) */}
             <Card>
-              <div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    borderBottom: "1px solid #f0f0f0",
-                    padding: "12px 0",
-                  }}
-                >
-                  <FileTextOutlined />
-                  <span style={{ marginLeft: 8, fontWeight: "bold" }}>
-                    Transaction History
-                  </span>
-                </div>
-                <div style={{ padding: "16px 0" }}>
-                  {payment.paymentTransactions &&
-                  payment.paymentTransactions.length > 0 ? (
-                    <Table
-                      columns={transactionColumns}
-                      dataSource={payment.paymentTransactions}
-                      rowKey={(record) => record.id || record.payment_number}
-                      pagination={{
-                        pageSize: 10,
-                        showSizeChanger: true,
-                      }}
-                      size="small"
-                    />
-                  ) : (
-                    <Empty description="No transactions found" />
-                  )}
-                </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  borderBottom: "1px solid #f0f0f0",
+                  padding: "12px 0",
+                  marginBottom: 16,
+                }}
+              >
+                <FileTextOutlined />
+                <span style={{ marginLeft: 8, fontWeight: "bold" }}>
+                  {" "}
+                  Transaction History{" "}
+                </span>
               </div>
+              {/* Ensure paymentTransactions is checked */}
+              {payment.paymentTransactions &&
+              payment.paymentTransactions.length > 0 ? (
+                <Table
+                  columns={transactionColumns}
+                  dataSource={payment.paymentTransactions}
+                  // Use a stable key, preferably the transaction's unique ID
+                  rowKey={(record) =>
+                    record.id ||
+                    `${record.payment_number}-${record.payment_date}`
+                  }
+                  pagination={{ pageSize: 10, showSizeChanger: true }}
+                  size="small"
+                  scroll={{ x: 800 }} // Add horizontal scroll if needed
+                />
+              ) : (
+                <Empty description="No transactions recorded yet" />
+              )}
             </Card>
+
+            {/* Optionally, add Payment Schedule Table if needed */}
+            {payment.payment_type !== "spot_cash" &&
+              payment.paymentSchedules &&
+              payment.paymentSchedules.length > 0 && (
+                <Card style={{ marginTop: 16 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      borderBottom: "1px solid #f0f0f0",
+                      padding: "12px 0",
+                      marginBottom: 16,
+                    }}
+                  >
+                    <CalendarOutlined />
+                    <span style={{ marginLeft: 8, fontWeight: "bold" }}>
+                      {" "}
+                      Payment Schedule{" "}
+                    </span>
+                  </div>
+                  <Table
+                    columns={scheduleColumns}
+                    dataSource={payment.paymentSchedules}
+                    rowKey={(record) => record.id || record.payment_number}
+                    pagination={{ pageSize: 5, showSizeChanger: false }} // Smaller pagination for schedule
+                    size="small"
+                    scroll={{ x: 600 }}
+                  />
+                </Card>
+              )}
           </Col>
         </Row>
 
-        {/* Additional notes */}
+        {/* Additional notes (existing) */}
         {payment.payment_notes && (
           <Card
             title={
               <Space>
-                <FileTextOutlined />
-                <span>Payment Notes</span>
+                {" "}
+                <FileTextOutlined /> <span>General Payment Notes</span>{" "}
               </Space>
             }
             style={{ marginTop: 16 }}
           >
-            <Paragraph>{payment.payment_notes}</Paragraph>
+            <Paragraph style={{ whiteSpace: "pre-wrap" }}>
+              {payment.payment_notes}
+            </Paragraph>
           </Card>
         )}
 
-        {/* Record Payment Modal */}
+        {/* Record Payment Modal (UPDATED with loading/disabled states) */}
         <Modal
           title="Record Payment"
           open={recordPaymentModalVisible}
-          onCancel={() => setRecordPaymentModalVisible(false)}
-          footer={null}
+          // Update onCancel (UPDATED)
+          onCancel={() => {
+            if (!isGeneratingPdf) {
+              setRecordPaymentModalVisible(false);
+              recordPaymentForm.resetFields();
+            } else {
+              message.warning("Please wait for PDF generation to complete.");
+            }
+          }}
+          footer={null} // Keep footer null
+          // Add closable/maskClosable (UPDATED)
+          closable={!isGeneratingPdf}
+          maskClosable={!isGeneratingPdf}
         >
           <Form
             form={recordPaymentForm}
             layout="vertical"
-            onFinish={handleRecordPayment}
+            onFinish={handleRecordPayment} // Uses updated function
           >
+            {/* Form Items (existing) */}
             <Form.Item
               name="amount"
               label="Payment Amount"
               rules={[
                 { required: true, message: "Please enter payment amount" },
+                {
+                  type: "number",
+                  min: 0.01,
+                  message: "Amount must be positive",
+                },
               ]}
             >
               <InputNumber
@@ -718,7 +1011,8 @@ const ClientPaymentDetails = () => {
                 formatter={(value) =>
                   `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
-                parser={(value) => value.replace(/₱\s?|(,*)/g, "")}
+                parser={(value) => value?.replace(/₱\s?|(,*)/g, "")}
+                precision={2} // Ensure 2 decimal places
               />
             </Form.Item>
 
@@ -747,34 +1041,65 @@ const ClientPaymentDetails = () => {
               </Radio.Group>
             </Form.Item>
 
-            <Form.Item name="reference_number" label="Reference Number">
-              <Input placeholder="Optional reference number for the transaction" />
+            <Form.Item
+              name="reference_number"
+              label="Reference Number (Optional)"
+            >
+              <Input placeholder="e.g., Check #, Transaction ID" />
             </Form.Item>
 
-            <Form.Item name="payment_notes" label="Payment Notes">
+            <Form.Item name="payment_notes" label="Payment Notes (Optional)">
               <TextArea
                 rows={3}
-                placeholder="Optional notes about this payment"
+                placeholder="e.g., Payment for Month X, Late fee included"
               />
             </Form.Item>
 
-            <div style={{ textAlign: "right" }}>
+            {/* Modal Footer Buttons (UPDATED with loading/disabled states) */}
+            <div style={{ textAlign: "right", marginTop: "20px" }}>
               <Button
-                onClick={() => setRecordPaymentModalVisible(false)}
+                // Update onClick (UPDATED)
+                onClick={() => {
+                  if (!isGeneratingPdf) {
+                    setRecordPaymentModalVisible(false);
+                    recordPaymentForm.resetFields();
+                  } else {
+                    message.warning(
+                      "Please wait for PDF generation to complete."
+                    );
+                  }
+                }}
                 style={{ marginRight: 8 }}
+                // Add disabled state (UPDATED)
+                disabled={isGeneratingPdf}
               >
                 Cancel
               </Button>
               <Button
                 type="primary"
-                htmlType="submit"
+                htmlType="submit" // Keep as submit
                 icon={<DollarOutlined />}
+                // Add loading and disabled states (UPDATED)
+                loading={isGeneratingPdf}
+                disabled={isGeneratingPdf}
               >
-                Record Payment
+                {/* Update button text (UPDATED) */}
+                {isGeneratingPdf ? "Generating..." : "Record Payment"}
               </Button>
             </div>
+            {/* --- End Modal Footer Buttons --- */}
           </Form>
         </Modal>
+
+        {/* Hidden component for PDF Generation (ADDED) */}
+        {/* It renders based on lastPaymentDataForReceipt state */}
+        {/* We pass ref, data, and user info */}
+        <AcknowledgementReceiptPDF
+          ref={acknowledgementReceiptRef}
+          receiptData={lastPaymentDataForReceipt}
+          userInfo={user} // Pass logged-in user info
+          // companyInfo={{ name: "Your Custom Company Name" }} // Optional: Pass custom company info if needed
+        />
       </div>
     </ConfigProvider>
   );

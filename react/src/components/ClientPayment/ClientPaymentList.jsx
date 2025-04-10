@@ -59,6 +59,16 @@ const ClientPaymentList = () => {
     useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [recordPaymentForm] = Form.useForm();
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+
+  const breakpoints = {
+    xs: 480, // Extra small devices
+    sm: 576, // Small devices
+    md: 768, // Medium devices
+    lg: 992, // Large devices
+    xl: 1200, // Extra large devices
+    xxl: 1600, // Extra extra large devices
+  };
 
   // Fetch payments data
   useEffect(() => {
@@ -98,6 +108,9 @@ const ClientPaymentList = () => {
       message.error("Failed to delete payment record");
     }
   };
+
+  // Check if we're on a mobile device
+  const isMobile = screenWidth < breakpoints.md;
 
   // Open record payment modal
   const openRecordPaymentModal = (record) => {
@@ -453,17 +466,6 @@ const ClientPaymentList = () => {
               onClick={() => handleViewEdit(record.id)}
             />
           </Tooltip>
-          <Tooltip title="Record Payment">
-            <Button
-              type="text"
-              icon={<CheckCircleOutlined />}
-              disabled={
-                record.payment_type === "spot_cash" ||
-                getPaymentStatus(record).status === "COMPLETED"
-              }
-              onClick={() => openRecordPaymentModal(record)}
-            />
-          </Tooltip>
           <Popconfirm
             title="Delete this payment record?"
             description="This action cannot be undone."
@@ -486,26 +488,36 @@ const ClientPaymentList = () => {
         },
       }}
     >
+      <div
+        className="header-section"
+        style={{
+          marginBottom: isMobile ? "16px" : "20px",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? "12px" : "0",
+        }}
+      >
+        <Col>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{ margin: 0, fontWeight: 700 }}
+          >
+            Client Payments
+          </Title>
+        </Col>
+        <Col>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleAddClientPayment}
+          >
+            Add Client Payment
+          </Button>
+        </Col>
+      </div>
       <Card>
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
-          <Col>
-            <Title level={3}>Client Payments</Title>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={handleAddClientPayment}
-            >
-              Add Client Payment
-            </Button>
-          </Col>
-        </Row>
-
         <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} md={8} lg={6}>
             <Input
