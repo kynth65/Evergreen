@@ -430,24 +430,6 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                 >
                   <Input placeholder="Client's contact number" />
                 </Form.Item>
-                <Form.Item
-                  name="email"
-                  label="Email Address"
-                  rules={[
-                    {
-                      type: "email",
-                      message: "Please enter a valid email",
-                    },
-                  ]}
-                >
-                  <Input placeholder="Client's email address" />
-                </Form.Item>
-                <Form.Item name="address" label="Address">
-                  <TextArea
-                    placeholder="Client's address"
-                    autoSize={{ minRows: 2, maxRows: 4 }}
-                  />
-                </Form.Item>
               </Card>
             </Col>
 

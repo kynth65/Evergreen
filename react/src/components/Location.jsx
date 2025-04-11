@@ -107,9 +107,13 @@ export default function Location() {
                 </div>
                 <div>
                   <h4 className="font-bold text-xl mb-1 text-white">Address</h4>
-                  <p className="text-green-50/90">123 Evergreen Road</p>
-                  <p className="text-green-50/90">Norzagaray, Bulacan</p>
-                  <p className="text-green-50/90">Philippines</p>
+                  <p className="text-green-50/90">
+                    STA EVERGREEN 97, Pecson Ville Subdivision,
+                  </p>
+                  <p className="text-green-50/90">
+                    Tungkong Mangga, San Jose Del Monte, 3023, Bulacan
+                  </p>
+                  <p className="text-green-50/90">North Luzon, Philippines</p>
                 </div>
               </div>
 
@@ -124,10 +128,7 @@ export default function Location() {
                   <p className="text-green-50/90">
                     Monday to Friday: 8:00 AM - 5:00 PM
                   </p>
-                  <p className="text-green-50/90">
-                    Saturday: 8:00 AM - 12:00 PM
-                  </p>
-                  <p className="text-green-50/90">Sunday: Closed</p>
+                  <p className="text-green-50/90">Saturday, Sunday: Closed</p>
                 </div>
               </div>
 
@@ -137,14 +138,11 @@ export default function Location() {
                 </div>
                 <div>
                   <h4 className="font-bold text-xl mb-1 text-white">Contact</h4>
-                  <p className="text-green-50/90">Phone: (123) 456-7890</p>
+                  <p className="text-green-50/90">Phone: 276173787</p>
                   <p className="text-green-50/90">
                     Email:{" "}
-                    <a
-                      href="mailto:info@evergreenfarms.com"
-                      className="text-green-200 hover:text-white transition-colors"
-                    >
-                      info@evergreenfarms.com
+                    <a className="text-green-200">
+                      evergreenrealty2020@gmail.com
                     </a>
                   </p>
                 </div>
@@ -155,10 +153,10 @@ export default function Location() {
                   Directions
                 </h4>
                 <p className="text-green-50/90 mb-4">
-                  From Manila, take the North Luzon Expressway (NLEX) and exit
-                  at Sta. Rita. Continue onto Plaridel Bypass Road then follow
-                  signs to Norzagaray. Our office is located 2km past the town
-                  center.
+                  From SM Tungko, walk towards Petron gas station near Brigino
+                  Hospital. Continue straight until you reach the first street
+                  on your left. Evergreen Farms is located in the white building
+                  on that corner.
                 </p>
                 <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-md font-medium transition-colors inline-flex items-center gap-2 shadow-lg backdrop-blur-sm bg-opacity-80 border border-green-500/30 hover:border-green-400/50">
                   <MapPin size={18} />

@@ -7,7 +7,15 @@ import beescapes from "../assets/beescapes layout.jpg";
 import beesettings from "../assets/beesettings layout.jpg";
 import jaikpark from "../assets/Jaika park layout.jpg";
 import juanderland from "../assets/juanderland.png";
-import { X, Leaf, Eye, ArrowRight } from "lucide-react"; // Added more icons
+import {
+  X,
+  Leaf,
+  Eye,
+  ArrowRight,
+  ShieldCheck,
+  Recycle,
+  Users,
+} from "lucide-react"; // Added more icons
 import Location from "../components/Location";
 
 export default function About() {
@@ -103,9 +111,11 @@ export default function About() {
                   About <span className="text-green-700">Evergreen</span> Farms
                 </h1>
                 <p className="text-xl text-gray-700 mb-8 leading-relaxed">
-                  Connecting people with premium farmland since 2020. We believe
-                  in sustainable agriculture and preserving natural landscapes
-                  for future generations.
+                  Connecting people with premium farmland since 2020. Whether
+                  you're looking to buy or sell, we believe in sustainable
+                  agriculture and preserving natural landscapes for future
+                  generations. If you are trying to sell your land, we are
+                  willing to help you sell it faster and easier.
                 </p>
                 <div className="h-1 w-24 bg-green-600 mb-8"></div>
                 <div className="flex items-center text-green-700 font-medium">
@@ -120,6 +130,68 @@ export default function About() {
                   alt="Scenic farmland view"
                   className="rounded-lg shadow-xl object-cover h-full w-full relative z-10"
                 />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Core Values Section - Adjusted to reflect both buying and selling */}
+        <section className="py-16 md:py-24 bg-white relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-5xl font-bold text-green-800 mb-4">
+                Our Core Values
+              </h2>
+              <div className="h-1 w-24 bg-green-500 mx-auto mb-6"></div>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                We are dedicated to providing exceptional service whether you
+                are buying or selling farmland. Our values ensure a smooth and
+                ethical process for all our clients.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {/* Integrity */}
+              <div className="bg-green-50 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <ShieldCheck className="w-8 h-8 text-green-700" />
+                </div>
+                <h3 className="text-2xl font-bold text-green-800 mb-2">
+                  Integrity
+                </h3>
+                <p className="text-gray-700">
+                  Honest and transparent dealings are at the heart of our
+                  business. We ensure fair practices for both buyers and
+                  sellers.
+                </p>
+              </div>
+
+              {/* Sustainability */}
+              <div className="bg-green-50 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <Recycle className="w-8 h-8 text-green-700" />
+                </div>
+                <h3 className="text-2xl font-bold text-green-800 mb-2">
+                  Sustainability
+                </h3>
+                <p className="text-gray-700">
+                  We promote sustainable agricultural practices that protect the
+                  environment and ensure long-term land viability.
+                </p>
+              </div>
+
+              {/* Community */}
+              <div className="bg-green-50 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <Users className="w-8 h-8 text-green-700" />
+                </div>
+                <h3 className="text-2xl font-bold text-green-800 mb-2">
+                  Community
+                </h3>
+                <p className="text-gray-700">
+                  We build strong relationships with our clients and support
+                  local communities through responsible land stewardship.
+                </p>
               </div>
             </div>
           </div>

@@ -7,7 +7,7 @@ export default function ContactUs() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-[#f7fdf7] p-20">
+      <div className="min-h-screen bg-[#f7fdf7] py-2 pb-20 px-4 sm:px-6 lg:py-2 lg:pb-20">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white shadow-lg rounded-lg p-8 mt-16">
             <div className="space-y-4 mb-8">
