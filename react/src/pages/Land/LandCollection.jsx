@@ -36,6 +36,8 @@ const LandCard = ({ land }) => {
     }).format(totalPrice);
   };
 
+  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative h-56">
@@ -44,9 +46,7 @@ const LandCard = ({ land }) => {
         landDetails.images &&
         landDetails.images.length > 0 ? (
           <img
-            src={`${import.meta.env.VITE_API_BASE_URL}/storage/${
-              landDetails.images[0].image_path
-            }`}
+            src={`${baseUrl}/storage/${landDetails.images[0].image_path}`}
             alt={land.name}
             className="w-full h-full object-cover"
           />
