@@ -35,16 +35,14 @@ export default function Hero() {
             </div>
 
             {/* CTA Button */}
-            <button className="w-full md:w-auto bg-[#278336] text-white py-3 px-8 rounded-lg hover:bg-green-600 transition-colors font-medium shadow-md">
+            <a
+              href="https://www.facebook.com/messages/t/101861274821233"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full md:w-auto bg-[#278336] text-white py-3 px-8 rounded-lg hover:bg-green-600 transition-colors font-medium shadow-md"
+            >
               Book a Free Tour Trip
-            </button>
-            <p className="text-sm text-gray-600 mt-4 max-w-md">
-              By clicking 'Book a Free Tour Trip' you acknowledge that you have
-              read and agree to the{" "}
-              <a href="#" className="underline hover:text-gray-900">
-                Terms of Service
-              </a>
-            </p>
+            </a>
           </div>
 
           {/* Right Content - Image with Location Card */}

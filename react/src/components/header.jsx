@@ -18,9 +18,7 @@ export default function Header() {
 
   return (
     <header
-      className={`evergreen-header font-grotesk py-4 fixed w-full top-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white/70 backdrop-blur-md shadow-lg" : "bg-white/70"
-      }`}
+      className={`evergreen-header font-grotesk py-2  w-full top-0 z-50 transition-all duration-300 `}
     >
       <nav className="evergreen-nav max-w-7xl mx-auto flex justify-between items-center px-4">
         {/* Logo */}
@@ -56,11 +54,11 @@ export default function Header() {
                 </li>
                 <li>
                   <Link
-                    to="/services"
+                    to="/lands"
                     className="hover:text-gray-600 text-2xl"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Services
+                    Land Collection
                   </Link>
                 </li>
                 <li>

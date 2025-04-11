@@ -83,7 +83,7 @@ export default function About() {
   return (
     <>
       <Header />
-      <main className="bg-gray-50 min-h-screen pt-18">
+      <main className="bg-gray-50 min-h-screen ">
         {/* Hero Section - Enhanced with decorative elements and improved layout */}
         <section className="py-16 md:py-24 bg-gradient-to-b from-white to-green-50 relative overflow-hidden">
           {/* Decorative elements */}

@@ -1,154 +1,108 @@
-import React, { useState } from "react";
-import { MessageSquare } from "lucide-react";
+import React from "react";
+import { MessageSquare, Phone, Mail, MapPin } from "lucide-react";
 import Header from "../components/header";
 import Footer from "../components/footer";
 
 export default function ContactUs() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    message: "",
-  });
-  const [submitStatus, setSubmitStatus] = useState("");
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const submissionData = {
-      access_key: "6b38b5cc-df19-4c65-a6fb-e9f1cbe28bad",
-      ...formData,
-    };
-
-    try {
-      const response = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(submissionData),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setSubmitStatus("success");
-        setFormData({
-          name: "",
-          email: "",
-          message: "",
-        });
-        console.log("Success", result);
-      } else {
-        setSubmitStatus("error");
-        console.log("Error", result);
-      }
-    } catch (error) {
-      setSubmitStatus("error");
-      console.log("Error", error);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   return (
     <>
-      {" "}
       <Header />
-      <div className="min-h-screen bg-[#f7fdf7] pt-20">
+      <div className="min-h-screen bg-[#f7fdf7] p-20">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white shadow-lg rounded-lg p-8 mt-16">
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-2 mb-2">
                 <MessageSquare className="w-6 h-6 text-green-600" />
                 <h1 className="text-2xl font-bold text-gray-800">
-                  Schedule a Land Visit
+                  Get In Touch
                 </h1>
               </div>
               <p className="text-gray-600">
-                Interested in viewing our available land properties? Fill out
-                the form below to schedule a visit or request more information
-                about our listings.
+                We're here to help with any questions about our land properties.
+                For the fastest response, message us directly on Facebook
+                Messenger.
               </p>
-              {submitStatus === "success" && (
-                <div className="bg-green-100 text-green-700 p-3 rounded-lg">
-                  Message sent successfully!
-                </div>
-              )}
-              {submitStatus === "error" && (
-                <div className="bg-red-100 text-red-700 p-3 rounded-lg">
-                  Failed to send message. Please try again.
-                </div>
-              )}
             </div>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label
-                    className="text-sm font-medium text-gray-700"
-                    htmlFor="name"
+
+            {/* Messenger Card */}
+            <div className="bg-blue-50 rounded-lg p-6 mb-8 border border-blue-100">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="w-16 h-16"
+                    viewBox="0 0 36 36"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                    required
-                  />
+                    <path
+                      d="M18 0C8.0748 0 0 7.5495 0 16.8613C0 21.7682 2.2449 26.1219 5.99071 29.0704V36L12.7258 32.5484C14.3957 33.0612 16.1618 33.3402 18 33.3402C27.9252 33.3402 36 25.7907 36 16.4789C36 7.16711 27.9252 0 18 0Z"
+                      fill="#0084FF"
+                    />
+                    <path
+                      d="M19.9383 22.0656L14.9319 16.6604L5.34961 22.0656L15.9851 10.9512L21.0684 16.3564L30.5738 10.9512L19.9383 22.0656Z"
+                      fill="white"
+                    />
+                  </svg>
                 </div>
-                <div className="space-y-2">
-                  <label
-                    className="text-sm font-medium text-gray-700"
-                    htmlFor="email"
+                <div className="flex-grow text-center md:text-left">
+                  <h3 className="text-xl font-semibold text-blue-800 mb-2">
+                    Message Us on Facebook
+                  </h3>
+                  <p className="text-blue-700 mb-4">
+                    Get a faster response through our Facebook Messenger
+                  </p>
+                  <a
+                    href="https://www.facebook.com/messages/t/101861274821233"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition duration-200"
                   >
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
-                    required
-                  />
+                    <MessageSquare className="w-5 h-5" />
+                    <span>Open Messenger</span>
+                  </a>
                 </div>
               </div>
-              <div className="space-y-2">
-                <label
-                  className="text-sm font-medium text-gray-700"
-                  htmlFor="message"
-                >
-                  Your Message or Visit Request Details
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  placeholder="Please include your preferred visit dates and times, or any specific questions about our land properties."
-                  value={formData.message}
-                  onChange={handleChange}
-                  rows="5"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition resize-none"
-                  required
-                ></textarea>
+            </div>
+
+            {/* Contact Information */}
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <h2 className="text-xl font-medium mb-6">Contact Information</h2>
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-green-600" />
+                  <span className="text-gray-700">276173787</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-green-600" />
+                  <a
+                    href="mailto:evergreenrealty2020@gmail.com"
+                    className="text-gray-700 hover:text-green-600 transition-colors"
+                  >
+                    evergreenrealty2020@gmail.com
+                  </a>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-green-600 mt-1" />
+                  <span className="text-gray-700">
+                    Tungko, San Jose Del Monte Bulacan
+                  </span>
+                </div>
               </div>
-              <button
-                type="submit"
-                className="w-full md:w-auto px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-200 ease-in-out cursor-pointer"
-              >
-                Send Request
-              </button>
-            </form>
+            </div>
+
+            {/* Schedule Visit Optional Section */}
+            <div className="mt-8 pt-8 border-t border-gray-200">
+              <h3 className="text-lg font-medium text-gray-800 mb-4">
+                Prefer to schedule a visit?
+              </h3>
+              <p className="text-gray-600 mb-4">
+                If you'd like to see our properties in person, you can also
+                message us on Facebook or call our phone number to arrange a
+                convenient time.
+              </p>
+            </div>
           </div>
         </div>
       </div>
