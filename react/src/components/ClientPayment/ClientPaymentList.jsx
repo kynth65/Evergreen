@@ -21,6 +21,7 @@ import {
   Popconfirm,
   Dropdown, // Added
   Menu, // Added
+  Skeleton, // Added for skeleton loading
 } from "antd";
 import {
   PlusOutlined,
@@ -197,6 +198,7 @@ const ClientPaymentList = () => {
         title: "Client",
         dataIndex: "client_name",
         key: "client_name",
+        align: "left", // Explicitly align left
         render: (text, record) => (
           // Link to view details page
           <a
@@ -211,9 +213,7 @@ const ClientPaymentList = () => {
             )}
           </a>
         ),
-        sorter: (a, b) =>
-          (a.client_name || "").localeCompare(b.client_name || ""),
-        sortDirections: ["ascend", "descend"],
+        // Removed sorter and sortDirections
       },
       {
         title: "Payment Type",
@@ -225,11 +225,7 @@ const ClientPaymentList = () => {
             {text === "spot_cash" ? "Spot Cash" : "Installment"}
           </Tag>
         ),
-        filters: [
-          { text: "Installment", value: "installment" },
-          { text: "Spot Cash", value: "spot_cash" },
-        ],
-        onFilter: (value, record) => record.payment_type === value,
+        // Removed filters and onFilter properties
       },
     ];
 
@@ -429,6 +425,89 @@ const ClientPaymentList = () => {
   };
   // --- End Responsive Columns ---
 
+  // Add global CSS for table alignment
+  React.useEffect(() => {
+    // Add a style tag to ensure all table content is left-aligned
+    const styleElement = document.createElement("style");
+    styleElement.innerHTML = `
+      .left-aligned-table .ant-table-thead > tr > th,
+      .left-aligned-table .ant-table-tbody > tr > td,
+      .left-aligned-table .ant-table-column-title {
+        text-align: left !important;
+      }
+      .left-aligned-table .ant-table-cell-fix-right {
+        text-align: left !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
+  // Custom skeleton row reflecting responsive columns
+  const SkeletonRow = () => (
+    <tr className="ant-table-row">
+      <td>
+        <Skeleton.Input active size="small" style={{ width: "90%" }} />
+        <div className="text-xs text-gray-500 mt-1">
+          <Skeleton.Input active size="small" style={{ width: "60%" }} />
+        </div>
+      </td>
+      <td>
+        <Skeleton.Button active size="small" style={{ width: 80 }} />
+      </td>
+      {screenWidth >= breakpoints.md && (
+        <td>
+          <Skeleton.Input active size="small" style={{ width: "90%" }} />
+          <div className="text-xs text-gray-500 mt-1">
+            <Skeleton.Input active size="small" style={{ width: "70%" }} />
+          </div>
+        </td>
+      )}
+      {screenWidth >= breakpoints.lg && (
+        <>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: "70%" }} />
+          </td>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: "70%" }} />
+          </td>
+        </>
+      )}
+      <td>
+        <Space>
+          {isMobile ? (
+            <Skeleton.Button active size="small" shape="circle" />
+          ) : (
+            <>
+              {/* Match skeleton to text buttons */}
+              <Skeleton.Button
+                active
+                size="small"
+                shape="circle"
+                style={{ width: 24 }}
+              />
+              <Skeleton.Button
+                active
+                size="small"
+                shape="circle"
+                style={{ width: 24 }}
+              />
+              <Skeleton.Button
+                active
+                size="small"
+                shape="circle"
+                style={{ width: 24 }}
+              />
+            </>
+          )}
+        </Space>
+      </td>
+    </tr>
+  );
+
   return (
     <ConfigProvider theme={{ token: { colorPrimary: "#1da57a" } }}>
       {/* Header Section - Use conditional styles based on isMobile */}
@@ -518,7 +597,7 @@ const ClientPaymentList = () => {
             columns={getResponsiveColumns()}
             dataSource={filteredPayments}
             rowKey="id"
-            loading={loading}
+            loading={false} // Set to false since we're using custom skeleton
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -529,7 +608,59 @@ const ClientPaymentList = () => {
             }}
             scroll={{ x: "max-content" }} // Important for horizontal scroll
             size={isMobile ? "small" : "middle"} // Smaller table cells on mobile
-            className="ant-table-smooth-scroll"
+            className="ant-table-smooth-scroll left-aligned-table"
+            tableLayout="fixed" // Added for better column width control
+            style={{ textAlign: "left" }} // Force text alignment for the entire table
+            components={{
+              body: {
+                wrapper: (props) => {
+                  if (loading) {
+                    return (
+                      <tbody {...props}>
+                        {Array(10)
+                          .fill(null)
+                          .map((_, index) => (
+                            <SkeletonRow key={index} />
+                          ))}
+                      </tbody>
+                    );
+                  }
+                  if (!loading && filteredPayments.length === 0) {
+                    return (
+                      <tbody {...props}>
+                        <tr>
+                          <td
+                            colSpan={getResponsiveColumns().length}
+                            style={{ textAlign: "center", padding: "40px" }}
+                          >
+                            <Text type="secondary">
+                              No payment agreements found.
+                            </Text>
+                            {(searchText ||
+                              filterPaymentType !== "all" ||
+                              dateRange) && (
+                              <div style={{ marginTop: "10px" }}>
+                                <Button
+                                  onClick={() => {
+                                    setSearchText("");
+                                    setFilterPaymentType("all");
+                                    setDateRange(null);
+                                  }}
+                                  size="small"
+                                >
+                                  Clear Filters
+                                </Button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    );
+                  }
+                  return <tbody {...props} />;
+                },
+              },
+            }}
           />
         </div>
         {/* Mobile hint */}

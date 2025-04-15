@@ -15,9 +15,7 @@ import html2pdf from "html2pdf.js";
 import AcknowledgementReceiptPDF from "./AcknowledgementReceiptPDF";
 import axiosClient from "../../axios.client";
 import { roundUpToWhole } from "../../utils/numberFormatters";
-
 const { TextArea } = Input;
-
 /**
  * Component for recording a new payment and handling PDF receipt generation
  */
@@ -26,15 +24,48 @@ const RecordPaymentSection = ({
   paymentStatus,
   user,
   refreshData,
+  visible,
+  onClose,
 }) => {
   const [form] = Form.useForm();
-  const [recordPaymentModalVisible, setRecordPaymentModalVisible] =
-    useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [lastPaymentDataForReceipt, setLastPaymentDataForReceipt] =
     useState(null);
   const acknowledgementReceiptRef = useRef(null);
   const pdfGenerationAttempt = useRef(0);
+
+  // Reset form and setup default values when modal becomes visible
+  useEffect(() => {
+    if (visible && payment) {
+      // Get next payment info
+      const nextPaymentNumber = payment.completed_payments + 1;
+      const nextScheduledPayment = payment.paymentSchedules?.find(
+        (schedule) => schedule.payment_number === nextPaymentNumber
+      );
+
+      // Calculate expected payment
+      const totalInstallments = payment.installment_years * 12;
+      const expectedMonthlyAmount =
+        totalInstallments > 0 ? payment.total_amount / totalInstallments : 0;
+
+      // Round up to whole number
+      const roundedAmount = nextScheduledPayment?.amount
+        ? roundUpToWhole(nextScheduledPayment.amount)
+        : roundUpToWhole(
+            payment.payment_type !== "spot_cash"
+              ? expectedMonthlyAmount
+              : payment.total_amount
+          );
+
+      form.setFieldsValue({
+        amount: roundedAmount,
+        payment_date: dayjs(),
+        payment_method: "CASH",
+        reference_number: null,
+        payment_notes: null,
+      });
+    }
+  }, [visible, payment, form]);
 
   // PDF generation function
   const generateAcknowledgementReceiptPDF = (receiptData) => {
@@ -45,7 +76,6 @@ const RecordPaymentSection = ({
       setIsGeneratingPdf(false);
       return;
     }
-
     if (!receiptData) {
       message.error("No payment data available for receipt generation.");
       console.error("receiptData is null or undefined.");
@@ -73,13 +103,10 @@ const RecordPaymentSection = ({
         logging: true, // Enable logging for debug
       },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      // Direct download without preview
+      autoPrint: false,
+      output: "save",
     };
-
-    // Log current HTML content for debugging
-    console.log(
-      "PDF Element Content:",
-      element.innerHTML.substring(0, 100) + "..."
-    );
 
     // Create a promise-based generation process
     message.loading({
@@ -124,7 +151,6 @@ const RecordPaymentSection = ({
         lastPaymentDataForReceipt
       );
       setIsGeneratingPdf(true);
-
       // Short delay to ensure component is rendered
       setTimeout(() => {
         generateAcknowledgementReceiptPDF(lastPaymentDataForReceipt);
@@ -132,49 +158,18 @@ const RecordPaymentSection = ({
     }
   }, [lastPaymentDataForReceipt]);
 
-  // Open record payment modal
-  const openRecordPaymentModal = () => {
-    if (!payment || isGeneratingPdf) return;
-
-    setRecordPaymentModalVisible(true);
-
-    // Get next payment info
-    const nextPaymentNumber = payment.completed_payments + 1;
-    const nextScheduledPayment = payment.paymentSchedules?.find(
-      (schedule) => schedule.payment_number === nextPaymentNumber
-    );
-
-    // Calculate expected payment
-    const totalInstallments = payment.installment_years * 12;
-    const expectedMonthlyAmount =
-      totalInstallments > 0 ? payment.total_amount / totalInstallments : 0;
-
-    // Round up to whole number
-    const roundedAmount = nextScheduledPayment?.amount
-      ? roundUpToWhole(nextScheduledPayment.amount)
-      : roundUpToWhole(
-          payment.payment_type !== "spot_cash"
-            ? expectedMonthlyAmount
-            : payment.total_amount
-        );
-
-    form.setFieldsValue({
-      amount: roundedAmount,
-      payment_date: dayjs(),
-      payment_method: "CASH",
-      reference_number: null,
-      payment_notes: null,
-    });
-  };
-
   // Handle record payment
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleRecordPayment = async (values) => {
-    if (!payment || isGeneratingPdf) return;
+    if (!payment || isGeneratingPdf || isSubmitting) return;
+
+    // Set submitting state to prevent multiple clicks
+    setIsSubmitting(true);
 
     // Round up the payment amount to ensure whole numbers
     const paymentAmount = roundUpToWhole(values.amount);
     const paymentDate = values.payment_date;
-
     // Prepare receipt data
     const receiptData = {
       clientName: payment.client_name,
@@ -193,7 +188,6 @@ const RecordPaymentSection = ({
           : "N/A",
       paymentNumber: (payment.completed_payments || 0) + 1,
     };
-
     try {
       // Record the payment in the API
       await axiosClient.post(`/client-payments/${payment.id}/record-payment`, {
@@ -201,16 +195,12 @@ const RecordPaymentSection = ({
         amount: paymentAmount,
         payment_date: paymentDate.format("YYYY-MM-DD"),
       });
-
       message.success("Payment recorded successfully");
-
       // Close modal before PDF generation
-      setRecordPaymentModalVisible(false);
+      onClose();
       form.resetFields();
-
       // Trigger PDF generation AFTER API call succeeds
       setLastPaymentDataForReceipt(receiptData);
-
       // Refresh data after a short delay (after PDF generation)
       setTimeout(() => {
         refreshData();
@@ -225,32 +215,27 @@ const RecordPaymentSection = ({
       }
       message.error(errorMessage);
       setIsGeneratingPdf(false);
+    } finally {
+      // Always reset submitting state, but with a delay when there's an error
+      // This prevents immediately retriggering submission after an error
+      if (isGeneratingPdf) {
+        // Keep it locked while generating PDF
+        setTimeout(() => setIsSubmitting(false), 3000);
+      } else {
+        setIsSubmitting(false);
+      }
     }
   };
 
   return (
     <>
-      {/* Record Payment Button (only shown for installment payments that aren't completed) */}
-      {payment.payment_type !== "spot_cash" &&
-        paymentStatus?.status !== "COMPLETED" && (
-          <Button
-            type="primary"
-            icon={<DollarOutlined />}
-            onClick={openRecordPaymentModal}
-            disabled={isGeneratingPdf}
-            loading={isGeneratingPdf}
-          >
-            Record Payment
-          </Button>
-        )}
-
       {/* Record Payment Modal */}
       <Modal
         title="Record Payment"
-        open={recordPaymentModalVisible}
+        open={visible}
         onCancel={() => {
           if (!isGeneratingPdf) {
-            setRecordPaymentModalVisible(false);
+            onClose();
             form.resetFields();
           } else {
             message.warning("Please wait for PDF generation to complete.");
@@ -283,7 +268,6 @@ const RecordPaymentSection = ({
               precision={0} // Ensure whole numbers
             />
           </Form.Item>
-
           <Form.Item
             name="payment_date"
             label="Payment Date"
@@ -291,7 +275,6 @@ const RecordPaymentSection = ({
           >
             <DatePicker style={{ width: "100%" }} />
           </Form.Item>
-
           <Form.Item
             name="payment_method"
             label="Payment Method"
@@ -306,27 +289,24 @@ const RecordPaymentSection = ({
               <Radio value="ONLINE">Online Payment</Radio>
             </Radio.Group>
           </Form.Item>
-
           <Form.Item
             name="reference_number"
             label="Reference Number (Optional)"
           >
             <Input placeholder="e.g., Check #, Transaction ID" />
           </Form.Item>
-
           <Form.Item name="payment_notes" label="Payment Notes (Optional)">
             <TextArea
               rows={3}
               placeholder="e.g., Payment for Month X, Late fee included"
             />
           </Form.Item>
-
           {/* Modal Footer Buttons */}
           <div style={{ textAlign: "right", marginTop: "20px" }}>
             <Button
               onClick={() => {
                 if (!isGeneratingPdf) {
-                  setRecordPaymentModalVisible(false);
+                  onClose();
                   form.resetFields();
                 } else {
                   message.warning(
@@ -343,10 +323,14 @@ const RecordPaymentSection = ({
               type="primary"
               htmlType="submit"
               icon={<DollarOutlined />}
-              loading={isGeneratingPdf}
-              disabled={isGeneratingPdf}
+              loading={isGeneratingPdf || isSubmitting}
+              disabled={isGeneratingPdf || isSubmitting}
             >
-              {isGeneratingPdf ? "Generating..." : "Record Payment"}
+              {isGeneratingPdf
+                ? "Generating..."
+                : isSubmitting
+                ? "Processing..."
+                : "Record Payment"}
             </Button>
           </div>
         </Form>
@@ -361,5 +345,4 @@ const RecordPaymentSection = ({
     </>
   );
 };
-
 export default RecordPaymentSection;

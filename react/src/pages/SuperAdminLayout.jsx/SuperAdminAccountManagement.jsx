@@ -11,6 +11,7 @@ import {
   Search,
   RefreshCw,
   MoreVertical,
+  ChevronDown,
 } from "lucide-react";
 
 export default function SuperAdminAccountManagement() {
@@ -24,6 +25,8 @@ export default function SuperAdminAccountManagement() {
   const [viewPassword, setViewPassword] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const [expandedRow, setExpandedRow] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   // Responsive breakpoints matching LotList
   const breakpoints = {
@@ -47,6 +50,8 @@ export default function SuperAdminAccountManagement() {
 
   // Check if we're on a mobile device
   const isMobile = screenWidth < breakpoints.md;
+  // Check if we're on a small device
+  const isSmall = screenWidth < breakpoints.lg;
 
   // New user form
   const [formData, setFormData] = useState({
@@ -68,6 +73,20 @@ export default function SuperAdminAccountManagement() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown && !event.target.closest(`.dropdown-${openDropdown}`)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openDropdown]);
 
   // Fetch users on component mount
   useEffect(() => {
@@ -141,6 +160,7 @@ export default function SuperAdminAccountManagement() {
     try {
       await axiosClient.delete(`/users/${userId}`);
       setUsers((prev) => prev.filter((user) => user.id !== userId));
+      setOpenDropdown(null);
     } catch (err) {
       setError("Failed to delete user");
       console.error(err);
@@ -158,6 +178,7 @@ export default function SuperAdminAccountManagement() {
       password: "", // Don't include the password in the form
     });
     setIsEditing(user.id);
+    setOpenDropdown(null);
   };
 
   const togglePasswordVisibility = (userId) => {
@@ -165,6 +186,15 @@ export default function SuperAdminAccountManagement() {
       ...prev,
       [userId]: !prev[userId],
     }));
+  };
+
+  const toggleRowExpand = (userId) => {
+    setExpandedRow(expandedRow === userId ? null : userId);
+  };
+
+  const toggleDropdown = (userId, e) => {
+    e.stopPropagation();
+    setOpenDropdown(openDropdown === userId ? null : userId);
   };
 
   const filteredUsers = users.filter((user) => {
@@ -179,60 +209,32 @@ export default function SuperAdminAccountManagement() {
 
   // Render action buttons or dropdown based on screen size
   const renderActions = (user) => {
-    if (isMobile) {
-      return (
-        <div className="relative group">
-          <button
-            className="p-1 rounded-full hover:bg-gray-200 focus:outline-none"
-            onClick={(e) => {
-              e.stopPropagation();
-              const dropdown = document.getElementById(`dropdown-${user.id}`);
-              if (dropdown) {
-                dropdown.classList.toggle("hidden");
-              }
-            }}
-          >
-            <MoreVertical size={20} />
-          </button>
-          <div
-            id={`dropdown-${user.id}`}
-            className="hidden absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden z-10 w-32"
-          >
+    return (
+      <div className={`relative dropdown-${user.id}`}>
+        <button
+          className="p-1 rounded-full hover:bg-gray-200 focus:outline-none cursor-pointer"
+          onClick={(e) => toggleDropdown(user.id, e)}
+        >
+          <MoreVertical size={20} />
+        </button>
+        {openDropdown === user.id && (
+          <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden z-10 w-32">
             <button
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center"
+              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center cursor-pointer"
               onClick={() => startEditing(user)}
             >
               <Edit size={16} className="mr-2" />
               <span>Edit</span>
             </button>
             <button
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600 flex items-center"
+              className="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600 flex items-center cursor-pointer"
               onClick={() => handleDeleteUser(user.id)}
             >
               <Trash2 size={16} className="mr-2" />
               <span>Delete</span>
             </button>
           </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex justify-end space-x-2">
-        <button
-          className="p-1 text-green-600 hover:text-green-900  hover:bg-green-100 cursor-pointer rounded-full"
-          onClick={() => startEditing(user)}
-          style={{ color: colors.primary }}
-        >
-          <Edit size={18} />
-        </button>
-        <button
-          className="p-1 text-red-600 hover:text-red-900  hover:bg-red-100 cursor-pointer rounded-full"
-          onClick={() => handleDeleteUser(user.id)}
-          style={{ color: colors.error }}
-        >
-          <Trash2 size={18} />
-        </button>
+        )}
       </div>
     );
   };
@@ -272,6 +274,32 @@ export default function SuperAdminAccountManagement() {
     );
   };
 
+  // Render expanded row details for mobile view
+  const renderExpandedDetails = (user) => {
+    return (
+      <tr className="bg-gray-50">
+        <td colSpan="4" className="px-4 py-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-xs font-medium text-gray-500">Age</div>
+              <div className="text-sm">{user.age || "-"}</div>
+            </div>
+            {isMobile && (
+              <div>
+                <div className="text-xs font-medium text-gray-500">Email</div>
+                <div className="text-sm overflow-x-auto">{user.email}</div>
+              </div>
+            )}
+            <div>
+              <div className="text-xs font-medium text-gray-500">Password</div>
+              <div className="text-sm">••••••••</div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
   // Render skeleton loading state
   const renderSkeleton = () => {
     return Array(5)
@@ -281,10 +309,12 @@ export default function SuperAdminAccountManagement() {
           <td className="px-4 py-3 whitespace-nowrap">
             <div className="h-4 w-20 bg-gray-200 rounded"></div>
           </td>
-          <td className="px-4 py-3 whitespace-nowrap">
-            <div className="h-4 w-32 bg-gray-200 rounded"></div>
-          </td>
           {!isMobile && (
+            <td className="px-4 py-3 whitespace-nowrap">
+              <div className="h-4 w-32 bg-gray-200 rounded"></div>
+            </td>
+          )}
+          {!isSmall && (
             <>
               <td className="px-4 py-3 whitespace-nowrap">
                 <div className="h-4 w-12 bg-gray-200 rounded"></div>
@@ -298,7 +328,7 @@ export default function SuperAdminAccountManagement() {
             <div className="h-4 w-16 bg-gray-200 rounded"></div>
           </td>
           <td className="px-4 py-3 whitespace-nowrap text-right">
-            <div className="h-6 w-16 bg-gray-200 rounded ml-auto"></div>
+            <div className="h-6 w-8 bg-gray-200 rounded ml-auto"></div>
           </td>
         </tr>
       ));
@@ -372,7 +402,7 @@ export default function SuperAdminAccountManagement() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Create New User</h2>
               <button
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 cursor-pointer"
                 onClick={() => setIsCreating(false)}
               >
                 <X size={20} />
@@ -508,7 +538,7 @@ export default function SuperAdminAccountManagement() {
                   />
                   <button
                     type="button"
-                    className="absolute right-2 top-2.5 text-gray-500 hover:text-gray-700"
+                    className="absolute right-2 top-2.5 text-gray-500 hover:text-gray-700 cursor-pointer"
                     onClick={() => togglePasswordVisibility("new")}
                   >
                     {viewPassword.new ? (
@@ -549,21 +579,23 @@ export default function SuperAdminAccountManagement() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
                     {!isMobile && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                    )}
+                    {!isSmall && (
                       <>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Age
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Role
+                          Password
                         </th>
                       </>
                     )}
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {isMobile ? "Role" : "Password"}
+                      Role
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -583,21 +615,23 @@ export default function SuperAdminAccountManagement() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
                     {!isMobile && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                    )}
+                    {!isSmall && (
                       <>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Age
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Role
+                          Password
                         </th>
                       </>
                     )}
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {isMobile ? "Role" : "Password"}
+                      Role
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
@@ -608,7 +642,7 @@ export default function SuperAdminAccountManagement() {
                   {filteredUsers.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={isMobile ? "4" : "6"}
+                        colSpan="6"
                         className="px-4 py-3 text-center text-gray-500"
                       >
                         No users found
@@ -616,227 +650,252 @@ export default function SuperAdminAccountManagement() {
                     </tr>
                   ) : (
                     filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
-                        {isEditing === user.id ? (
-                          <td
-                            colSpan={isMobile ? "4" : "6"}
-                            className="px-4 py-3"
-                          >
-                            <form
-                              onSubmit={handleUpdateUser}
-                              className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                            >
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  First Name
-                                </label>
-                                <input
-                                  type="text"
-                                  name="first_name"
-                                  className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
-                                  required
-                                  value={formData.first_name}
-                                  onChange={handleInputChange}
-                                  style={{
-                                    "--tw-ring-color": colors.primary,
-                                    borderColor: "rgb(209, 213, 219)",
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Middle Initial
-                                </label>
-                                <input
-                                  type="text"
-                                  name="middle_initial"
-                                  maxLength="1"
-                                  className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
-                                  value={formData.middle_initial}
-                                  onChange={handleInputChange}
-                                  style={{
-                                    "--tw-ring-color": colors.primary,
-                                    borderColor: "rgb(209, 213, 219)",
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Last Name
-                                </label>
-                                <input
-                                  type="text"
-                                  name="last_name"
-                                  className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
-                                  required
-                                  value={formData.last_name}
-                                  onChange={handleInputChange}
-                                  style={{
-                                    "--tw-ring-color": colors.primary,
-                                    borderColor: "rgb(209, 213, 219)",
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Age
-                                </label>
-                                <input
-                                  type="number"
-                                  name="age"
-                                  min="18"
-                                  max="100"
-                                  className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
-                                  value={formData.age}
-                                  onChange={handleInputChange}
-                                  style={{
-                                    "--tw-ring-color": colors.primary,
-                                    borderColor: "rgb(209, 213, 219)",
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Email
-                                </label>
-                                <input
-                                  type="email"
-                                  name="email"
-                                  className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
-                                  required
-                                  value={formData.email}
-                                  onChange={handleInputChange}
-                                  style={{
-                                    "--tw-ring-color": colors.primary,
-                                    borderColor: "rgb(209, 213, 219)",
-                                  }}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  Role
-                                </label>
-                                <select
-                                  name="role"
-                                  className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
-                                  required
-                                  value={formData.role}
-                                  onChange={handleInputChange}
-                                  style={{
-                                    "--tw-ring-color": colors.primary,
-                                    borderColor: "rgb(209, 213, 219)",
-                                  }}
-                                >
-                                  <option value="agent">Agent</option>
-                                  <option value="admin">Admin</option>
-                                  <option value="intern">Intern</option>
-                                  <option value="superadmin">
-                                    Super Admin
-                                  </option>
-                                </select>
-                              </div>
-                              <div className="relative">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                  New Password (Optional)
-                                </label>
-                                <div className="relative">
+                      <React.Fragment key={user.id}>
+                        <tr
+                          className={`hover:bg-gray-50 ${
+                            isMobile || isSmall ? "cursor-pointer" : ""
+                          }`}
+                          onClick={() =>
+                            (isMobile || isSmall) && toggleRowExpand(user.id)
+                          }
+                        >
+                          {isEditing === user.id ? (
+                            <td colSpan="6" className="px-4 py-3">
+                              <form
+                                onSubmit={handleUpdateUser}
+                                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                              >
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    First Name
+                                  </label>
                                   <input
-                                    type={
-                                      viewPassword[user.id]
-                                        ? "text"
-                                        : "password"
-                                    }
-                                    name="password"
-                                    placeholder="Leave blank to keep current"
+                                    type="text"
+                                    name="first_name"
                                     className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
-                                    value={formData.password}
+                                    required
+                                    value={formData.first_name}
                                     onChange={handleInputChange}
                                     style={{
                                       "--tw-ring-color": colors.primary,
                                       borderColor: "rgb(209, 213, 219)",
                                     }}
                                   />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Middle Initial
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="middle_initial"
+                                    maxLength="1"
+                                    className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
+                                    value={formData.middle_initial}
+                                    onChange={handleInputChange}
+                                    style={{
+                                      "--tw-ring-color": colors.primary,
+                                      borderColor: "rgb(209, 213, 219)",
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Last Name
+                                  </label>
+                                  <input
+                                    type="text"
+                                    name="last_name"
+                                    className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
+                                    required
+                                    value={formData.last_name}
+                                    onChange={handleInputChange}
+                                    style={{
+                                      "--tw-ring-color": colors.primary,
+                                      borderColor: "rgb(209, 213, 219)",
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Age
+                                  </label>
+                                  <input
+                                    type="number"
+                                    name="age"
+                                    min="18"
+                                    max="100"
+                                    className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
+                                    value={formData.age}
+                                    onChange={handleInputChange}
+                                    style={{
+                                      "--tw-ring-color": colors.primary,
+                                      borderColor: "rgb(209, 213, 219)",
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Email
+                                  </label>
+                                  <input
+                                    type="email"
+                                    name="email"
+                                    className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
+                                    required
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    style={{
+                                      "--tw-ring-color": colors.primary,
+                                      borderColor: "rgb(209, 213, 219)",
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Role
+                                  </label>
+                                  <select
+                                    name="role"
+                                    className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
+                                    required
+                                    value={formData.role}
+                                    onChange={handleInputChange}
+                                    style={{
+                                      "--tw-ring-color": colors.primary,
+                                      borderColor: "rgb(209, 213, 219)",
+                                    }}
+                                  >
+                                    <option value="agent">Agent</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="intern">Intern</option>
+                                    <option value="superadmin">
+                                      Super Admin
+                                    </option>
+                                  </select>
+                                </div>
+                                <div className="relative">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    New Password (Optional)
+                                  </label>
+                                  <div className="relative">
+                                    <input
+                                      type={
+                                        viewPassword[user.id]
+                                          ? "text"
+                                          : "password"
+                                      }
+                                      name="password"
+                                      placeholder="Leave blank to keep current"
+                                      className="w-full p-2 border rounded focus:ring-2 focus:border-transparent"
+                                      value={formData.password}
+                                      onChange={handleInputChange}
+                                      style={{
+                                        "--tw-ring-color": colors.primary,
+                                        borderColor: "rgb(209, 213, 219)",
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      className="absolute right-2 top-2.5 text-gray-500 hover:text-gray-700 cursor-pointer"
+                                      onClick={() =>
+                                        togglePasswordVisibility(user.id)
+                                      }
+                                    >
+                                      {viewPassword[user.id] ? (
+                                        <EyeOff size={18} />
+                                      ) : (
+                                        <Eye size={18} />
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="col-span-full flex justify-end mt-2">
                                   <button
                                     type="button"
-                                    className="absolute right-2 top-2.5 text-gray-500 hover:text-gray-700"
-                                    onClick={() =>
-                                      togglePasswordVisibility(user.id)
-                                    }
+                                    className="mr-2 inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 cursor-pointer hover:bg-gray-50"
+                                    onClick={() => setIsEditing(null)}
                                   >
-                                    {viewPassword[user.id] ? (
-                                      <EyeOff size={18} />
-                                    ) : (
-                                      <Eye size={18} />
-                                    )}
+                                    <X size={16} className="mr-1" />
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="submit"
+                                    className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white cursor-pointer hover:bg-green-700"
+                                    style={{ backgroundColor: colors.primary }}
+                                  >
+                                    <Check size={16} className="mr-1" />
+                                    Save Changes
                                   </button>
                                 </div>
-                              </div>
-                              <div className="col-span-full flex justify-end mt-2">
-                                <button
-                                  type="button"
-                                  className="mr-2 inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md bg-white text-gray-700 cursor-pointer hover:bg-gray-50"
-                                  onClick={() => setIsEditing(null)}
-                                >
-                                  <X size={16} className="mr-1" />
-                                  Cancel
-                                </button>
-                                <button
-                                  type="submit"
-                                  className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white cursor-pointer hover:bg-green-700"
-                                  style={{ backgroundColor: colors.primary }}
-                                >
-                                  <Check size={16} className="mr-1" />
-                                  Save Changes
-                                </button>
-                              </div>
-                            </form>
-                          </td>
-                        ) : (
-                          <>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="ml-0">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {user.first_name}{" "}
-                                    {user.middle_initial &&
-                                      `${user.middle_initial}. `}
-                                    {user.last_name}
+                              </form>
+                            </td>
+                          ) : (
+                            <>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="ml-0">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {user.first_name}{" "}
+                                      {user.middle_initial &&
+                                        `${user.middle_initial}. `}
+                                      {user.last_name}
+                                    </div>
+                                    {(isMobile || isSmall) &&
+                                      expandedRow === user.id && (
+                                        <div className="text-xs text-gray-500 mt-1">
+                                          {isSmall && !isMobile
+                                            ? user.email
+                                            : ""}
+                                          {expandedRow === user.id && (
+                                            <ChevronDown
+                                              size={16}
+                                              className="ml-1 inline"
+                                            />
+                                          )}
+                                        </div>
+                                      )}
                                   </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
-                                {user.email}
-                              </div>
-                            </td>
-                            {!isMobile && (
-                              <>
+                              </td>
+                              {!isMobile && (
                                 <td className="px-4 py-3 whitespace-nowrap">
                                   <div className="text-sm text-gray-900">
-                                    {user.age || "-"}
+                                    {user.email}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  {renderRoleTag(user.role)}
-                                </td>
-                              </>
-                            )}
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {isMobile ? (
-                                renderRoleTag(user.role)
-                              ) : (
-                                <div className="text-sm text-gray-500">
-                                  ••••••••
-                                </div>
                               )}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                              {renderActions(user)}
-                            </td>
-                          </>
-                        )}
-                      </tr>
+                              {!isSmall && (
+                                <>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="text-sm text-gray-900">
+                                      {user.age || "-"}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <div className="text-sm text-gray-500">
+                                      ••••••••
+                                    </div>
+                                  </td>
+                                </>
+                              )}
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                {renderRoleTag(user.role)}
+                              </td>
+                              <td
+                                className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {renderActions(user)}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                        {(isMobile || isSmall) &&
+                          expandedRow === user.id &&
+                          !isEditing &&
+                          renderExpandedDetails(user)}
+                      </React.Fragment>
                     ))
                   )}
                 </tbody>
@@ -845,10 +904,10 @@ export default function SuperAdminAccountManagement() {
           )}
 
           {/* Mobile information note */}
-          {isMobile && !loading && filteredUsers.length > 0 && (
+          {(isMobile || isSmall) && !loading && filteredUsers.length > 0 && (
             <div className="mt-4 text-center">
               <span className="text-xs text-gray-500">
-                Swipe left/right to see more details. Tap the menu icon to view
+                Tap a row to see more details. Tap the menu icon (⋮) to view
                 actions.
               </span>
             </div>

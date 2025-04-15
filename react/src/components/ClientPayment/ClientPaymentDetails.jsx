@@ -133,7 +133,7 @@ const ClientPaymentDetails = () => {
     setRefreshKey((prev) => prev + 1);
   };
 
-  // Handle record payment button click
+  // Handle record payment button click - this now directly connects to RecordPaymentSection's functionality
   const handleRecordPaymentClick = () => {
     setShowRecordPaymentModal(true);
   };
@@ -161,6 +161,11 @@ const ClientPaymentDetails = () => {
     );
   }
 
+  // We check if it's appropriate to show the button at all
+  const shouldShowRecordPaymentButton =
+    payment.payment_type !== "spot_cash" &&
+    paymentStatus?.status !== "COMPLETED";
+
   // Main component render
   return (
     <ConfigProvider
@@ -174,7 +179,7 @@ const ClientPaymentDetails = () => {
         {/* Responsive Header Section */}
         <div className="mb-4">
           <Card bodyStyle={{ padding: 0 }}>
-            <div className="flex flex-col  md:flex-row justify-between items-start md:items-center w-full p-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center w-full p-4">
               {/* Left section with back button and title */}
               <div className="flex items-center mb-4 md:mb-0">
                 <Button
@@ -189,15 +194,19 @@ const ClientPaymentDetails = () => {
                 </Title>
               </div>
 
-              {/* Right section with Record Payment button */}
+              {/* Right section with Record Payment button - only show if appropriate */}
               <div>
-                <Button
-                  type="primary"
-                  icon={<DollarOutlined />}
-                  onClick={handleRecordPaymentClick}
-                >
-                  Record Payment
-                </Button>
+                {shouldShowRecordPaymentButton && (
+                  <Button
+                    type="primary"
+                    icon={<DollarOutlined />}
+                    onClick={handleRecordPaymentClick}
+                    // Disable the button if modal is already open to prevent multiple clicks
+                    disabled={showRecordPaymentModal}
+                  >
+                    Record Payment
+                  </Button>
+                )}
               </div>
             </div>
           </Card>
@@ -217,17 +226,15 @@ const ClientPaymentDetails = () => {
           <PaymentNotesCard notes={payment.payment_notes} />
         )}
 
-        {/* Record Payment Modal */}
-        {showRecordPaymentModal && (
-          <RecordPaymentSection
-            payment={payment}
-            paymentStatus={paymentStatus}
-            user={user}
-            refreshData={handleRefreshData}
-            visible={showRecordPaymentModal}
-            onClose={() => setShowRecordPaymentModal(false)}
-          />
-        )}
+        {/* Record Payment Modal - we pass down showRecordPaymentModal and setShowRecordPaymentModal */}
+        <RecordPaymentSection
+          payment={payment}
+          paymentStatus={paymentStatus}
+          user={user}
+          refreshData={handleRefreshData}
+          visible={showRecordPaymentModal}
+          onClose={() => setShowRecordPaymentModal(false)}
+        />
       </div>
     </ConfigProvider>
   );
