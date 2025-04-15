@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class LandResource extends JsonResource
 {
@@ -14,7 +15,7 @@ class LandResource extends JsonResource
      */
     public function toArray($request)
     {
-        // Get the correct base URL for the current environment
+        // Get the correct base URL
         $protocol = $request->secure() ? 'https://' : 'http://';
         $baseUrl = $protocol . $request->getHttpHost();
         
@@ -40,28 +41,34 @@ class LandResource extends JsonResource
                 ];
             }),
             
-            // Include images with full URLs
+            // Include images with direct URLs to our controller
             'images' => $this->when($this->relationLoaded('images'), function () use ($baseUrl) {
                 return $this->images->map(function ($image) use ($baseUrl) {
+                    // Extract just the filename from the path
+                    $filename = basename($image->image_path);
+                    
                     return [
                         'id' => $image->id,
                         'image_path' => $image->image_path,
                         'is_primary' => $image->is_primary,
                         'sort_order' => $image->sort_order,
-                        // Direct path to our image controller
-                        'image_url' => $baseUrl . '/storage/' . $image->image_path
+                        // Direct path to our simple controller
+                        'image_url' => $baseUrl . '/image/' . $filename
                     ];
                 });
             }, []),
             
-            // Primary image with full URL
+            // Primary image with direct URL
             'primary_image' => $this->when(
                 $this->relationLoaded('primaryImage') && $this->primaryImage !== null, 
                 function () use ($baseUrl) {
+                    // Extract just the filename from the path
+                    $filename = basename($this->primaryImage->image_path);
+                    
                     return [
                         'id' => $this->primaryImage->id,
                         'image_path' => $this->primaryImage->image_path,
-                        'image_url' => $baseUrl . '/storage/' . $this->primaryImage->image_path
+                        'image_url' => $baseUrl . '/image/' . $filename
                     ];
                 }
             ),

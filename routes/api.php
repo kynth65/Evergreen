@@ -21,6 +21,9 @@ Route::get('/user', function (Request $request) {
 
 Route::get('storage/{path}', [ImageController::class, 'serve'])
      ->where('path', '.*');
+
+Route::get('image/{filename}', [ImageController::class, 'serveImage']);
+
      
 Route::middleware('auth:sanctum')->group(function () {
     // User profile routes
