@@ -261,6 +261,10 @@ export default function SuperAdminAccountManagement() {
         bgColor = "bg-blue-100";
         textColor = "text-blue-800";
         break;
+      case "client":
+        bgColor = "bg-amber-100";
+        textColor = "text-amber-800";
+        break;
       default:
         break;
     }
@@ -335,20 +339,47 @@ export default function SuperAdminAccountManagement() {
   };
 
   return (
-    <div className="container mx-auto px-2 sm:px-4">
+    <div className="">
+      {/* Header Section - MOVED OUTSIDE THE CARD */}
       <div
-        className="bg-white shadow rounded-lg overflow-hidden"
-        style={{ boxShadow: "0 2px 12px rgba(0, 0, 0, 0.08)" }}
+        className="header-section"
+        style={{
+          marginBottom: isMobile ? "16px" : "20px",
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: isMobile ? "12px" : "0",
+        }}
       >
-        {/* Header Section */}
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-0">
+          Account Management
+        </h1>
+        <div className="flex space-x-2">
+          <button
+            className="flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors cursor-pointer"
+            onClick={() => {
+              setIsCreating(true);
+              setIsEditing(null);
+            }}
+            style={{
+              backgroundColor: colors.primary,
+              color: "white",
+            }}
+          >
+            <Plus size={18} />
+            <span>Create User</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-100 rounded-lg overflow-hidden">
+        {/* Search and Filters Section */}
         <div
-          className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 sm:p-6 border-b border-gray-200"
+          className="p-4 sm:p-6 border-b border-gray-200"
           style={{ backgroundColor: "white" }}
         >
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-0">
-            Account Management
-          </h1>
-          <div className="flex flex-col sm:flex-row w-full sm:w-auto space-y-3 sm:space-y-0 sm:space-x-4">
+          <div className="flex flex-col sm:flex-row w-full space-y-3 sm:space-y-0 sm:space-x-4">
             <div className="relative w-full sm:w-auto">
               <input
                 type="text"
@@ -363,29 +394,13 @@ export default function SuperAdminAccountManagement() {
               />
               <Search className="absolute left-3 top-2.5 text-gray-400 w-5 h-5" />
             </div>
-            <div className="flex space-x-2">
-              <button
-                className="flex items-center justify-center space-x-2 px-4 py-2 rounded-lg transition-colors cursor-pointer"
-                onClick={() => {
-                  setIsCreating(true);
-                  setIsEditing(null);
-                }}
-                style={{
-                  backgroundColor: colors.primary,
-                  color: "white",
-                }}
-              >
-                <Plus size={18} />
-                <span>Create User</span>
-              </button>
-              <button
-                className="flex items-center justify-center space-x-1 px-3 py-2 rounded-lg border border-gray-300 transition-colors bg-white cursor-pointer"
-                onClick={fetchUsers}
-              >
-                <RefreshCw size={18} />
-                <span className="hidden sm:inline">Refresh</span>
-              </button>
-            </div>
+            <button
+              className="flex items-center justify-center px-3 py-2 rounded-lg border border-gray-300 transition-colors bg-white cursor-pointer"
+              onClick={fetchUsers}
+            >
+              <RefreshCw size={18} />
+              <span className="ml-1 hidden sm:inline">Refresh</span>
+            </button>
           </div>
         </div>
 
@@ -516,6 +531,7 @@ export default function SuperAdminAccountManagement() {
                   <option value="agent">Agent</option>
                   <option value="admin">Admin</option>
                   <option value="intern">Intern</option>
+                  <option value="client">Client</option>
                   <option value="superadmin">Super Admin</option>
                 </select>
               </div>
@@ -769,6 +785,7 @@ export default function SuperAdminAccountManagement() {
                                     <option value="agent">Agent</option>
                                     <option value="admin">Admin</option>
                                     <option value="intern">Intern</option>
+                                    <option value="client">Client</option>
                                     <option value="superadmin">
                                       Super Admin
                                     </option>

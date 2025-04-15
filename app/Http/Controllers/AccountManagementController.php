@@ -29,7 +29,7 @@ class AccountManagementController extends Controller
             'last_name' => 'required|string|max:255',
             'age' => 'nullable|integer|min:18|max:100',
             'email' => 'required|string|email|max:255|unique:users',
-            'role' => 'required|string|in:superadmin,admin,agent,intern',
+            'role' => 'required|string|in:superadmin,admin,agent,intern,client',
             'password' => 'required|string|min:8',
         ]);
 

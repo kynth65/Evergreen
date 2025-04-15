@@ -37,6 +37,9 @@ import ClientPaymentAddForm from "./components/ClientPayment/ClientPaymentAddFor
 import ClientPaymentEditForm from "./components/ClientPayment/ClientPaymentEditForm";
 import ClientPaymentDetails from "./components/ClientPayment/ClientPaymentDetails";
 
+import ClientLayout from "./layouts/ClientLayout";
+import ClientDashboard from "./pages/Client/ClientDashboard";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -345,6 +348,30 @@ const router = createBrowserRouter([
       },
     ],
   },
+
+  {
+    path: "/client",
+    element: <ClientLayout />,
+    children: [
+      {
+        path: "",
+        element: <ClientDashboard />,
+      },
+      // {
+      //   path: "payment-list",
+      //   element: <ClientPaymentList role="client" />, // Reusing your existing ClientPaymentList component
+      // },
+      // {
+      //   path: "available-lands",
+      //   element: <ClientAvailableLands />,
+      // },
+      {
+        path: "profile",
+        element: <Profile />, // Reusing your existing Profile component
+      },
+    ],
+  },
+
   {
     path: "*",
     element: <NotFound />,
