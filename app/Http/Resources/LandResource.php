@@ -3,7 +3,6 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class LandResource extends JsonResource
 {
@@ -15,7 +14,7 @@ class LandResource extends JsonResource
      */
     public function toArray($request)
     {
-        // Get the correct base URL
+        // Get the correct base URL for the current environment
         $protocol = $request->secure() ? 'https://' : 'http://';
         $baseUrl = $protocol . $request->getHttpHost();
         
@@ -41,19 +40,26 @@ class LandResource extends JsonResource
                 ];
             }),
             
-            // Include images with direct URLs to our controller
+            // Include images with direct URLs to public directory
             'images' => $this->when($this->relationLoaded('images'), function () use ($baseUrl) {
                 return $this->images->map(function ($image) use ($baseUrl) {
-                    // Extract just the filename from the path
-                    $filename = basename($image->image_path);
+                    // Generate direct URL to the file in public directory
+                    $imagePath = $image->image_path;
+                    
+                    // Handle both formats: either "lands/filename.jpg" or just "filename.jpg"
+                    $imageUrl = $baseUrl . '/' . (strpos($imagePath, 'lands/') === 0 ? $imagePath : 'lands/' . basename($imagePath));
+                    
+                    // For migration period: if image doesn't exist in public yet, use fallback controller
+                    if (!file_exists(public_path($imagePath)) && !file_exists(public_path('lands/' . basename($imagePath)))) {
+                        $imageUrl = $baseUrl . '/image/' . basename($imagePath);
+                    }
                     
                     return [
                         'id' => $image->id,
                         'image_path' => $image->image_path,
                         'is_primary' => $image->is_primary,
                         'sort_order' => $image->sort_order,
-                        // Direct path to our simple controller
-                        'image_url' => $baseUrl . '/image/' . $filename
+                        'image_url' => $imageUrl
                     ];
                 });
             }, []),
@@ -62,13 +68,20 @@ class LandResource extends JsonResource
             'primary_image' => $this->when(
                 $this->relationLoaded('primaryImage') && $this->primaryImage !== null, 
                 function () use ($baseUrl) {
-                    // Extract just the filename from the path
-                    $filename = basename($this->primaryImage->image_path);
+                    $imagePath = $this->primaryImage->image_path;
+                    
+                    // Handle both formats: either "lands/filename.jpg" or just "filename.jpg"
+                    $imageUrl = $baseUrl . '/' . (strpos($imagePath, 'lands/') === 0 ? $imagePath : 'lands/' . basename($imagePath));
+                    
+                    // For migration period: if image doesn't exist in public yet, use fallback controller
+                    if (!file_exists(public_path($imagePath)) && !file_exists(public_path('lands/' . basename($imagePath)))) {
+                        $imageUrl = $baseUrl . '/image/' . basename($imagePath);
+                    }
                     
                     return [
                         'id' => $this->primaryImage->id,
                         'image_path' => $this->primaryImage->image_path,
-                        'image_url' => $baseUrl . '/image/' . $filename
+                        'image_url' => $imageUrl
                     ];
                 }
             ),

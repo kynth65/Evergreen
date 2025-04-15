@@ -3,34 +3,40 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
 
 class ImageController extends Controller
 {
     /**
-     * Serve images directly from storage
+     * Serve images as a fallback method
+     * This is mainly for backward compatibility with old image paths
      */
     public function serveImage($filename)
     {
-        // Images are stored in 'public/lands/{filename}'
-        $path = 'public/lands/' . $filename;
+        // Check if the file exists in the public directory
+        $path = public_path('lands/' . $filename);
         
-        Log::info("Attempting to serve image: " . $path);
-        
-        // Check if file exists
-        if (!Storage::exists($path)) {
-            Log::error("Image not found: " . $path);
-            return response('Image not found', 404);
+        if (!file_exists($path)) {
+            // Fallback to storage if not in public directory
+            $storagePath = storage_path('app/public/lands/' . $filename);
+            
+            if (!file_exists($storagePath)) {
+                Log::error("Image not found: " . $filename);
+                return response('Image not found', 404);
+            }
+            
+            $path = $storagePath;
         }
         
-        // Get file content and mime type
-        $file = Storage::get($path);
-        $type = Storage::mimeType($path);
+        // Get file content and determine MIME type
+        $file = file_get_contents($path);
+        $type = mime_content_type($path);
         
         // Return file with appropriate headers
-        return response($file)
-            ->header('Content-Type', $type)
-            ->header('Cache-Control', 'public, max-age=86400');
+        return Response::make($file, 200, [
+            'Content-Type' => $type,
+            'Cache-Control' => 'public, max-age=86400'
+        ]);
     }
 }

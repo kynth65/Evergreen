@@ -9,11 +9,16 @@ import Footer from "../../components/footer";
 const LandCard = ({ land }) => {
   const [landDetails, setLandDetails] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     const fetchLandDetails = async () => {
       try {
         const response = await axiosClient.get(`/lands/${land.id}`);
+        console.log(
+          `Land details loaded for ID ${land.id}:`,
+          response.data.data
+        );
         setLandDetails(response.data.data);
         setLoading(false);
       } catch (err) {
@@ -37,32 +42,48 @@ const LandCard = ({ land }) => {
     }).format(totalPrice);
   };
 
+  // Get image source with fallbacks
+  const getImageSource = () => {
+    // Return placeholder during loading
+    if (loading) return null;
+
+    // Check if we have land details with images
+    if (
+      !landDetails ||
+      !landDetails.images ||
+      landDetails.images.length === 0
+    ) {
+      return "https://via.placeholder.com/400x250?text=No+Image+Available";
+    }
+
+    // Use the image_url directly from API
+    return landDetails.images[0].image_url;
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative h-56">
-        {!loading &&
-        landDetails &&
-        landDetails.images &&
-        landDetails.images.length > 0 ? (
+        {!loading ? (
           <img
-            // Simply use the image_url from the API
-            src={landDetails.images[0].image_url}
+            src={getImageSource()}
             alt={land.name}
             className="w-full h-full object-cover"
             onError={(e) => {
+              // Log error for debugging
               console.error("Image failed to load:", e.target.src);
+
+              // Set default placeholder
               e.target.src =
                 "https://via.placeholder.com/400x250?text=Image+Not+Available";
               e.target.alt = "Image not available";
+
+              // Note that we had an error
+              setImgError(true);
             }}
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-            {loading ? (
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-800"></div>
-            ) : (
-              <Map className="h-12 w-12 text-gray-400" />
-            )}
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-800"></div>
           </div>
         )}
 
