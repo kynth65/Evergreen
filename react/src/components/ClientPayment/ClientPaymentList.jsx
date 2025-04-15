@@ -549,11 +549,11 @@ const ClientPaymentList = () => {
               placeholder={["Start Date", "End Date"]}
             />
           </Col>
-          <Col xs={24} sm={12} md={4} lg={5}>
+          {/* <Col xs={24} sm={12} md={4} lg={5}>
             <Button icon={<FileExcelOutlined />} style={{ width: "100%" }}>
               Export
             </Button>
-          </Col>
+          </Col> */}
         </Row>
 
         <Table
