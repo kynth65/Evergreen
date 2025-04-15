@@ -33,8 +33,8 @@ class LandResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             
-            // Include agent if loaded
-            'agent' => $this->when($this->relationLoaded('agent'), function () {
+            // Include agent if loaded and not null
+            'agent' => $this->when($this->relationLoaded('agent') && $this->agent !== null, function () {
                 return [
                     'id' => $this->agent->id,
                     'name' => $this->agent->name,
@@ -53,16 +53,19 @@ class LandResource extends JsonResource
                         'image_url' => $baseUrl . '/storage/' . $image->image_path
                     ];
                 });
-            }),
+            }, []), // Default to empty array if images not loaded
             
-            // Primary image with full URL 
-            'primary_image' => $this->when($this->relationLoaded('primaryImage') && $this->primaryImage, function () use ($baseUrl) {
-                return [
-                    'id' => $this->primaryImage->id,
-                    'image_path' => $this->primaryImage->image_path,
-                    'image_url' => $baseUrl . '/storage/' . $this->primaryImage->image_path
-                ];
-            }),
+            // Primary image with full URL - with additional null checks
+            'primary_image' => $this->when(
+                $this->relationLoaded('primaryImage') && $this->primaryImage !== null, 
+                function () use ($baseUrl) {
+                    return [
+                        'id' => $this->primaryImage->id,
+                        'image_path' => $this->primaryImage->image_path,
+                        'image_url' => $baseUrl . '/storage/' . $this->primaryImage->image_path
+                    ];
+                }
+            ),
         ];
     }
 }
