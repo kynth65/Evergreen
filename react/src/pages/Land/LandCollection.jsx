@@ -45,7 +45,7 @@ const LandCard = ({ land }) => {
         landDetails.images &&
         landDetails.images.length > 0 ? (
           <img
-            // Use the image_url property from the API response
+            // Simply use the image_url from the API
             src={landDetails.images[0].image_url}
             alt={land.name}
             className="w-full h-full object-cover"

@@ -8,23 +8,18 @@ class LandResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
      */
     public function toArray($request)
     {
-        // Get base URL for the current request
+        // Get the correct base URL
         $protocol = $request->secure() ? 'https://' : 'http://';
         $baseUrl = $protocol . $request->getHttpHost();
         
-        // Transform the data
         return [
             'id' => $this->id,
             'name' => $this->name,
             'size' => $this->size,
             'price_per_sqm' => $this->price_per_sqm,
-            'total_price' => $this->total_price,
             'agent_id' => $this->agent_id,
             'location' => $this->location,
             'description' => $this->description,
@@ -38,11 +33,10 @@ class LandResource extends JsonResource
                 return [
                     'id' => $this->agent->id,
                     'name' => $this->agent->name,
-                    // Add other agent fields as needed
                 ];
             }),
             
-            // Include images with full URLs
+            // Include images with full URLs - now using the correct path
             'images' => $this->when($this->relationLoaded('images'), function () use ($baseUrl) {
                 return $this->images->map(function ($image) use ($baseUrl) {
                     return [
@@ -50,12 +44,13 @@ class LandResource extends JsonResource
                         'image_path' => $image->image_path,
                         'is_primary' => $image->is_primary,
                         'sort_order' => $image->sort_order,
+                        // Direct path to our controller that will serve the image:
                         'image_url' => $baseUrl . '/storage/' . $image->image_path
                     ];
                 });
-            }, []), // Default to empty array if images not loaded
+            }, []),
             
-            // Primary image with full URL - with additional null checks
+            // Primary image with full URL
             'primary_image' => $this->when(
                 $this->relationLoaded('primaryImage') && $this->primaryImage !== null, 
                 function () use ($baseUrl) {

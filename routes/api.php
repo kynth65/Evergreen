@@ -19,8 +19,8 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('storage/{path?}', [ImageController::class, 'serve'])
-     ->where('path', '.*'); // Allow any path structure
+Route::get('storage/{path}', [ImageController::class, 'serve'])
+     ->where('path', '.*');
      
 Route::middleware('auth:sanctum')->group(function () {
     // User profile routes
