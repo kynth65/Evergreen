@@ -194,7 +194,7 @@ export default function NavBar() {
               }}
               aria-label={`${unreadCount} unread notifications`}
             >
-              <Bell className="w-6 h-6 text-gray-600" />
+              <Bell className="w-6 h-6 text-gray-600 cursor-pointer" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-sm animate-pulse">
                   {unreadCount > 99
@@ -274,7 +274,7 @@ export default function NavBar() {
           {/* User Profile */}
           <div className="relative user-menu-container">
             <button
-              className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+              className="flex items-center cursor-pointer space-x-2 p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowUserMenu(!showUserMenu);
@@ -315,13 +315,13 @@ export default function NavBar() {
                     <User className="w-4 h-4 mr-3 text-gray-500" />
                     Profile
                   </Link>
-                  <Link
+                  {/* <Link
                     to="/settings"
                     className="px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
                   >
                     <Settings className="w-4 h-4 mr-3 text-gray-500" />
                     Settings
-                  </Link>
+                  </Link> */}
                   <hr className="my-1 border-gray-100" />
                   {/* Changed from Link to button for logout */}
                   <button

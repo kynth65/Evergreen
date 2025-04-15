@@ -123,13 +123,13 @@
 }
 
 .btn-primary {
-  background-color: #4caf50;
+  background-color: #1da57a;
   color: white;
   border: none;
 }
 
 .btn-primary:hover {
-  background-color: #388e3c;
+  background-color: #1da57ae4;
 }
 
 .btn-secondary {

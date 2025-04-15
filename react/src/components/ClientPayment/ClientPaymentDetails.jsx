@@ -7,23 +7,20 @@ import {
   Row,
   Col,
   Typography,
-  Tag,
   Button,
   Space,
   Empty,
   message,
   ConfigProvider,
 } from "antd";
-import { ArrowLeftOutlined, EditOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, DollarOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
-
 // Import custom components
 import ClientPropertyInfo from "./ClientPropertyInfo";
 import PaymentDetailsInfo from "./PaymentDetailsInfo";
 import PaymentNotesCard from "./PaymentNotesCard";
 import RecordPaymentSection from "./RecordPaymentSection";
-
 dayjs.extend(isBetween);
 const { Title } = Typography;
 
@@ -32,32 +29,27 @@ const ClientPaymentDetails = () => {
   const navigate = useNavigate();
   const { user } = useStateContext();
   const userRole = user?.role;
-
   const [loading, setLoading] = useState(true);
   const [payment, setPayment] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
 
   // Fetch payment data
   useEffect(() => {
     const fetchPaymentDetails = async () => {
       setLoading(true);
       try {
-        console.log("Fetching payment details for ID:", id);
         const response = await axiosClient.get(`/client-payments/${id}`);
-
         // Fetch transactions separately
         const transactionsResponse = await axiosClient.get(
           `/client-payments/${id}/transactions`
         );
-        console.log("Transactions response:", transactionsResponse.data);
 
         // Combine the data
         const paymentData = {
           ...response.data,
           paymentTransactions: transactionsResponse.data,
         };
-
-        console.log("Combined payment data:", paymentData);
 
         // Sort paymentSchedules if they exist
         if (paymentData.paymentSchedules) {
@@ -87,9 +79,9 @@ const ClientPaymentDetails = () => {
     fetchPaymentDetails();
   }, [id, refreshKey]);
 
-  // Calculate payment status and color
+  // Calculate payment status and color (without showing the status in the header)
   const getPaymentStatus = (record) => {
-    if (!record) return { status: "LOADING", color: "default" };
+    if (!record) return { status: "", color: "default" };
 
     if (record.payment_type === "spot_cash") {
       const paidTransaction = record.paymentTransactions?.find(
@@ -125,7 +117,7 @@ const ClientPaymentDetails = () => {
       return { status: "LATE", color: "warning" };
     }
 
-    return { status: "CURRENT", color: "processing" };
+    return { status: "", color: "processing" }; // Removed "CURRENT" status
   };
 
   // Handle return to list
@@ -139,6 +131,11 @@ const ClientPaymentDetails = () => {
   // Handle data refresh (for after payment recording)
   const handleRefreshData = () => {
     setRefreshKey((prev) => prev + 1);
+  };
+
+  // Handle record payment button click
+  const handleRecordPaymentClick = () => {
+    setShowRecordPaymentModal(true);
   };
 
   // Loading state UI
@@ -174,44 +171,37 @@ const ClientPaymentDetails = () => {
       }}
     >
       <div style={{ padding: "0", maxWidth: "100%" }}>
-        {/* Header with back button and actions */}
-        <Card style={{ marginBottom: 16 }}>
-          <Row justify="space-between" align="middle">
-            <Col>
-              <Space size="middle">
-                <Button icon={<ArrowLeftOutlined />} onClick={handleBackToList}>
+        {/* Responsive Header Section */}
+        <div className="mb-4">
+          <Card bodyStyle={{ padding: 0 }}>
+            <div className="flex flex-col  md:flex-row justify-between items-start md:items-center w-full p-4">
+              {/* Left section with back button and title */}
+              <div className="flex items-center mb-4 md:mb-0">
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  onClick={handleBackToList}
+                  className="mr-3"
+                >
                   Back to List
                 </Button>
                 <Title level={4} style={{ margin: 0 }}>
                   Payment Details
                 </Title>
-                {paymentStatus && (
-                  <Tag color={paymentStatus.color}>{paymentStatus.status}</Tag>
-                )}
-              </Space>
-            </Col>
-            <Col>
-              <Space>
-                {/* <Button
-                  icon={<EditOutlined />}
-                  onClick={() => {
-                    navigate(`/${userRole}/client-payment/edit/${id}`);
-                  }}
-                >
-                  Edit
-                </Button> */}
+              </div>
 
-                {/* Record Payment Button via RecordPaymentSection component */}
-                <RecordPaymentSection
-                  payment={payment}
-                  paymentStatus={paymentStatus}
-                  user={user}
-                  refreshData={handleRefreshData}
-                />
-              </Space>
-            </Col>
-          </Row>
-        </Card>
+              {/* Right section with Record Payment button */}
+              <div>
+                <Button
+                  type="primary"
+                  icon={<DollarOutlined />}
+                  onClick={handleRecordPaymentClick}
+                >
+                  Record Payment
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
 
         {/* Main content */}
         <Row gutter={[16, 16]}>
@@ -225,6 +215,18 @@ const ClientPaymentDetails = () => {
         {/* Additional notes */}
         {payment.payment_notes && (
           <PaymentNotesCard notes={payment.payment_notes} />
+        )}
+
+        {/* Record Payment Modal */}
+        {showRecordPaymentModal && (
+          <RecordPaymentSection
+            payment={payment}
+            paymentStatus={paymentStatus}
+            user={user}
+            refreshData={handleRefreshData}
+            visible={showRecordPaymentModal}
+            onClose={() => setShowRecordPaymentModal(false)}
+          />
         )}
       </div>
     </ConfigProvider>

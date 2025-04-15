@@ -465,7 +465,7 @@ const LotList = ({ role: propRole }) => {
           style={{
             marginBottom: isMobile ? "16px" : "20px",
             display: "flex",
-            flexDirection: isMobile ? "column" : "row",
+            flexDirection: isMobile ? "row" : "row",
             justifyContent: "space-between",
             alignItems: isMobile ? "flex-start" : "center",
             gap: isMobile ? "12px" : "0",

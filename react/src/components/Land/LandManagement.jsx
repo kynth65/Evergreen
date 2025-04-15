@@ -13,23 +13,30 @@ import {
   message,
   Input,
   Select,
+  Typography,
+  Dropdown,
+  Menu,
+  ConfigProvider,
+  Modal,
 } from "antd";
 import {
   SearchOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  FileOutlined,
+  EyeOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
-import { useStateContext } from "../../context/ContextProvider";
+import { useStateContext } from "../../context/ContextProvider"; // Adjust path if needed
 import { useNavigate, Outlet, useLocation } from "react-router-dom";
-import axiosClient from "../../axios.client";
+import axiosClient from "../../axios.client"; // Adjust path if needed
 
 const { Search } = Input;
 const { Option } = Select;
+const { Title, Text } = Typography;
 
-export default function LandManagement({ role = "admin" }) {
-  const { token } = useStateContext();
+export default function LandManagement({ role: propRole = "admin" }) {
+  const { token, user: contextUser } = useStateContext();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
@@ -39,19 +46,51 @@ export default function LandManagement({ role = "admin" }) {
   const [lands, setLands] = useState([]);
   const [filteredLands, setFilteredLands] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [userRole, setUserRole] = useState(propRole);
+
+  // --- Screen Width State and Breakpoints ---
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const breakpoints = {
+    xs: 480,
+    sm: 576,
+    md: 768,
+    lg: 992,
+    xl: 1200,
+    xxl: 1600,
+  };
+  const isMobile = screenWidth < breakpoints.md;
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  // --- End Screen Width ---
 
   // Define green color scheme
   const colors = {
     primary: "#1da57a", // Primary green
-    secondary: "#52c41a", // Secondary lighter green
-    warning: "#faad14",
-    success: "#52c41a",
-    error: "#f5222d",
-    lightBg: "#f6ffed", // Light green background
+    secondary: "#52c41a", // Secondary lighter green (used for 'Available' status) - Antd 'green'
+    warning: "#faad14", // Standard warning - Antd 'yellow'/'warning'
+    error: "#f5222d", // Standard error - Antd 'red'/'error'
+    lightBg: "#f6ffed",
+    textLinkHover: "#1a8c60",
+    textSecondary: "#8c8c8c",
   };
 
-  // Check if we're on the exact land-management path (not a child route)
-  const isExactPath = location.pathname === `/${role}/land-management`;
+  const isExactPath = location.pathname === `/${userRole}/land-management`;
+
+  useEffect(() => {
+    if (propRole) {
+      setUserRole(propRole);
+    } else if (contextUser && contextUser.role) {
+      setUserRole(contextUser.role);
+    } else {
+      setUserRole("admin");
+    }
+  }, [propRole, contextUser]);
 
   const [pagination, setPagination] = useState({
     current: 1,
@@ -60,336 +99,486 @@ export default function LandManagement({ role = "admin" }) {
   });
 
   useEffect(() => {
-    if (isExactPath) {
+    if (isExactPath && userRole) {
       fetchLandData();
     }
-  }, [isExactPath, role]);
+  }, [isExactPath, userRole]);
 
-  // Effect to handle filtering
   useEffect(() => {
-    if (lands.length > 0) {
-      let result = [...lands];
-
-      // Apply location filter
-      if (filterLocation !== "all") {
-        result = result.filter((land) => land.location === filterLocation);
-      }
-
-      // Apply search filter
-      if (searchText) {
-        const lowerSearchText = searchText.toLowerCase();
-        result = result.filter(
-          (land) =>
-            land.name.toLowerCase().includes(lowerSearchText) ||
-            (land.location &&
-              land.location.toLowerCase().includes(lowerSearchText))
-        );
-      }
-
-      setFilteredLands(result);
+    let result = [...lands];
+    if (filterLocation !== "all") {
+      result = result.filter((land) => land.location === filterLocation);
     }
+    if (searchText) {
+      const lowerSearchText = searchText.toLowerCase();
+      result = result.filter(
+        (land) =>
+          land.name?.toLowerCase().includes(lowerSearchText) ||
+          land.location?.toLowerCase().includes(lowerSearchText)
+      );
+    }
+    setFilteredLands(result);
+    setPagination((prev) => ({ ...prev, total: result.length, current: 1 }));
   }, [lands, filterLocation, searchText]);
 
   const fetchLandData = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Get lands data
-      const landsResponse = await axiosClient.get("/lands", {
-        params: {
-          per_page: 100,
-          role: role,
-        },
-      });
-
-      // Process data
-      const landsData = landsResponse.data.data || [];
-
-      // Extract unique locations for filter
+      const landsResponse = await axiosClient.get("/lands");
+      const landsData = landsResponse.data?.data || landsResponse.data || [];
       const locationsList = [
         ...new Set(landsData.map((land) => land.location).filter(Boolean)),
       ];
-
       setLands(landsData);
-      setFilteredLands(landsData);
       setLocations(locationsList);
-      setLoading(false);
     } catch (err) {
       console.error("Error fetching land data:", err);
       setError("Failed to load land data");
-      setLoading(false);
       message.error(
         "Failed to load lands: " + (err.response?.data?.message || err.message)
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteLand = (id) => {
-    axiosClient
-      .delete(`/lands/${id}`)
-      .then(() => {
-        message.success("Land property deleted successfully");
-        fetchLandData();
-      })
-      .catch((err) => {
-        console.error("Error deleting land:", err);
-        message.error("Failed to delete land property");
-      });
+    Modal.confirm({
+      title: "Delete this property?",
+      content: "This action cannot be undone.",
+      okText: "Yes, delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await axiosClient.delete(`/lands/${id}`);
+          message.success("Land property deleted successfully");
+          fetchLandData();
+        } catch (err) {
+          console.error("Error deleting land:", err);
+          message.error(
+            "Failed to delete land property: " +
+              (err.response?.data?.message || err.message)
+          );
+        }
+      },
+    });
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setFilterLocation("all");
     setSearchText("");
   };
 
-  // Custom skeleton row for loading state
+  // --- Responsive Columns Function ---
+  const getResponsiveColumns = () => {
+    const baseColumns = [
+      {
+        title: "#",
+        key: "index",
+        width: 60,
+        render: (text, record, index) =>
+          (pagination.current - 1) * pagination.pageSize + index + 1,
+      },
+      {
+        title: "Property Name",
+        dataIndex: "name",
+        key: "name",
+        render: (text, record) => (
+          <Tooltip title="Click to view details">
+            <a
+              onClick={() =>
+                navigate(`/${userRole}/land-management/${record.id}`)
+              }
+              style={{ color: colors.primary, fontWeight: 500 }}
+              className="hover:!text-[#1a8c60]" // Optional: Tailwind hover class
+            >
+              {text || "Unnamed Property"}
+            </a>
+          </Tooltip>
+        ),
+      },
+    ];
+
+    const desktopColumns = [
+      {
+        title: "Location",
+        dataIndex: "location",
+        key: "location",
+        responsive: ["md"],
+      },
+      {
+        title: "Size (sqm)",
+        dataIndex: "size",
+        key: "size",
+        responsive: ["md"],
+        render: (size) => (size ? size.toLocaleString() : "-"),
+      },
+      {
+        title: "Price per sqm",
+        dataIndex: "price_per_sqm",
+        key: "price_per_sqm",
+        responsive: ["lg"],
+        render: (price) =>
+          price
+            ? `₱${Number(price).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`
+            : "-",
+      },
+      {
+        title: "Status",
+        dataIndex: "status",
+        key: "status",
+        responsive: ["lg"],
+        render: (status) => {
+          let color = "default";
+          const lowerStatus = status?.toLowerCase() || "unknown";
+          switch (lowerStatus) {
+            case "available":
+              // Use the secondary green color, matching Antd's 'green' tag color
+              color = colors.secondary;
+              break;
+            case "pending":
+              color = colors.warning;
+              break;
+            case "sold":
+              color = colors.error;
+              break;
+          }
+          // Use Antd's built-in color names for consistency if preferred
+          // e.g., color = "green" for available
+          return (
+            <Tag
+              color={
+                lowerStatus === "available"
+                  ? "green"
+                  : lowerStatus === "pending"
+                  ? "warning"
+                  : lowerStatus === "sold"
+                  ? "error"
+                  : "default"
+              }
+            >
+              {status?.toUpperCase() || "N/A"}
+            </Tag>
+          );
+        },
+      },
+    ];
+
+    const actionsColumn = {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: isMobile ? 60 : 100,
+      align: "center",
+      render: (_, record) => {
+        const actionItems = [
+          {
+            key: "view",
+            label: "View Details",
+            icon: <EyeOutlined />,
+            onClick: () =>
+              navigate(`/${userRole}/land-management/${record.id}`),
+          },
+          {
+            key: "edit",
+            label: "Edit Property",
+            icon: <EditOutlined />,
+            onClick: () =>
+              navigate(`/${userRole}/land-management/${record.id}/edit`),
+          },
+          {
+            key: "delete",
+            danger: true,
+            label: "Delete Property",
+            icon: <DeleteOutlined />,
+            onClick: () => deleteLand(record.id),
+          },
+        ];
+
+        if (isMobile) {
+          const menu = <Menu items={actionItems} />;
+          return (
+            <Dropdown
+              overlay={menu}
+              trigger={["click"]}
+              placement="bottomRight"
+            >
+              <Button type="text" icon={<MoreOutlined />} size="small" />
+            </Dropdown>
+          );
+        } else {
+          // Desktop: Use type="text" buttons with specific icon colors
+          return (
+            <Space size="small">
+              <Tooltip title="View Details">
+                <Button
+                  type="text" // Changed from link to text
+                  icon={<EyeOutlined style={{}} />} // Apply color directly to icon
+                  onClick={() =>
+                    navigate(`/${userRole}/land-management/${record.id}`)
+                  }
+                  size="small"
+                  // No explicit style needed for button text color with type="text"
+                />
+              </Tooltip>
+              <Tooltip title="Edit Property">
+                <Button
+                  type="text" // Changed from link to text
+                  icon={<EditOutlined style={{}} />} // Apply color directly to icon
+                  onClick={() =>
+                    navigate(`/${userRole}/land-management/${record.id}/edit`)
+                  }
+                  size="small"
+                />
+              </Tooltip>
+              <Popconfirm
+                title="Delete this property?"
+                description="This action cannot be undone."
+                onConfirm={() => deleteLand(record.id)}
+                okText="Yes, delete"
+                cancelText="No"
+                okButtonProps={{ danger: true }}
+              >
+                <Tooltip title="Delete Property">
+                  <Button
+                    danger // Use danger prop for styling
+                    type="text" // Changed from link to text
+                    icon={<DeleteOutlined />} // Icon inherits danger color
+                    size="small"
+                  />
+                </Tooltip>
+              </Popconfirm>
+            </Space>
+          );
+        }
+      },
+    };
+
+    return [...baseColumns, ...desktopColumns, actionsColumn];
+  };
+  // --- End Responsive Columns ---
+
+  // Custom skeleton row reflecting responsive columns
   const SkeletonRow = () => (
     <tr className="ant-table-row">
       <td>
-        <Skeleton.Input active size="small" style={{ width: 40 }} />
+        <Skeleton.Input active size="small" style={{ width: "80%" }} />
       </td>
       <td>
-        <Skeleton.Input active size="small" style={{ width: 150 }} />
+        <Skeleton.Input active size="small" style={{ width: "90%" }} />
       </td>
-      <td>
-        <Skeleton.Input active size="small" style={{ width: 120 }} />
-      </td>
-      <td>
-        <Skeleton.Input active size="small" style={{ width: 80 }} />
-      </td>
-      <td>
-        <Skeleton.Input active size="small" style={{ width: 100 }} />
-      </td>
-      <td>
-        <Skeleton.Input active size="small" style={{ width: 80 }} />
-      </td>
+      {!isMobile && (
+        <>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: "80%" }} />
+          </td>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: "70%" }} />
+          </td>
+        </>
+      )}
+      {screenWidth >= breakpoints.lg && (
+        <>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: "70%" }} />
+          </td>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: "60%" }} />
+          </td>
+        </>
+      )}
       <td>
         <Space>
-          <Skeleton.Button active size="small" shape="square" />
-          <Skeleton.Button active size="small" shape="square" />
-          <Skeleton.Button active size="small" shape="square" />
+          {isMobile ? (
+            <Skeleton.Button active size="small" shape="circle" />
+          ) : (
+            <>
+              {/* Match skeleton to text buttons */}
+              <Skeleton.Button
+                active
+                size="small"
+                shape="circle"
+                style={{ width: 24 }}
+              />
+              <Skeleton.Button
+                active
+                size="small"
+                shape="circle"
+                style={{ width: 24 }}
+              />
+              <Skeleton.Button
+                active
+                size="small"
+                shape="circle"
+                style={{ width: 24 }}
+              />
+            </>
+          )}
         </Space>
       </td>
     </tr>
   );
 
-  const columns = [
-    {
-      title: "#",
-      key: "index",
-      width: 60,
-      render: (text, record, index) => {
-        return (pagination.current - 1) * pagination.pageSize + index + 1;
-      },
-    },
-    {
-      title: "Property Name",
-      dataIndex: "name",
-      key: "name",
-      render: (text, record) => (
-        <Tooltip title="Click to view details">
-          <a onClick={() => navigate(`/${role}/land-management/${record.id}`)}>
-            {text}
-          </a>
-        </Tooltip>
-      ),
-    },
-    {
-      title: "Location",
-      dataIndex: "location",
-      key: "location",
-    },
-    {
-      title: "Size (sqm)",
-      dataIndex: "size",
-      key: "size",
-      render: (size) => size.toLocaleString(),
-    },
-    {
-      title: "Price per sqm",
-      dataIndex: "price_per_sqm",
-      key: "price_per_sqm",
-      render: (price) => `$${price.toLocaleString()}`,
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => {
-        let color = "default";
-        switch (status.toLowerCase()) {
-          case "available":
-            color = "success";
-            break;
-          case "pending":
-            color = "processing";
-            break;
-          case "sold":
-            color = "default";
-            break;
-          default:
-            break;
-        }
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
-      },
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            icon={<FileOutlined />}
-            size="small"
-            onClick={() => navigate(`/${role}/land-management/${record.id}`)}
-          >
-            View
-          </Button>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() =>
-              navigate(`/${role}/land-management/${record.id}/edit`)
-            }
-          >
-            Edit
-          </Button>
-          <Popconfirm
-            title="Are you sure you want to delete this property?"
-            onConfirm={() => deleteLand(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button danger icon={<DeleteOutlined />} size="small">
-              Delete
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
   if (!isExactPath) {
-    // If we're on a child route, just render the outlet
-    return <Outlet />;
+    return <Outlet context={{ refreshLandData: fetchLandData, userRole }} />;
   }
 
   return (
-    <div className="land-management">
-      <div
-        className="header-section"
-        style={{
-          marginBottom: "20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h1 className="text-2xl font-bold ">Land Management</h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
+    <ConfigProvider theme={{ token: { colorPrimary: colors.primary } }}>
+      <div className="land-management">
+        {/* Header Section */}
+        <div
+          className="header-section"
           style={{
-            backgroundColor: colors.primary,
-            borderColor: colors.primary,
+            marginBottom: isMobile ? "16px" : "20px",
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
+            gap: isMobile ? "12px" : "0",
           }}
-          onClick={() => navigate(`/${role}/land-management/new`)}
         >
-          Add Property
-        </Button>
-      </div>
-
-      {/* Display table of lands if on main list view */}
-      <Card>
-        {/* Filters and Search Section */}
-        <div style={{ marginBottom: 20 }}>
-          <Row gutter={16} align="middle">
-            <Col xs={24} sm={24} md={8} lg={8}>
-              <Search
-                placeholder="Search property name or location..."
-                allowClear
-                enterButton={<SearchOutlined />}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onSearch={(value) => setSearchText(value)}
-              />
-            </Col>
-            <Col xs={12} sm={8} md={5} lg={4}>
-              <Select
-                placeholder="Filter by Location"
-                style={{ width: "100%" }}
-                value={filterLocation}
-                onChange={setFilterLocation}
-              >
-                <Option value="all">All Locations</Option>
-                {locations.map((location) => (
-                  <Option key={location} value={location}>
-                    {location}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-            <Col xs={24} sm={8} md={6} lg={4}>
-              <Button onClick={resetFilters}>Reset Filters</Button>
-            </Col>
-          </Row>
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{ margin: 0, fontWeight: 700 }}
+          >
+            Land Management
+          </Title>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => navigate(`/${userRole}/land-management/new`)}
+            style={{ width: isMobile ? "100%" : "auto" }}
+          >
+            Add Property
+          </Button>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={filteredLands}
-          rowKey="id"
-          loading={false} // We're handling our own loading state with skeletons
-          pagination={{
-            position: ["bottomRight"],
-            showSizeChanger: true,
-            pageSizeOptions: ["10", "20", "50", "100"],
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} properties`,
-            onChange: (page, pageSize) => {
-              setPagination({
-                ...pagination,
-                current: page,
-                pageSize: pageSize,
-                total: filteredLands.length,
-              });
-            },
-            onShowSizeChange: (current, size) => {
-              setPagination({
-                ...pagination,
-                current: 1, // Reset to first page when changing page size
-                pageSize: size,
-                total: filteredLands.length,
-              });
-            },
-          }}
-          components={{
-            body: {
-              wrapper: (props) => {
-                // Add skeleton rows if loading
-                if (loading) {
-                  return (
-                    <tbody {...props}>
-                      {Array(5)
-                        .fill(null)
-                        .map((_, index) => (
-                          <SkeletonRow key={index} />
-                        ))}
-                    </tbody>
-                  );
-                }
-                return <tbody {...props} />;
-              },
-            },
-          }}
-        />
-      </Card>
+        <Card bodyStyle={{ padding: isMobile ? "12px" : "24px" }}>
+          {/* Filters Section */}
+          <div style={{ marginBottom: 20 }}>
+            <Row gutter={[16, 16]} align="middle">
+              <Col xs={24} sm={24} md={10} lg={8}>
+                <Search
+                  placeholder="Search property name or location..."
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+              </Col>
+              <Col xs={12} sm={12} md={6} lg={5}>
+                <Select
+                  placeholder="Filter by Location"
+                  style={{ width: "100%" }}
+                  value={filterLocation}
+                  onChange={setFilterLocation}
+                  allowClear
+                  onClear={() => setFilterLocation("all")}
+                >
+                  <Option value="all">All Locations</Option>
+                  {locations.map((location) => (
+                    <Option key={location} value={location}>
+                      {location}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
+              <Col xs={12} sm={12} md={4} lg={3}>
+                <Button onClick={resetFilters} style={{ width: "100%" }}>
+                  Reset
+                </Button>
+              </Col>
+            </Row>
+          </div>
 
-      {/* Outlet for child routes */}
-      <Outlet />
-    </div>
+          {/* Table Section */}
+          <div
+            className="responsive-table-container"
+            style={{ overflowX: "auto" }}
+          >
+            <Table
+              columns={getResponsiveColumns()}
+              dataSource={filteredLands}
+              rowKey="id"
+              loading={false}
+              pagination={{
+                ...pagination,
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showSizeChanger: true,
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} of ${total} properties`,
+                size: isMobile ? "small" : "default",
+                onChange: (page, pageSize) => {
+                  setPagination((prev) => ({
+                    ...prev,
+                    current: page,
+                    pageSize: pageSize,
+                  }));
+                },
+              }}
+              scroll={{ x: "max-content" }}
+              size={isMobile ? "small" : "middle"}
+              components={{
+                body: {
+                  wrapper: (props) => {
+                    if (loading) {
+                      return (
+                        <tbody {...props}>
+                          {Array(pagination.pageSize)
+                            .fill(null)
+                            .map((_, index) => (
+                              <SkeletonRow key={index} />
+                            ))}
+                        </tbody>
+                      );
+                    }
+                    if (!loading && filteredLands.length === 0) {
+                      return (
+                        <tbody {...props}>
+                          <tr>
+                            <td
+                              colSpan={getResponsiveColumns().length}
+                              style={{ textAlign: "center", padding: "40px" }}
+                            >
+                              <Text type="secondary">
+                                No land properties found.
+                              </Text>
+                              {(searchText || filterLocation !== "all") && (
+                                <div style={{ marginTop: "10px" }}>
+                                  <Button onClick={resetFilters} size="small">
+                                    Clear Filters
+                                  </Button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        </tbody>
+                      );
+                    }
+                    return <tbody {...props} />;
+                  },
+                },
+              }}
+            />
+          </div>
+          {/* Mobile hint */}
+          {isMobile && (
+            <div style={{ marginTop: "12px", textAlign: "center" }}>
+              <Text type="secondary" style={{ fontSize: "11px" }}>
+                Swipe table left/right if needed. Use{" "}
+                <MoreOutlined style={{ verticalAlign: "middle" }} /> for
+                actions.
+              </Text>
+            </div>
+          )}
+        </Card>
+      </div>
+    </ConfigProvider>
   );
 }
