@@ -580,7 +580,7 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                     >
                       <InputNumber
                         min={1}
-                        max={4} // As per requirement, max 4 years
+                        max={6} // As per requirement, max 4 years
                         style={{ width: "100%" }}
                         onChange={handleYearsChange}
                         disabled={
