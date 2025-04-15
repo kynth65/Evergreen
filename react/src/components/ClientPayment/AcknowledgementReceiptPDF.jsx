@@ -198,7 +198,7 @@ const styles = `
 const AcknowledgementReceiptPDF = forwardRef(
   ({ receiptData, companyInfo, userInfo }, ref) => {
     if (!receiptData) {
-      return <div ref={ref}>No receipt data available</div>;
+      return <div ref={ref}></div>;
     }
 
     const {
