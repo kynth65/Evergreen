@@ -18,6 +18,8 @@ export default function NotFound() {
     switch (user.role) {
       case "admin":
         return "/admin/";
+      case "client":
+        return "/client/";
       case "intern":
         return "/intern/";
       case "superadmin":
