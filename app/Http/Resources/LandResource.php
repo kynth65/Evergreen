@@ -8,10 +8,13 @@ class LandResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
      */
     public function toArray($request)
     {
-        // Get the correct base URL
+        // Get the correct base URL for the current environment
         $protocol = $request->secure() ? 'https://' : 'http://';
         $baseUrl = $protocol . $request->getHttpHost();
         
@@ -20,6 +23,7 @@ class LandResource extends JsonResource
             'name' => $this->name,
             'size' => $this->size,
             'price_per_sqm' => $this->price_per_sqm,
+            'total_price' => $this->size * $this->price_per_sqm,
             'agent_id' => $this->agent_id,
             'location' => $this->location,
             'description' => $this->description,
@@ -36,7 +40,7 @@ class LandResource extends JsonResource
                 ];
             }),
             
-            // Include images with full URLs - now using the correct path
+            // Include images with full URLs
             'images' => $this->when($this->relationLoaded('images'), function () use ($baseUrl) {
                 return $this->images->map(function ($image) use ($baseUrl) {
                     return [
@@ -44,7 +48,7 @@ class LandResource extends JsonResource
                         'image_path' => $image->image_path,
                         'is_primary' => $image->is_primary,
                         'sort_order' => $image->sort_order,
-                        // Direct path to our controller that will serve the image:
+                        // Direct path to our image controller
                         'image_url' => $baseUrl . '/storage/' . $image->image_path
                     ];
                 });
