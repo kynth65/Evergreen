@@ -5,6 +5,7 @@ import { Search, ChevronLeft, ChevronRight, Map } from "lucide-react";
 import Header from "../../components/header";
 import Footer from "../../components/footer";
 
+// Updated LandCard component with improved image URL handling
 const LandCard = ({ land }) => {
   const [landDetails, setLandDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,8 +37,6 @@ const LandCard = ({ land }) => {
     }).format(totalPrice);
   };
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
-
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative h-56">
@@ -46,9 +45,16 @@ const LandCard = ({ land }) => {
         landDetails.images &&
         landDetails.images.length > 0 ? (
           <img
-            src={`${baseUrl}/storage/${landDetails.images[0].image_path}`}
+            // Use the image_url property from the API response
+            src={landDetails.images[0].image_url}
             alt={land.name}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error("Image failed to load:", e.target.src);
+              e.target.src =
+                "https://via.placeholder.com/400x250?text=Image+Not+Available";
+              e.target.alt = "Image not available";
+            }}
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">

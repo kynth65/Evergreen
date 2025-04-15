@@ -43,7 +43,18 @@ class LandController extends Controller
         $query->orderBy($sortField, $sortDirection);
         
         $perPage = $request->input('per_page', 10);
-        return $query->paginate($perPage);
+        $lands = $query->paginate($perPage);
+        
+        // Return data as a resource
+        return LandResource::collection($lands)
+            ->additional([
+                'meta' => [
+                    'total' => $lands->total(),
+                    'per_page' => $lands->perPage(),
+                    'current_page' => $lands->currentPage(),
+                    'last_page' => $lands->lastPage(),
+                ],
+            ]);
     }
 
     /**
@@ -109,9 +120,7 @@ class LandController extends Controller
      */
     public function show(Land $land)
     {
-        return response()->json([
-            'data' => $land->load(['images', 'agent'])
-        ]);
+        return new LandResource($land->load(['images', 'agent']));
     }
 
     /**
