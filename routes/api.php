@@ -12,20 +12,12 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ClientPaymentController;
-use App\Http\Controllers\ImageController;
 
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('storage/{path}', [ImageController::class, 'serve'])
-     ->where('path', '.*');
-
-     Route::get('image/{filename}', [ImageController::class, 'serveImage']);
-
-
-     
 Route::middleware('auth:sanctum')->group(function () {
     // User profile routes
     Route::get('/user', [AuthController::class, 'getProfile']);

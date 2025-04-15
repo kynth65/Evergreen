@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Land;
 use App\Models\LandImage;
-use App\Http\Resources\LandResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -44,18 +43,7 @@ class LandController extends Controller
         $query->orderBy($sortField, $sortDirection);
         
         $perPage = $request->input('per_page', 10);
-        $lands = $query->paginate($perPage);
-        
-        // Return data as a resource
-        return LandResource::collection($lands)
-            ->additional([
-                'meta' => [
-                    'total' => $lands->total(),
-                    'per_page' => $lands->perPage(),
-                    'current_page' => $lands->currentPage(),
-                    'last_page' => $lands->lastPage(),
-                ],
-            ]);
+        return $query->paginate($perPage);
     }
 
     /**
@@ -121,7 +109,9 @@ class LandController extends Controller
      */
     public function show(Land $land)
     {
-        return new LandResource($land->load(['images', 'agent']));
+        return response()->json([
+            'data' => $land->load(['images', 'agent'])
+        ]);
     }
 
     /**
