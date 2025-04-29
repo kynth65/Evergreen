@@ -41,6 +41,7 @@ import ClientLayout from "./layouts/ClientLayout";
 import ClientDashboard from "./pages/Client/ClientDashboard";
 import UserClientPaymentList from "./components/PaymentList/UserClientPaymentList";
 import ClientAvailableLand from "./pages/Client/AvailableLand";
+import ClientLandView from "./pages/Client/ClientLandView";
 
 const router = createBrowserRouter([
   {
@@ -154,6 +155,10 @@ const router = createBrowserRouter([
       {
         path: "client-payment/:id/edit",
         element: <ClientPaymentEditForm />,
+      },
+      {
+        path: "lot-management/:id/view",
+        element: <LotView role="client" />,
       },
       {
         path: "client-payment/:id/view",
@@ -361,15 +366,19 @@ const router = createBrowserRouter([
       },
       {
         path: "payment-list",
-        element: <UserClientPaymentList />, // Reusing your existing ClientPaymentList component
+        element: <UserClientPaymentList />,
       },
       {
         path: "available-land",
         element: <ClientAvailableLand />,
       },
       {
+        path: "available-land/:id",
+        element: <ClientLandView />,
+      },
+      {
         path: "profile",
-        element: <Profile />, // Reusing your existing Profile component
+        element: <Profile />,
       },
     ],
   },

@@ -298,7 +298,7 @@ const AvailableLand = () => {
               key: "view",
               label: "View",
               icon: <EyeOutlined />,
-              onClick: () => navigate(`/lands/${record.id}`),
+              onClick: () => navigate(`/client/available-land/${record.id}`),
             },
           ];
 
@@ -322,7 +322,7 @@ const AvailableLand = () => {
               type="primary"
               icon={<FileOutlined />}
               size="small"
-              onClick={() => navigate(`/lands/${record.id}`)}
+              onClick={() => navigate(`/client/available-land/${record.id}`)}
             >
               View
             </Button>
