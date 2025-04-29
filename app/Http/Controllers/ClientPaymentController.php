@@ -7,6 +7,7 @@ use App\Models\ClientLot;
 use App\Models\Lot;
 use App\Models\PaymentSchedule;
 use App\Models\PaymentTransaction;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -17,9 +18,65 @@ class ClientPaymentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clientPayments = ClientPayment::with(['lots', 'paymentSchedules'])->get();
+        // Check if a user_id is provided for filtering
+        if ($request->has('user_id')) {
+            $clientPayments = ClientPayment::with(['lots', 'paymentSchedules'])
+                ->where('user_id', $request->user_id)
+                ->get();
+        } else {
+            $clientPayments = ClientPayment::with(['lots', 'paymentSchedules'])->get();
+        }
+        
+        return response()->json($clientPayments);
+    }
+
+    /**
+     * Get all users with the 'client' role.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getClients()
+    {
+        $clients = User::where('role', 'client')
+            ->select('id', 'first_name', 'middle_initial', 'last_name', 'email')
+            ->get()
+            ->map(function ($user) {
+                // Format the full name based on your user model structure
+                $middleInitial = $user->middle_initial ? " {$user->middle_initial}." : '';
+                $fullName = "{$user->first_name}{$middleInitial} {$user->last_name}";
+                
+                return [
+                    'id' => $user->id,
+                    'name' => $fullName,
+                    'email' => $user->email
+                ];
+            });
+            
+        return response()->json($clients);
+    }
+
+    /**
+     * Get payments for the authenticated client user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function getClientPayments(Request $request)
+    {
+        $user = $request->user();
+        
+        // Ensure the user is a client or handle appropriately
+        if (!$user || $user->role !== 'client') {
+            // You can either return an error or empty results
+            return response()->json(['message' => 'Access restricted to client users'], 403);
+        }
+        
+        $clientPayments = ClientPayment::with(['lots', 'paymentSchedules'])
+            ->where('user_id', $user->id)
+            ->get();
+            
         return response()->json($clientPayments);
     }
 
@@ -34,7 +91,7 @@ class ClientPaymentController extends Controller
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'payment_type' => 'required|in:spot_cash,installment',
-            'installment_years' => 'required|integer|min:1|max:4',
+            'installment_years' => 'required|integer|min:1|max:6',
             'start_date' => 'required|date',
             'next_payment_date' => 'nullable|date',
             'completed_payments' => 'required|integer|min:0',
@@ -42,6 +99,7 @@ class ClientPaymentController extends Controller
             'lots' => 'required|array|min:1',
             'lots.*.lot_id' => 'required|exists:lots,id',
             'lots.*.custom_price' => 'nullable|integer|min:0',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -63,6 +121,11 @@ class ClientPaymentController extends Controller
             $clientPayment->completed_payments = $request->completed_payments;
             $clientPayment->payment_notes = $request->payment_notes;
             $clientPayment->payment_status = $request->payment_type === 'spot_cash' ? 'COMPLETED' : 'ONGOING';
+            
+            // Associate with user if provided
+            if ($request->has('user_id')) {
+                $clientPayment->user_id = $request->user_id;
+            }
 
             // Calculate total amount
             $totalAmount = 0;
@@ -170,7 +233,7 @@ class ClientPaymentController extends Controller
      */
     public function show(string $id)
     {
-        $clientPayment = ClientPayment::with(['lots', 'paymentSchedules', 'paymentTransactions'])->findOrFail($id);
+        $clientPayment = ClientPayment::with(['lots', 'paymentSchedules', 'paymentTransactions', 'user'])->findOrFail($id);
         return response()->json($clientPayment);
     }
 
@@ -189,6 +252,7 @@ class ClientPaymentController extends Controller
             'next_payment_date' => 'nullable|date',
             'completed_payments' => 'sometimes|required|integer|min:0',
             'payment_notes' => 'nullable|string',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
         if ($validator->fails()) {
@@ -206,6 +270,7 @@ class ClientPaymentController extends Controller
                 'next_payment_date',
                 'completed_payments',
                 'payment_notes',
+                'user_id',
             ]));
             
             // Check if payment is completed
@@ -253,7 +318,7 @@ class ClientPaymentController extends Controller
             DB::commit();
             
             // Return the updated payment with related data
-            $clientPayment->load(['lots', 'paymentSchedules', 'paymentTransactions']);
+            $clientPayment->load(['lots', 'paymentSchedules', 'paymentTransactions', 'user']);
             return response()->json($clientPayment);
             
         } catch (\Exception $e) {
@@ -373,7 +438,7 @@ class ClientPaymentController extends Controller
             DB::commit();
             
             // Return the updated payment with related data
-            $clientPayment->load(['lots', 'paymentSchedules', 'paymentTransactions']);
+            $clientPayment->load(['lots', 'paymentSchedules', 'paymentTransactions', 'user']);
             return response()->json($clientPayment);
             
         } catch (\Exception $e) {
@@ -394,6 +459,4 @@ class ClientPaymentController extends Controller
         
         return response()->json($transactions);
     }
-
-    
 }

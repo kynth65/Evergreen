@@ -23,6 +23,7 @@ import {
   Radio,
   Table,
   Empty,
+  Spin,
 } from "antd";
 import {
   SaveOutlined,
@@ -34,6 +35,7 @@ import {
   HomeOutlined,
   DeleteOutlined,
   QuestionCircleOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -54,6 +56,8 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
   const [paymentSchedule, setPaymentSchedule] = useState([]);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [customPrices, setCustomPrices] = useState({});
+  const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(false);
 
   const colors = {
     primary: "#1da57a",
@@ -80,6 +84,23 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Fetch client users
+  useEffect(() => {
+    const fetchClients = async () => {
+      setLoadingClients(true);
+      try {
+        const response = await axiosClient.get("/client-payments/clients");
+        setClients(response.data);
+      } catch (error) {
+        console.error("Error fetching clients:", error);
+        message.error("Failed to load client users");
+      } finally {
+        setLoadingClients(false);
+      }
+    };
+    fetchClients();
   }, []);
 
   const isMobile = screenWidth < breakpoints.md;
@@ -179,6 +200,17 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
     form.getFieldValue("payment_type"),
   ]);
 
+  // Handle client user selection
+  const handleClientSelect = (value) => {
+    const selectedClient = clients.find((client) => client.id === value);
+    if (selectedClient) {
+      form.setFieldsValue({
+        client_name: selectedClient.name,
+        email: selectedClient.email,
+      });
+    }
+  };
+
   // Handle form submission
   const onFinish = (values) => {
     if (selectedLots.length === 0) {
@@ -255,7 +287,7 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
     });
   };
 
-  // Handle lot removal
+  // Handle lot// Handle lot removal
   const handleLotRemove = (lotId) => {
     setSelectedLots((prev) => {
       const newSelection = prev.filter((id) => id !== lotId);
@@ -406,6 +438,33 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                   </span>
                 }
               >
+                {/* Client User Selection - NEW */}
+                <Form.Item
+                  name="user_id"
+                  label="Select Client User"
+                  extra="Connect this payment to a registered client user account"
+                >
+                  <Select
+                    placeholder="Select a client user"
+                    onChange={handleClientSelect}
+                    loading={loadingClients}
+                    allowClear
+                    showSearch
+                    optionFilterProp="children"
+                    filterOption={(input, option) =>
+                      option.children
+                        .toLowerCase()
+                        .indexOf(input.toLowerCase()) >= 0
+                    }
+                  >
+                    {clients.map((client) => (
+                      <Option key={client.id} value={client.id}>
+                        {client.name} ({client.email})
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+
                 <Form.Item
                   name="client_name"
                   label="Client Name"
@@ -429,6 +488,16 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                   ]}
                 >
                   <Input placeholder="Client's contact number" />
+                </Form.Item>
+
+                {/* Added email field */}
+                <Form.Item name="email" label="Email">
+                  <Input placeholder="Client's email address" />
+                </Form.Item>
+
+                {/* Added address field */}
+                <Form.Item name="address" label="Address">
+                  <TextArea rows={2} placeholder="Client's address" />
                 </Form.Item>
               </Card>
             </Col>
@@ -580,7 +649,7 @@ const ClientPaymentAddForm = ({ onSuccess }) => {
                     >
                       <InputNumber
                         min={1}
-                        max={6} // As per requirement, max 4 years
+                        max={6} // Max 6 years as per updated requirement
                         style={{ width: "100%" }}
                         onChange={handleYearsChange}
                         disabled={

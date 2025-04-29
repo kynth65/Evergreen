@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -92,5 +91,23 @@ class User extends Authenticatable
     public function isSuperAdmin()
     {
         return $this->hasRole('superadmin');
+    }
+
+    /**
+     * Get the client payments associated with this user.
+     */
+    public function clientPayments()
+    {
+        return $this->hasMany(ClientPayment::class, 'user_id');
+    }
+
+    /**
+     * Check if user is a client
+     * 
+     * @return bool
+     */
+    public function isClient()
+    {
+        return $this->hasRole('client');
     }
 }

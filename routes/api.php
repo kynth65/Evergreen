@@ -67,13 +67,28 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/files/{file}/move', [FileController::class, 'move']);
 });
 
-Route::prefix('client-payments')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('client-payments')->group(function () {
+    // Special routes that need to come FIRST
+    // Get clients for dropdown selection
+    Route::get('/clients', [ClientPaymentController::class, 'getClients']);
+    
+    // Client user specific routes
+    Route::get('/my-payments', [ClientPaymentController::class, 'getClientPayments']);
+    
+    // Standard routes
     // Get all client payments
     Route::get('/', [ClientPaymentController::class, 'index']);
     
     // Create a new client payment
     Route::post('/', [ClientPaymentController::class, 'store']);
     
+    // Record a payment for an installment plan
+    Route::post('/{id}/record-payment', [ClientPaymentController::class, 'recordPayment']);
+
+    // get all payment transactions for a specific client payment
+    Route::get('/{id}/transactions', [ClientPaymentController::class, 'getTransactions']);
+    
+    // These must come LAST as they have parameterized routes that could conflict
     // Get a specific client payment
     Route::get('/{id}', [ClientPaymentController::class, 'show']);
     
@@ -82,13 +97,6 @@ Route::prefix('client-payments')->group(function () {
     
     // Delete a client payment
     Route::delete('/{id}', [ClientPaymentController::class, 'destroy']);
-    
-    // Record a payment for an installment plan
-    Route::post('/{id}/record-payment', [ClientPaymentController::class, 'recordPayment']);
-
-    // get all payment transactions for a specific client payment
-    Route::get('/{id}/transactions', [ClientPaymentController::class, 'getTransactions']);
-
 });
 
 //Admin Routes
