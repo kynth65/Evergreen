@@ -1,83 +1,189 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axiosClient from "../../axios.client";
-import Header from "../../components/header";
-import Footer from "../../components/footer";
+import { useStateContext } from "../../context/ContextProvider";
 import {
-  Map,
-  Search,
-  Filter,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Loader,
-} from "lucide-react";
+  Table,
+  Button,
+  Tag,
+  Space,
+  Tooltip,
+  Popconfirm,
+  Skeleton,
+  message,
+  Input,
+  Select,
+  Row,
+  Col,
+  Card,
+  Typography,
+  Dropdown,
+  Menu,
+  ConfigProvider,
+  Modal,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FileOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
+  MoreOutlined,
+  EyeOutlined,
+  EnvironmentOutlined,
+} from "@ant-design/icons";
+
+const { Search } = Input;
+const { Option } = Select;
+const { Title, Text } = Typography;
 
 const AvailableLand = () => {
+  const { user } = useStateContext();
   const [lands, setLands] = useState([]);
+  const [filteredLands, setFilteredLands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [location, setLocation] = useState("");
   const [locations, setLocations] = useState([]);
-  const [sortBy, setSortBy] = useState("created_at");
-  const [sortDir, setSortDir] = useState("desc");
-  const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [perPage, setPerPage] = useState(9);
+  const [locationFilter, setLocationFilter] = useState("");
+  const [priceSort, setPriceSort] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Using exact same color scheme as LotList
+  const colors = {
+    primary: "#1da57a", // Primary green
+    secondary: "#52c41a", // Secondary lighter green
+    warning: "#faad14",
+    success: "#52c41a",
+    error: "#f5222d",
+    lightBg: "#f6ffed", // Light green background
+  };
+
+  // Responsive breakpoints
+  const breakpoints = {
+    xs: 480, // Extra small devices
+    sm: 576, // Small devices
+    md: 768, // Medium devices
+    lg: 992, // Large devices
+    xl: 1200, // Extra large devices
+    xxl: 1600, // Extra extra large devices
+  };
+
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  });
+
+  // Update screen width on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Fetch lands data
   useEffect(() => {
-    const fetchLands = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          status: "available", // Only fetch available lands
-          page: currentPage,
-          per_page: perPage,
-          sort_by: sortBy,
-          sort_dir: sortDir,
-        };
-
-        // Add search term if it exists
-        if (searchTerm) {
-          params.search = searchTerm;
-        }
-
-        // Add location filter if selected
-        if (location) {
-          params.location = location;
-        }
-
-        const response = await axiosClient.get("/lands", { params });
-        setLands(response.data.data);
-        setTotalPages(Math.ceil(response.data.total / response.data.per_page));
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to load land listings. Please try again later.");
-        setLoading(false);
-        console.error(err);
-      }
-    };
-
     fetchLands();
-  }, [searchTerm, location, sortBy, sortDir, currentPage, perPage]);
-
-  // Fetch unique locations for filter
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const response = await axiosClient.get("/lands/stats");
-        const locationData = response.data.data.locationCounts;
-        setLocations(Object.keys(locationData));
-      } catch (err) {
-        console.error("Failed to load locations:", err);
-      }
-    };
-
     fetchLocations();
   }, []);
+
+  // Effect to handle filtering and sorting
+  useEffect(() => {
+    if (lands.length > 0) {
+      let result = [...lands];
+
+      // Apply location filter
+      if (locationFilter) {
+        result = result.filter((land) => land.location === locationFilter);
+      }
+
+      // Apply search filter
+      if (searchText) {
+        const lowerSearchText = searchText.toLowerCase();
+        result = result.filter(
+          (land) =>
+            land.name?.toLowerCase().includes(lowerSearchText) ||
+            land.location?.toLowerCase().includes(lowerSearchText) ||
+            String(land.size).includes(lowerSearchText) ||
+            String(land.price_per_sqm).includes(lowerSearchText)
+        );
+      }
+
+      // Apply price sorting
+      if (priceSort === "asc") {
+        result.sort((a, b) => {
+          const priceA = a.price_per_sqm * a.size || 0;
+          const priceB = b.price_per_sqm * b.size || 0;
+          return priceA - priceB;
+        });
+      } else if (priceSort === "desc") {
+        result.sort((a, b) => {
+          const priceA = a.price_per_sqm * a.size || 0;
+          const priceB = b.price_per_sqm * b.size || 0;
+          return priceB - priceA;
+        });
+      }
+
+      setFilteredLands(result);
+      setPagination((prev) => ({
+        ...prev,
+        total: result.length,
+      }));
+    }
+  }, [lands, locationFilter, priceSort, searchText]);
+
+  const fetchLocations = async () => {
+    try {
+      const response = await axiosClient.get("/lands/stats");
+      if (
+        response.data &&
+        response.data.data &&
+        response.data.data.locationCounts
+      ) {
+        setLocations(Object.keys(response.data.data.locationCounts));
+      }
+    } catch (err) {
+      console.error("Error fetching locations:", err);
+    }
+  };
+
+  const fetchLands = () => {
+    setLoading(true);
+    axiosClient
+      .get("/lands", {
+        params: {
+          status: "available", // Only fetch available lands
+          per_page: 100, // Get a large number to handle client-side pagination
+        },
+      })
+      .then((response) => {
+        const availableLands = response.data.data || [];
+        setLands(availableLands);
+        setFilteredLands(availableLands);
+        setPagination((prev) => ({
+          ...prev,
+          total: availableLands.length,
+        }));
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Failed to load available lands");
+        setLoading(false);
+        console.error("Error fetching lands:", err);
+        message.error(
+          "Failed to load available lands: " +
+            (err.response?.data?.message || err.message)
+        );
+      });
+  };
 
   // Format price
   const formatPrice = (price, size) => {
@@ -89,286 +195,402 @@ const AvailableLand = () => {
     }).format(totalPrice);
   };
 
-  // Handle search
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1); // Reset to first page on new search
-  };
-
-  // Reset filters
+  // Reset all filters
   const resetFilters = () => {
-    setSearchTerm("");
-    setLocation("");
-    setSortBy("created_at");
-    setSortDir("desc");
-    setCurrentPage(1);
+    setLocationFilter("");
+    setPriceSort(null);
+    setSearchText("");
   };
 
-  // Handle pagination
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+  // Check if we're on a mobile device
+  const isMobile = screenWidth < breakpoints.md;
+
+  // Responsive columns logic
+  const getResponsiveColumns = () => {
+    // Base columns for all screen sizes
+    const baseColumns = [
+      {
+        title: "#",
+        key: "index",
+        width: 60,
+        render: (text, record, index) => {
+          // Calculate the continuous row number based on pagination
+          return (pagination.current - 1) * pagination.pageSize + index + 1;
+        },
+      },
+      {
+        title: "Land Name",
+        dataIndex: "name",
+        key: "name",
+        render: (text, record) => (
+          <Tooltip title="Click to view details">
+            <a onClick={() => navigate(`/lands/${record.id}`)}>{text}</a>
+          </Tooltip>
+        ),
+      },
+      {
+        title: "Status",
+        dataIndex: "status",
+        key: "status",
+        render: (status) => {
+          return <Tag color="success">AVAILABLE</Tag>;
+        },
+      },
+    ];
+
+    // Desktop-only columns
+    const desktopColumns = [
+      {
+        title: "Location",
+        dataIndex: "location",
+        key: "location",
+        responsive: ["md"],
+        render: (location) => (
+          <Tooltip title={location}>
+            <span>
+              <EnvironmentOutlined style={{ marginRight: 4 }} />
+              {location && location.length > 25
+                ? `${location.substring(0, 25)}...`
+                : location}
+            </span>
+          </Tooltip>
+        ),
+      },
+      {
+        title: "Land Size (sqm)",
+        dataIndex: "size",
+        key: "size",
+        responsive: ["md"],
+        render: (size) => (size ? size.toLocaleString() : "-"),
+      },
+      {
+        title: "Price/sqm",
+        dataIndex: "price_per_sqm",
+        key: "price_per_sqm",
+        responsive: ["lg"],
+        render: (price) =>
+          price
+            ? new Intl.NumberFormat("en-PH", {
+                style: "currency",
+                currency: "PHP",
+                maximumFractionDigits: 0,
+              }).format(price)
+            : "-",
+      },
+      {
+        title: "Total Price",
+        key: "total_price",
+        responsive: ["lg"],
+        render: (_, record) => formatPrice(record.price_per_sqm, record.size),
+      },
+    ];
+
+    // Actions column with dropdown for mobile
+    const actionsColumn = {
+      title: "Actions",
+      key: "actions",
+      fixed: isMobile ? "right" : false,
+      render: (_, record) => {
+        // For mobile: render a dropdown menu with actions
+        if (isMobile) {
+          const actionItems = [
+            {
+              key: "view",
+              label: "View",
+              icon: <EyeOutlined />,
+              onClick: () => navigate(`/lands/${record.id}`),
+            },
+          ];
+
+          const menu = <Menu items={actionItems} />;
+
+          return (
+            <Dropdown
+              overlay={menu}
+              placement="bottomRight"
+              trigger={["click"]}
+            >
+              <Button type="text" icon={<MoreOutlined />} />
+            </Dropdown>
+          );
+        }
+
+        // For desktop: render action buttons
+        return (
+          <Space size="small">
+            <Button
+              type="primary"
+              icon={<FileOutlined />}
+              size="small"
+              onClick={() => navigate(`/lands/${record.id}`)}
+            >
+              View
+            </Button>
+          </Space>
+        );
+      },
+    };
+
+    // Combine columns based on screen size
+    return [...baseColumns, ...desktopColumns, actionsColumn];
   };
+
+  // Custom skeleton row for loading state
+  const SkeletonRow = () => (
+    <tr className="ant-table-row">
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 40 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 150 }} />
+      </td>
+      <td>
+        <Skeleton.Input active size="small" style={{ width: 80 }} />
+      </td>
+      {screenWidth >= breakpoints.md && (
+        <>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 120 }} />
+          </td>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 80 }} />
+          </td>
+        </>
+      )}
+      {screenWidth >= breakpoints.lg && (
+        <>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 100 }} />
+          </td>
+          <td>
+            <Skeleton.Input active size="small" style={{ width: 120 }} />
+          </td>
+        </>
+      )}
+      <td>
+        <Space>
+          {isMobile ? (
+            <Skeleton.Button active size="small" shape="circle" />
+          ) : (
+            <Skeleton.Button active size="small" shape="square" />
+          )}
+        </Space>
+      </td>
+    </tr>
+  );
 
   return (
-    <div className="bg-[#f7fdf7] min-h-screen">
-      <Header />
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-[#384438]">
-              Available Land Properties
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Browse our collection of available land properties for sale
-            </p>
-          </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="mt-4 md:mt-0 flex items-center px-4 py-2 bg-[#384438] text-white rounded-lg hover:bg-[#2a332a] transition-colors"
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: colors.primary,
+        },
+      }}
+    >
+      <div
+        className="lot-management"
+        style={{ padding: isMobile ? "0px" : "0px" }}
+      >
+        <div
+          className="header-section"
+          style={{
+            marginBottom: isMobile ? "16px" : "20px",
+            display: "flex",
+            flexDirection: isMobile ? "row" : "row",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
+            gap: isMobile ? "12px" : "0",
+          }}
+        >
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{ margin: 0, fontWeight: 700 }}
           >
-            {showFilters ? (
-              <X className="h-4 w-4 mr-2" />
-            ) : (
-              <Filter className="h-4 w-4 mr-2" />
-            )}
-            {showFilters ? "Hide Filters" : "Show Filters"}
-          </button>
+            Available Land Properties
+          </Title>
+          <Button
+            type="primary"
+            icon={<FileOutlined />}
+            style={{
+              backgroundColor: colors.primary,
+              borderColor: colors.primary,
+            }}
+            onClick={() => navigate("/lands")}
+          >
+            View All Lands
+          </Button>
         </div>
 
-        {showFilters && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <form onSubmit={handleSearch} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label
-                    htmlFor="search"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Search
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      id="search"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search by name or description"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-[#384438] focus:border-[#384438]"
-                    />
-                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
+        <Card bodyStyle={{ padding: isMobile ? "12px" : "24px" }}>
+          {/* Filters and Search Section - Responsive */}
+          <div style={{ marginBottom: 20 }}>
+            <Row gutter={[16, 16]} align="middle">
+              <Col xs={24} sm={24} md={12} lg={8}>
+                <Search
+                  placeholder="Search land, location..."
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  onSearch={(value) => setSearchText(value)}
+                />
+              </Col>
 
-                <div>
-                  <label
-                    htmlFor="location"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Location
-                  </label>
-                  <select
-                    id="location"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#384438] focus:border-[#384438]"
-                  >
-                    <option value="">All Locations</option>
-                    {locations.map((loc, index) => (
-                      <option key={index} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <Col xs={12} sm={8} md={6} lg={4}>
+                <Select
+                  placeholder="Filter by Location"
+                  style={{ width: "100%" }}
+                  value={locationFilter}
+                  onChange={setLocationFilter}
+                  allowClear
+                >
+                  {locations.map((location) => (
+                    <Option key={location} value={location}>
+                      {location}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
 
-                <div>
-                  <label
-                    htmlFor="sort"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Sort By
-                  </label>
-                  <div className="flex space-x-2">
-                    <select
-                      id="sort"
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#384438] focus:border-[#384438]"
-                    >
-                      <option value="created_at">Date Listed</option>
-                      <option value="price_per_sqm">Price</option>
-                      <option value="size">Size</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSortDir(sortDir === "asc" ? "desc" : "asc")
-                      }
-                      className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200"
-                    >
-                      {sortDir === "asc" ? "↑" : "↓"}
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <Col xs={12} sm={8} md={6} lg={4}>
+                <Select
+                  placeholder="Sort by Price"
+                  style={{ width: "100%" }}
+                  value={priceSort}
+                  onChange={setPriceSort}
+                >
+                  <Option value={null}>Original Order</Option>
+                  <Option value="asc">Price: Low to High</Option>
+                  <Option value="desc">Price: High to Low</Option>
+                </Select>
+              </Col>
 
-              <div className="flex justify-between">
-                <button
-                  type="button"
+              <Col xs={24} sm={8} md={6} lg={4}>
+                <Button
                   onClick={resetFilters}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  style={{ width: isMobile ? "100%" : "auto" }}
                 >
                   Reset Filters
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-[#384438] text-white rounded-lg hover:bg-[#2a332a]"
-                >
-                  Apply Filters
-                </button>
-              </div>
-            </form>
+                </Button>
+              </Col>
+            </Row>
           </div>
-        )}
 
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader className="h-8 w-8 animate-spin text-[#384438]" />
-          </div>
-        ) : error ? (
-          <div className="bg-red-100 text-red-700 p-4 rounded-lg">{error}</div>
-        ) : lands.length === 0 ? (
-          <div className="bg-yellow-50 p-8 text-center rounded-lg">
-            <h3 className="text-xl font-medium text-yellow-800 mb-2">
-              No lands available
-            </h3>
-            <p className="text-yellow-700">
-              No properties match your search criteria. Try adjusting your
-              filters or check back later.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {lands.map((land) => (
-                <Link
-                  to={`/lands/${land.id}`}
-                  key={land.id}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-                >
-                  <div className="h-48 relative">
-                    {land.primary_image ? (
-                      <img
-                        src={`${import.meta.env.VITE_API_BASE_URL}/storage/${
-                          land.primary_image.image_path
-                        }`}
-                        alt={land.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                        <Map className="h-12 w-12 text-gray-400" />
-                      </div>
-                    )}
-                    <div className="absolute top-3 right-3">
-                      <span className="bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-bold capitalize">
-                        Available
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h2 className="text-xl font-bold text-[#384438] mb-1">
-                      {land.name}
-                    </h2>
-                    <p className="text-gray-600 mb-2 flex items-center">
-                      <Map className="h-4 w-4 mr-1" /> {land.location}
-                    </p>
-                    <div className="flex justify-between items-end mt-4">
-                      <div>
-                        <p className="text-sm text-gray-500">Land Size</p>
-                        <p className="font-medium">
-                          {land.size.toLocaleString()} sqm
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">Price</p>
-                        <p className="text-lg font-bold text-[#384438]">
-                          {formatPrice(land.price_per_sqm, land.size)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-12">
-                <nav className="flex items-center space-x-2">
-                  <button
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`p-2 rounded-md ${
-                      currentPage === 1
-                        ? "text-gray-400 cursor-not-allowed"
-                        : "text-[#384438] hover:bg-gray-100"
-                    }`}
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-
-                  {[...Array(totalPages).keys()].map((number) => {
-                    const page = number + 1;
-                    // Show at most 5 page numbers
-                    if (
-                      page === 1 ||
-                      page === totalPages ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    ) {
+          <div
+            className="responsive-table-container"
+            style={{ overflowX: "auto" }}
+          >
+            <Table
+              columns={getResponsiveColumns()}
+              dataSource={filteredLands}
+              rowKey="id"
+              loading={false}
+              scroll={{ x: "max-content" }}
+              size={isMobile ? "small" : "middle"}
+              pagination={{
+                position: ["bottomRight"],
+                showSizeChanger: true,
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showTotal: (total, range) =>
+                  `${range[0]}-${range[1]} of ${total} properties`,
+                size: isMobile ? "small" : "default",
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+                onChange: (page, pageSize) => {
+                  setPagination({
+                    ...pagination,
+                    current: page,
+                    pageSize: pageSize,
+                    total: filteredLands.length,
+                  });
+                },
+                onShowSizeChange: (current, size) => {
+                  setPagination({
+                    ...pagination,
+                    current: 1, // Reset to first page when changing page size
+                    pageSize: size,
+                    total: filteredLands.length,
+                  });
+                },
+              }}
+              components={{
+                body: {
+                  wrapper: (props) => {
+                    // Add skeleton rows if loading
+                    if (loading) {
                       return (
-                        <button
-                          key={page}
-                          onClick={() => goToPage(page)}
-                          className={`px-4 py-2 rounded-md ${
-                            currentPage === page
-                              ? "bg-[#384438] text-white"
-                              : "text-gray-700 hover:bg-gray-100"
-                          }`}
-                        >
-                          {page}
-                        </button>
+                        <tbody {...props}>
+                          {Array(5)
+                            .fill(null)
+                            .map((_, index) => (
+                              <SkeletonRow key={index} />
+                            ))}
+                        </tbody>
                       );
-                    } else if (
-                      (page === currentPage - 2 && currentPage > 3) ||
-                      (page === currentPage + 2 && currentPage < totalPages - 2)
-                    ) {
-                      return <span key={page}>...</span>;
                     }
-                    return null;
-                  })}
+                    return <tbody {...props} />;
+                  },
+                },
+              }}
+              locale={{
+                emptyText: error ? (
+                  <div style={{ padding: "24px 0" }}>
+                    <Text type="danger">{error}</Text>
+                  </div>
+                ) : (
+                  <div style={{ padding: "24px 0" }}>
+                    <Text>No available land properties found</Text>
+                  </div>
+                ),
+              }}
+            />
+          </div>
 
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`p-2 rounded-md ${
-                      currentPage === totalPages
-                        ? "text-gray-400 cursor-not-allowed"
-                        : "text-[#384438] hover:bg-gray-100"
-                    }`}
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </nav>
-              </div>
-            )}
-          </>
-        )}
+          {/* Mobile information note */}
+          {isMobile && (
+            <div style={{ marginTop: "16px", textAlign: "center" }}>
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                Swipe left/right to see more details. Tap the menu icon to view
+                actions.
+              </Text>
+            </div>
+          )}
+        </Card>
+
+        {/* Add responsive styles */}
+        <style jsx="true">{`
+          .lot-management .ant-table-thead > tr > th {
+            white-space: nowrap;
+          }
+
+          @media (max-width: ${breakpoints.md}px) {
+            .lot-management .ant-table {
+              font-size: 13px;
+            }
+
+            .lot-management .ant-btn-sm {
+              font-size: 12px;
+              padding: 0 8px;
+            }
+
+            .lot-management .ant-table-pagination {
+              flex-wrap: wrap;
+            }
+          }
+
+          @media (max-width: ${breakpoints.sm}px) {
+            .lot-management .ant-pagination-options {
+              display: none;
+            }
+
+            .lot-management .ant-table-pagination-right {
+              justify-content: center;
+            }
+          }
+        `}</style>
       </div>
-      <Footer />
-    </div>
+    </ConfigProvider>
   );
 };
 
