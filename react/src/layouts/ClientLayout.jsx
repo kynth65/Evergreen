@@ -75,7 +75,7 @@ export default function ClientLayout() {
       description: "View payments",
     },
     {
-      path: "/client/available-lands",
+      path: "/client/available-land",
       name: "Available Lands/Lots",
       icon: <Home className="w-6 h-6" />,
       description: "Browse properties",

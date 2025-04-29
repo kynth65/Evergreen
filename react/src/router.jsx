@@ -40,6 +40,7 @@ import ClientPaymentDetails from "./components/ClientPayment/ClientPaymentDetail
 import ClientLayout from "./layouts/ClientLayout";
 import ClientDashboard from "./pages/Client/ClientDashboard";
 import UserClientPaymentList from "./components/PaymentList/UserClientPaymentList";
+import ClientAvailableLand from "./pages/Client/AvailableLand";
 
 const router = createBrowserRouter([
   {
@@ -362,10 +363,10 @@ const router = createBrowserRouter([
         path: "payment-list",
         element: <UserClientPaymentList />, // Reusing your existing ClientPaymentList component
       },
-      // {
-      //   path: "available-lands",
-      //   element: <ClientAvailableLands />,
-      // },
+      {
+        path: "available-land",
+        element: <ClientAvailableLand />,
+      },
       {
         path: "profile",
         element: <Profile />, // Reusing your existing Profile component
