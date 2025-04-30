@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Card,
   Space,
@@ -32,6 +32,19 @@ const { Text } = Typography;
  * Client view for payment details and transaction history
  */
 const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+  const isMobile = screenWidth < 768;
+
+  // Update screen width on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const progress = calculateProgress(payment);
   const { totalAmount, paidAmount, remainingAmount } =
     calculateTotalAmounts(payment);
@@ -62,6 +75,7 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
       title: "Method",
       dataIndex: "payment_method",
       key: "payment_method",
+      responsive: ["md"],
       render: (text) => {
         const methodColors = {
           CASH: "green",
@@ -80,6 +94,7 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
       title: "Reference #",
       dataIndex: "reference_number",
       key: "reference_number",
+      responsive: ["lg"],
       render: (text) => text || <Text type="secondary">N/A</Text>,
     },
   ];
@@ -174,7 +189,7 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
             <Divider style={{ margin: "8px 0 16px" }} />
             <Row gutter={[16, 16]}>
               <Col xs={24} md={12}>
-                <Descriptions column={1} size="small">
+                <Descriptions column={{ xs: 1, sm: 1 }} size="small">
                   <Descriptions.Item label="Payment Type">
                     <Tag
                       color={
@@ -347,16 +362,22 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
 
         {payment.paymentTransactions &&
         payment.paymentTransactions.length > 0 ? (
-          <Table
-            columns={transactionColumns}
-            dataSource={payment.paymentTransactions}
-            rowKey={(record) =>
-              record.id || `${record.payment_number}-${record.payment_date}`
-            }
-            pagination={{ pageSize: 5, showSizeChanger: true }}
-            size="small"
-            scroll={{ x: 800 }}
-          />
+          <div className="table-responsive">
+            <Table
+              columns={transactionColumns}
+              dataSource={payment.paymentTransactions}
+              rowKey={(record) =>
+                record.id || `${record.payment_number}-${record.payment_date}`
+              }
+              pagination={{
+                pageSize: 5,
+                showSizeChanger: !isMobile,
+                size: isMobile ? "small" : "default",
+              }}
+              size={isMobile ? "small" : "middle"}
+              scroll={{ x: "max-content" }}
+            />
+          </div>
         ) : (
           <Empty description="No payment history available" />
         )}
@@ -381,18 +402,51 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
                 Payment Schedule
               </span>
             </div>
-            <Table
-              columns={scheduleColumns}
-              dataSource={payment.paymentSchedules.sort(
-                (a, b) => a.payment_number - b.payment_number
-              )}
-              rowKey={(record) => record.id || record.payment_number}
-              pagination={{ pageSize: 5, showSizeChanger: false }}
-              size="small"
-              scroll={{ x: 600 }}
-            />
+            <div className="table-responsive">
+              <Table
+                columns={scheduleColumns}
+                dataSource={payment.paymentSchedules.sort(
+                  (a, b) => a.payment_number - b.payment_number
+                )}
+                rowKey={(record) => record.id || record.payment_number}
+                pagination={{
+                  pageSize: isMobile ? 3 : 5,
+                  showSizeChanger: !isMobile,
+                  size: isMobile ? "small" : "default",
+                }}
+                size={isMobile ? "small" : "middle"}
+                scroll={{ x: "max-content" }}
+              />
+            </div>
           </Card>
         )}
+
+      {/* Add responsive styles */}
+      <style jsx global>{`
+        .table-responsive {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        @media (max-width: 768px) {
+          .ant-card-body {
+            padding: 12px;
+          }
+
+          .ant-descriptions-item-label,
+          .ant-descriptions-item-content {
+            padding: 8px;
+          }
+
+          .ant-statistic-title {
+            font-size: 14px;
+          }
+
+          .ant-statistic-content {
+            font-size: 20px;
+          }
+        }
+      `}</style>
     </Col>
   );
 };

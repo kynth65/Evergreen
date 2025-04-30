@@ -61,6 +61,25 @@ export default function UserClientPaymentList() {
   const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
+  useEffect(() => {
+    // Find the table container and update its overflow property
+    const tableContainers = document.querySelectorAll(
+      ".overflow-hidden, .overflow-x-auto"
+    );
+    tableContainers.forEach((container) => {
+      if (isMobile || isSmall) {
+        container.style.overflow = "visible";
+      }
+    });
+
+    return () => {
+      // Reset when component unmounts
+      tableContainers.forEach((container) => {
+        container.style.overflow = "";
+      });
+    };
+  }, [isMobile, isSmall]);
+
   // Add styles for row click animation
   useEffect(() => {
     const styleEl = document.createElement("style");
@@ -72,6 +91,30 @@ export default function UserClientPaymentList() {
       .row-clickable:active {
         transform: scale(0.99);
         background-color: rgba(209, 213, 219, 0.5) !important;
+      }
+      
+      /* Fix for dropdown positioning */
+      .dropdown-menu {
+        position: absolute;
+        z-index: 1000;
+        min-width: 150px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      }
+      
+      /* Make sure parent containers don't clip overflow */
+      .overflow-x-auto {
+        overflow-x: visible !important;
+      }
+      
+      .overflow-hidden {
+        overflow: visible !important;
+      }
+      
+      /* For mobile devices only */
+      @media (max-width: 768px) {
+        .table-responsive-wrapper {
+          position: relative;
+        }
       }
     `;
     document.head.appendChild(styleEl);
@@ -356,7 +399,10 @@ export default function UserClientPaymentList() {
 
     // Use dropdown for mobile/small screens
     return (
-      <div className={`relative dropdown-${payment.id}`}>
+      <div
+        className={`relative dropdown-${payment.id}`}
+        style={{ position: "relative" }}
+      >
         <button
           className="p-1 rounded-full hover:bg-gray-200 focus:outline-none cursor-pointer"
           onClick={(e) => toggleDropdown(payment.id, e)}
@@ -365,7 +411,17 @@ export default function UserClientPaymentList() {
           <MoreVertical size={20} />
         </button>
         {openDropdown === payment.id && (
-          <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden z-50 w-40">
+          <div
+            className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden w-40"
+            style={{
+              zIndex: 1000,
+              position: "absolute",
+              top: "100%",
+              right: 0,
+              minWidth: "150px",
+              boxShadow: "0px 8px 16px 0px rgba(0,0,0,0.2)",
+            }}
+          >
             <button
               className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center cursor-pointer"
               onClick={(e) => {
