@@ -222,11 +222,8 @@ const AvailableLand = () => {
         title: "Land Name",
         dataIndex: "name",
         key: "name",
-        render: (text, record) => (
-          <Tooltip title="Click to view details">
-            <a onClick={() => navigate(`/lands/${record.id}`)}>{text}</a>
-          </Tooltip>
-        ),
+        // Simply display the text without any clickable functionality
+        render: (text) => <span>{text}</span>,
       },
       {
         title: "Status",
