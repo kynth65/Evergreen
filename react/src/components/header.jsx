@@ -52,7 +52,7 @@ export default function Header() {
                     About
                   </Link>
                 </li>
-                <li>
+                {/* <li>
                   <Link
                     to="/lands"
                     className="hover:text-gray-600 text-2xl"
@@ -60,7 +60,7 @@ export default function Header() {
                   >
                     Land Collection
                   </Link>
-                </li>
+                </li> */}
                 <li>
                   <Link
                     to="/contact"

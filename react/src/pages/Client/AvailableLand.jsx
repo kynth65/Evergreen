@@ -298,7 +298,7 @@ const AvailableLand = () => {
               key: "view",
               label: "View",
               icon: <EyeOutlined />,
-              onClick: () => navigate(`/client/available-land/${record.id}`),
+              onClick: () => navigate(`/client/available-lands/${record.id}`),
             },
           ];
 
@@ -322,7 +322,7 @@ const AvailableLand = () => {
               type="primary"
               icon={<FileOutlined />}
               size="small"
-              onClick={() => navigate(`/client/available-land/${record.id}`)}
+              onClick={() => navigate(`/client/available-lands/${record.id}`)}
             >
               View
             </Button>
@@ -408,17 +408,6 @@ const AvailableLand = () => {
           >
             Available Land Properties
           </Title>
-          <Button
-            type="primary"
-            icon={<FileOutlined />}
-            style={{
-              backgroundColor: colors.primary,
-              borderColor: colors.primary,
-            }}
-            onClick={() => navigate("/lands")}
-          >
-            View All Lands
-          </Button>
         </div>
 
         <Card bodyStyle={{ padding: isMobile ? "12px" : "24px" }}>

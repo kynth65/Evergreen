@@ -99,7 +99,7 @@ const ClientLandView = () => {
           <Button
             type="primary"
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/client/available-land")}
+            onClick={() => navigate("/client/available-lands")}
             style={{
               backgroundColor: colors.primary,
               borderColor: colors.primary,
@@ -218,7 +218,7 @@ const ClientLandView = () => {
           <Space>
             <Button
               type="primary"
-              onClick={() => navigate("/client/available-land")}
+              onClick={() => navigate("/client/available-lands")}
               style={{
                 backgroundColor: colors.primary,
                 borderColor: colors.primary,

@@ -369,11 +369,11 @@ const router = createBrowserRouter([
         element: <UserClientPaymentList />,
       },
       {
-        path: "available-land",
+        path: "available-lands",
         element: <ClientAvailableLand />,
       },
       {
-        path: "available-land/:id",
+        path: "available-lands/:id",
         element: <ClientLandView />,
       },
       {
