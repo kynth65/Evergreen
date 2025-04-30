@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Search,
-  RefreshCw,
   Eye,
-  CreditCard,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -12,7 +10,6 @@ import {
   ChevronDown,
   Filter,
   Calendar,
-  DollarSign,
   Calendar as CalendarIcon,
   ArrowLeft,
 } from "lucide-react";
@@ -30,7 +27,6 @@ export default function UserClientPaymentList() {
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [filterPeriod, setFilterPeriod] = useState("all");
   const [selectedPayment, setSelectedPayment] = useState(null);
-  const [paymentTransactions, setPaymentTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const { user } = useStateContext();
 
@@ -65,6 +61,26 @@ export default function UserClientPaymentList() {
   const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
+  // Add styles for row click animation
+  useEffect(() => {
+    const styleEl = document.createElement("style");
+    styleEl.textContent = `
+      .row-clickable {
+        transition: transform 0.15s ease, background-color 0.15s ease;
+      }
+      
+      .row-clickable:active {
+        transform: scale(0.99);
+        background-color: rgba(209, 213, 219, 0.5) !important;
+      }
+    `;
+    document.head.appendChild(styleEl);
+
+    return () => {
+      document.head.removeChild(styleEl);
+    };
+  }, []);
+
   // Update screen width on window resize
   useEffect(() => {
     const handleResize = () => {
@@ -83,9 +99,10 @@ export default function UserClientPaymentList() {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    // Add capture phase to ensure this runs before other click handlers
+    document.addEventListener("mousedown", handleClickOutside, true);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside, true);
     };
   }, [openDropdown]);
 
@@ -116,7 +133,6 @@ export default function UserClientPaymentList() {
       const response = await axiosClient.get(
         `/client-payments/${paymentId}/transactions`
       );
-      setPaymentTransactions(response.data);
       return response.data;
     } catch (err) {
       console.error("Error fetching payment transactions:", err);
@@ -142,11 +158,6 @@ export default function UserClientPaymentList() {
       month: "short",
       day: "numeric",
     });
-  };
-
-  const handleRefresh = () => {
-    fetchPayments();
-    setSelectedPayment(null);
   };
 
   const viewPaymentDetails = async (payment) => {
@@ -313,16 +324,48 @@ export default function UserClientPaymentList() {
 
   // Render action buttons or dropdown based on screen size
   const renderActions = (payment) => {
+    // Display buttons directly on larger screens
+    if (!isMobile && !isSmall) {
+      return (
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center"
+            onClick={(e) => {
+              e.stopPropagation();
+              viewPaymentDetails(payment);
+            }}
+          >
+            <Eye size={14} className="mr-1" />
+            <span>View</span>
+          </button>
+          {payment.payment_status === "COMPLETED" && (
+            <button
+              className="px-3 py-1.5 text-xs rounded-md bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors flex items-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log("Download receipt", payment);
+              }}
+            >
+              <Download size={14} className="mr-1" />
+              <span>Receipt</span>
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    // Use dropdown for mobile/small screens
     return (
       <div className={`relative dropdown-${payment.id}`}>
         <button
           className="p-1 rounded-full hover:bg-gray-200 focus:outline-none cursor-pointer"
           onClick={(e) => toggleDropdown(payment.id, e)}
+          aria-label="Open actions menu"
         >
           <MoreVertical size={20} />
         </button>
         {openDropdown === payment.id && (
-          <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden z-10 w-40">
+          <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-lg overflow-hidden z-50 w-40">
             <button
               className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center cursor-pointer"
               onClick={(e) => {
@@ -571,7 +614,7 @@ export default function UserClientPaymentList() {
             <div className="relative w-full sm:w-auto">
               <input
                 type="text"
-                placeholder="Search payments..."
+                placeholder="Search properties..."
                 className="pl-10 pr-4 py-2 w-full border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -596,14 +639,6 @@ export default function UserClientPaymentList() {
               </select>
               <Filter className="absolute right-3 top-2.5 text-gray-400 w-4 h-4 pointer-events-none" />
             </div>
-
-            <button
-              className="flex items-center justify-center px-3 py-2 rounded-lg border border-gray-300 transition-colors bg-white cursor-pointer"
-              onClick={handleRefresh}
-            >
-              <RefreshCw size={18} />
-              <span className="ml-1 hidden sm:inline">Refresh</span>
-            </button>
           </div>
         </div>
 
@@ -674,10 +709,20 @@ export default function UserClientPaymentList() {
                     return (
                       <React.Fragment key={payment.id}>
                         <tr
-                          className={`hover:bg-gray-50 cursor-pointer ${
+                          className={`row-clickable hover:bg-gray-50 cursor-pointer ${
                             isPastDue(payment) ? "bg-red-50" : ""
                           }`}
-                          onClick={() => viewPaymentDetails(payment)}
+                          onClick={(e) => {
+                            // Add a brief visual feedback when clicking
+                            const row = e.currentTarget;
+                            row.style.backgroundColor =
+                              "rgba(209, 213, 219, 0.5)";
+
+                            // Use setTimeout to allow the visual feedback to be visible before navigation
+                            setTimeout(() => {
+                              viewPaymentDetails(payment);
+                            }, 150);
+                          }}
                         >
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="flex items-center">
