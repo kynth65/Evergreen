@@ -445,7 +445,7 @@ const ClientDashboard = () => {
                 </p>
                 <Link
                   to="/client/available-lands"
-                  className="text-xs text-emerald-600 hover:underline"
+                  className="text-xs text-emerald-600 hover:underline cursor-pointer"
                 >
                   View all properties
                 </Link>
@@ -576,7 +576,7 @@ const ClientDashboard = () => {
               <h2 className="text-lg font-semibold">Available Properties</h2>
               <Link
                 to="/client/available-lands"
-                className="text-sm text-emerald-600 hover:underline"
+                className="text-sm text-emerald-600 cursor-pointer hover:underline"
               >
                 View All
               </Link>
@@ -631,7 +631,11 @@ const ClientDashboard = () => {
                           </tr>
                         ))
                     : availableProperties.map((property) => (
-                        <tr key={property.id} className="hover:bg-gray-50">
+                        <tr
+                          key={property.id}
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => showPropertyDetails(property)}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
                               {property.name}
@@ -656,10 +660,13 @@ const ClientDashboard = () => {
                               ₱{property.price.toFixed(2)}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <td
+                            className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <button
                               onClick={() => showPropertyDetails(property)}
-                              className="text-emerald-600 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-md"
+                              className="text-emerald-600 cursor-pointer hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-md"
                             >
                               View
                             </button>
@@ -708,8 +715,12 @@ const ClientDashboard = () => {
               ) : (
                 <ul className="divide-y divide-gray-200">
                   {cheapestProperties.map((property) => (
-                    <li key={property.id} className="py-3">
-                      <div className="flex justify-between">
+                    <li
+                      key={property.id}
+                      className="py-3 cursor-pointer hover:bg-gray-50"
+                      onClick={() => showPropertyDetails(property)}
+                    >
+                      <div className="flex justify-between items-center">
                         <div className="flex-1">
                           <h3 className="text-sm font-medium text-gray-900">
                             {property.name}
@@ -729,10 +740,13 @@ const ClientDashboard = () => {
                           </p>
                         </div>
                         <button
-                          onClick={() => showPropertyDetails(property)}
-                          className="text-emerald-600 hover:text-emerald-900 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            showPropertyDetails(property);
+                          }}
+                          className="text-emerald-600 cursor-pointer hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-md text-xs"
                         >
-                          <Eye className="w-4 h-4" />
+                          View
                         </button>
                       </div>
                     </li>
@@ -757,9 +771,9 @@ const ClientDashboard = () => {
           role="dialog"
           aria-modal="true"
         >
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-4 text-center sm:block sm:p-0">
             <div
-              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              className="fixed inset-0 backdrop-blur-sm bg-transparent bg-opacity-40 transition-opacity"
               aria-hidden="true"
               onClick={() => setPropertyDetailsVisible(false)}
             ></div>
@@ -769,7 +783,7 @@ const ClientDashboard = () => {
             >
               &#8203;
             </span>
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div className="inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:max-w-lg sm:w-full">
               <div className="absolute top-0 right-0 pt-4 pr-4">
                 <button
                   type="button"
@@ -789,9 +803,6 @@ const ClientDashboard = () => {
                       {selectedProperty.name}
                     </h3>
                     <div className="mt-4">
-                      <div className="mb-4 bg-gray-100 h-40 flex items-center justify-center rounded-lg">
-                        <Home className="w-16 h-16 text-gray-400" />
-                      </div>
                       <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
                           <p className="text-sm text-gray-500">Location</p>
@@ -807,21 +818,15 @@ const ClientDashboard = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-500">Type</p>
+                          <p className="text-sm text-gray-500">Price per sqm</p>
                           <p className="text-sm font-medium">
-                            {selectedProperty.type}
+                            ₱{selectedProperty.price_per_sqm.toFixed(2)}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">Price</p>
-                          <p className="text-sm font-medium text-emerald-600">
+                          <p className="text-base font-bold text-emerald-600 bg-emerald-50 p-2 rounded-md text-center">
                             ₱{selectedProperty.price.toFixed(2)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Price per sqm</p>
-                          <p className="text-sm font-medium">
-                            ₱{selectedProperty.price_per_sqm.toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -842,14 +847,14 @@ const ClientDashboard = () => {
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-emerald-600 text-base font-medium text-white hover:bg-emerald-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
+                  className="w-full inline-flex justify-center cursor-pointer rounded-md border border-transparent shadow-sm px-4 py-2 bg-emerald-600 text-base font-medium text-white hover:bg-emerald-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
                   onClick={handleInquireClick}
                 >
                   Inquire Now
                 </button>
                 <button
                   type="button"
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  className="mt-3 w-full inline-flex justify-center cursor-pointer rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                   onClick={() => setPropertyDetailsVisible(false)}
                 >
                   Close
