@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Search,
-  Eye,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -340,7 +339,7 @@ export default function UserClientPaymentList() {
         );
       case "pending":
         return (
-          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+          <span className="px-2 py-1 flex items-center text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
             <Clock className="w-3 h-3 mr-1" /> Pending
           </span>
         );
@@ -372,13 +371,12 @@ export default function UserClientPaymentList() {
       return (
         <div className="flex items-center justify-end space-x-2">
           <button
-            className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center"
+            className="px-3 py-1.5 text-xs cursor-pointer rounded-md bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors flex items-center"
             onClick={(e) => {
               e.stopPropagation();
               viewPaymentDetails(payment);
             }}
           >
-            <Eye size={14} className="mr-1" />
             <span>View</span>
           </button>
           {payment.payment_status === "COMPLETED" && (
@@ -423,13 +421,12 @@ export default function UserClientPaymentList() {
             }}
           >
             <button
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center cursor-pointer"
+              className="w-full px-4 py-2 text-left rounded-lg hover:bg-emerald-50 text-emerald-600 flex items-center cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
                 viewPaymentDetails(payment);
               }}
             >
-              <Eye size={16} className="mr-2" />
               <span>View Details</span>
             </button>
             {payment.payment_status === "COMPLETED" && (
@@ -627,7 +624,7 @@ export default function UserClientPaymentList() {
         <div className="mb-4">
           <button
             onClick={backToList}
-            className="flex items-center text-blue-600 hover:text-blue-800"
+            className="flex items-center text-emerald-600 hover:text-emerald-800"
           >
             <ArrowLeft size={16} className="mr-1" />
             <span>Back to Payment List</span>

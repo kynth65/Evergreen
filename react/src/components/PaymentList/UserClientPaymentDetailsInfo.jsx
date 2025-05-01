@@ -159,7 +159,7 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={8}>
             <Statistic
-              title="Total Amount"
+              title={<span className="text-dark">Total Amount</span>}
               value={roundUpToWhole(totalAmount)}
               precision={0}
               formatter={(value) => `₱${formatCurrency(value)}`}
@@ -167,7 +167,7 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
           </Col>
           <Col xs={24} sm={8}>
             <Statistic
-              title="Total Paid"
+              title={<span className="text-dark">Total Paid</span>}
               value={roundUpToWhole(paidAmount)}
               precision={0}
               valueStyle={{ color: "#3f8600" }}
@@ -176,7 +176,7 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
           </Col>
           <Col xs={24} sm={8}>
             <Statistic
-              title="Remaining Balance"
+              title={<span className="text-dark">Remaining Balance</span>}
               value={roundUpToWhole(remainingAmount)}
               precision={0}
               valueStyle={{
@@ -188,9 +188,15 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
           <Col xs={24}>
             <Divider style={{ margin: "8px 0 16px" }} />
             <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Descriptions column={{ xs: 1, sm: 1 }} size="small">
-                  <Descriptions.Item label="Payment Type">
+              <Col xs={24}>
+                <Descriptions
+                  column={{ xs: 1, sm: 2, md: 4 }}
+                  size="small"
+                  className="text-dark"
+                >
+                  <Descriptions.Item
+                    label={<span className="text-dark">Payment Type</span>}
+                  >
                     <Tag
                       color={
                         payment.payment_type === "spot_cash" ? "green" : "blue"
@@ -201,14 +207,20 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
                         : "Installment"}
                     </Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Start Date">
+                  <Descriptions.Item
+                    label={<span className="text-dark">Start Date</span>}
+                  >
                     {payment.start_date
                       ? dayjs(payment.start_date).format("MMMM D, YYYY")
                       : "N/A"}
                   </Descriptions.Item>
                   {payment.payment_type !== "spot_cash" && (
                     <>
-                      <Descriptions.Item label="Installment Period">
+                      <Descriptions.Item
+                        label={
+                          <span className="text-dark">Installment Period</span>
+                        }
+                      >
                         {payment.installment_years}{" "}
                         {payment.installment_years > 1 ? "years" : "year"} (
                         {payment.installment_years * 12} months)
@@ -224,7 +236,11 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
                         // Round up the monthly payment
                         const roundedMonthly = roundUpToWhole(monthly);
                         return (
-                          <Descriptions.Item label="Monthly Payment">
+                          <Descriptions.Item
+                            label={
+                              <span className="text-dark">Monthly Payment</span>
+                            }
+                          >
                             ₱{formatCurrency(roundedMonthly)}
                           </Descriptions.Item>
                         );
@@ -233,64 +249,70 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
                   )}
                 </Descriptions>
               </Col>
-              <Col xs={24} md={12}>
-                {payment.payment_type !== "spot_cash" && (
-                  <>
-                    <div style={{ marginBottom: 8 }}>
-                      <Text strong>Payment Progress</Text>
-                    </div>
-                    <Progress
-                      percent={progress.percent}
-                      status={
-                        progress.percent === 100
-                          ? "success"
-                          : paymentStatus?.status === "LATE" ||
-                            paymentStatus?.status === "SUPER LATE"
-                          ? "exception"
-                          : "active"
-                      }
-                      strokeColor={
-                        progress.percent < 30
-                          ? "#f5222d"
-                          : progress.percent < 70
-                          ? "#faad14"
-                          : "#52c41a"
-                      }
-                    />
-                    <div style={{ marginTop: 8 }}>
-                      <Text>
-                        {progress.completed} of {progress.total} payments
-                        completed ({progress.percent}%)
-                      </Text>
-                    </div>
-
-                    {/* Show next payment due date */}
-                    {payment.next_payment_date &&
-                      paymentStatus?.status !== "COMPLETED" && (
-                        <div style={{ marginTop: 16 }}>
-                          <Text strong>Next Payment Due:</Text>{" "}
-                          <Text
-                            type={
-                              paymentStatus?.status === "LATE" ||
-                              paymentStatus?.status === "SUPER LATE"
-                                ? "danger"
-                                : undefined
-                            }
-                          >
-                            {dayjs(payment.next_payment_date).format(
-                              "MMMM D, YYYY"
-                            )}
-                            {(paymentStatus?.status === "LATE" ||
-                              paymentStatus?.status === "SUPER LATE") && (
-                              <Text type="danger"> (Overdue)</Text>
-                            )}
-                          </Text>
-                        </div>
-                      )}
-                  </>
-                )}
-              </Col>
             </Row>
+
+            {/* Payment Progress - Moved Below */}
+            {payment.payment_type !== "spot_cash" && (
+              <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                <Col xs={24}>
+                  <div style={{ marginBottom: 8 }}>
+                    <Text strong className="text-dark" style={{ fontSize: 16 }}>
+                      Payment Progress
+                    </Text>
+                  </div>
+                  <Progress
+                    percent={progress.percent}
+                    status={
+                      progress.percent === 100
+                        ? "success"
+                        : paymentStatus?.status === "LATE" ||
+                          paymentStatus?.status === "SUPER LATE"
+                        ? "exception"
+                        : "active"
+                    }
+                    strokeColor={
+                      progress.percent < 30
+                        ? "#f5222d"
+                        : progress.percent < 70
+                        ? "#faad14"
+                        : "#52c41a"
+                    }
+                  />
+                  <div style={{ marginTop: 8 }}>
+                    <Text className="text-dark">
+                      {progress.completed} of {progress.total} payments
+                      completed ({progress.percent}%)
+                    </Text>
+                  </div>
+
+                  {/* Show next payment due date */}
+                  {payment.next_payment_date &&
+                    paymentStatus?.status !== "COMPLETED" && (
+                      <div style={{ marginTop: 16 }}>
+                        <Text strong className="text-dark">
+                          Next Payment Due:
+                        </Text>{" "}
+                        <Text
+                          className={
+                            paymentStatus?.status === "LATE" ||
+                            paymentStatus?.status === "SUPER LATE"
+                              ? "text-danger"
+                              : "text-dark"
+                          }
+                        >
+                          {dayjs(payment.next_payment_date).format(
+                            "MMMM D, YYYY"
+                          )}
+                          {(paymentStatus?.status === "LATE" ||
+                            paymentStatus?.status === "SUPER LATE") && (
+                            <Text className="text-danger"> (Overdue)</Text>
+                          )}
+                        </Text>
+                      </div>
+                    )}
+                </Col>
+              </Row>
+            )}
           </Col>
         </Row>
       </Card>
@@ -315,25 +337,38 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
                   column={{ xs: 1, sm: 2, md: 3 }}
                   bordered
                   size="small"
+                  className="text-dark"
                 >
-                  <Descriptions.Item label="Property Name">
+                  <Descriptions.Item
+                    label={<span className="text-dark">Property Name</span>}
+                  >
                     {lot.property_name || "—"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Block & Lot">
+                  <Descriptions.Item
+                    label={<span className="text-dark">Block & Lot</span>}
+                  >
                     {lot.block_lot_no || "—"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Lot Area">
+                  <Descriptions.Item
+                    label={<span className="text-dark">Lot Area</span>}
+                  >
                     {lot.lot_area ? `${lot.lot_area} sqm` : "—"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Subdivision">
+                  <Descriptions.Item
+                    label={<span className="text-dark">Subdivision</span>}
+                  >
                     {lot.subdivision || "—"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Status">
+                  <Descriptions.Item
+                    label={<span className="text-dark">Status</span>}
+                  >
                     <Tag color={lot.status === "SOLD" ? "green" : "blue"}>
                       {lot.status || "—"}
                     </Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Contract Price">
+                  <Descriptions.Item
+                    label={<span className="text-dark">Contract Price</span>}
+                  >
                     ₱{formatCurrency(lot.total_contract_price || 0)}
                   </Descriptions.Item>
                 </Descriptions>
@@ -423,6 +458,28 @@ const UserClientPaymentDetailsInfo = ({ payment, paymentStatus }) => {
 
       {/* Add responsive styles */}
       <style jsx global>{`
+        .text-dark {
+          color: rgba(0, 0, 0, 0.85) !important;
+        }
+
+        .text-danger {
+          color: #cf1322 !important;
+        }
+
+        .ant-descriptions-item-label {
+          color: rgba(0, 0, 0, 0.85) !important;
+          font-weight: 500;
+        }
+
+        .ant-descriptions-item-content {
+          color: rgba(0, 0, 0, 0.85) !important;
+        }
+
+        .ant-statistic-title {
+          color: rgba(0, 0, 0, 0.85) !important;
+          font-weight: 500;
+        }
+
         .table-responsive {
           overflow-x: auto;
           -webkit-overflow-scrolling: touch;
