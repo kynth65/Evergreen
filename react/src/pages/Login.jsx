@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axiosClient from "../axios.client";
 import { useStateContext } from "../context/ContextProvider";
 import Header from "../components/header";
-import { Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
 import EvergreenLogo from "../assets/Logo/evergreen logo.png";
 
 export default function Login() {
@@ -15,7 +15,9 @@ export default function Login() {
   const { setUser, setToken } = useStateContext();
 
   const handleSubmit = async (e) => {
+    // This is critical to prevent the default form submission
     e.preventDefault();
+
     setIsLoading(true);
     setError("");
 
@@ -57,8 +59,14 @@ export default function Login() {
       }
     } catch (err) {
       console.error("Login error:", err);
+      // Set the error message
       const message = err.response?.data?.message || "Invalid credentials";
       setError(message);
+
+      // Clear only the password field
+      if (passwordRef.current) {
+        passwordRef.current.value = "";
+      }
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +115,19 @@ export default function Login() {
               {error && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
                   <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
-                  <p className="text-sm text-red-600">{error}</p>
+                  <div className="text-sm text-red-600">
+                    <p>{error}</p>
+                    {error.includes("password") && (
+                      <p className="mt-1">
+                        <Link
+                          to="/forgot-password"
+                          className="font-medium text-red-600 hover:text-red-500 underline"
+                        >
+                          Forgot Password?
+                        </Link>
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -220,8 +240,6 @@ export default function Login() {
                   )}
                 </button>
               </form>
-
-              {/* Removed the signup link section */}
             </div>
           </div>
 

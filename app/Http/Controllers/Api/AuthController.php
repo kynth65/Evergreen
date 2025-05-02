@@ -33,9 +33,20 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $data = $request->validated();
+        
+        // Check if the email exists first
+        $user = User::where('email', $data['email'])->first();
+        
+        if (!$user) {
+            return response()->json([
+                'message' => 'Invalid email address'
+            ], 401);
+        }
+        
+        // Now check the credentials
         if (!Auth::attempt($data)) {
             return response()->json([
-                'message' => 'Invalid credentials'
+                'message' => 'The password you\'ve entered is incorrect.'
             ], 401);
         }
 
