@@ -16,6 +16,24 @@ use Carbon\Carbon;
 class ClientPaymentController extends Controller
 {
     /**
+     * Calculate next payment due date based on start date and completed payments
+     * 
+     * @param string $startDate
+     * @param int $completedPayments
+     * @return string|null
+     */
+    private function calculateNextPaymentDate($startDate, $completedPayments)
+    {
+        if (!$startDate) {
+            return null;
+        }
+        
+        // Parse start date and add completed payments as months
+        $startDateCarbon = Carbon::parse($startDate);
+        return $startDateCarbon->copy()->addMonths($completedPayments)->format('Y-m-d');
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -93,7 +111,6 @@ class ClientPaymentController extends Controller
             'payment_type' => 'required|in:spot_cash,installment',
             'installment_years' => 'required|integer|min:1|max:6',
             'start_date' => 'required|date',
-            'next_payment_date' => 'nullable|date',
             'completed_payments' => 'required|integer|min:0',
             'payment_notes' => 'nullable|string',
             'lots' => 'required|array|min:1',
@@ -117,10 +134,17 @@ class ClientPaymentController extends Controller
             $clientPayment->payment_type = $request->payment_type;
             $clientPayment->installment_years = $request->installment_years;
             $clientPayment->start_date = $request->start_date;
-            $clientPayment->next_payment_date = $request->next_payment_date;
             $clientPayment->completed_payments = $request->completed_payments;
             $clientPayment->payment_notes = $request->payment_notes;
             $clientPayment->payment_status = $request->payment_type === 'spot_cash' ? 'COMPLETED' : 'ONGOING';
+            
+            // Calculate next payment date based on start date and completed payments
+            if ($request->payment_type === 'installment' && $request->payment_status !== 'COMPLETED') {
+                $clientPayment->next_payment_date = $this->calculateNextPaymentDate(
+                    $request->start_date,
+                    $request->completed_payments
+                );
+            }
             
             // Associate with user if provided
             if ($request->has('user_id')) {
@@ -249,7 +273,6 @@ class ClientPaymentController extends Controller
             'contact_number' => 'sometimes|required|string|max:20',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
-            'next_payment_date' => 'nullable|date',
             'completed_payments' => 'sometimes|required|integer|min:0',
             'payment_notes' => 'nullable|string',
             'user_id' => 'nullable|exists:users,id',
@@ -267,7 +290,6 @@ class ClientPaymentController extends Controller
                 'contact_number',
                 'email',
                 'address',
-                'next_payment_date',
                 'completed_payments',
                 'payment_notes',
                 'user_id',
@@ -279,6 +301,13 @@ class ClientPaymentController extends Controller
                 if ($request->completed_payments >= $totalPayments) {
                     $clientPayment->payment_status = 'COMPLETED';
                     $clientPayment->completed_payments = $totalPayments;
+                    $clientPayment->next_payment_date = null; // No more payments needed
+                } else {
+                    // Calculate next payment date based on start date and completed payments
+                    $clientPayment->next_payment_date = $this->calculateNextPaymentDate(
+                        $clientPayment->start_date,
+                        $request->completed_payments ?? $clientPayment->completed_payments
+                    );
                 }
             }
             
@@ -423,14 +452,11 @@ class ClientPaymentController extends Controller
                 $clientPayment->payment_status = 'COMPLETED';
                 $clientPayment->next_payment_date = null;
             } else {
-                // Set next payment date
-                $nextSchedule = PaymentSchedule::where('client_payment_id', $clientPayment->id)
-                    ->where('payment_number', $nextPaymentNumber + 1)
-                    ->first();
-                    
-                if ($nextSchedule) {
-                    $clientPayment->next_payment_date = $nextSchedule->due_date;
-                }
+                // Calculate next payment date based on start date and updated completed payments
+                $clientPayment->next_payment_date = $this->calculateNextPaymentDate(
+                    $clientPayment->start_date,
+                    $nextPaymentNumber
+                );
             }
             
             $clientPayment->save();

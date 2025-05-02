@@ -36,6 +36,32 @@ const PaymentDetailsInfo = ({ payment, paymentStatus }) => {
   const { totalAmount, paidAmount, remainingAmount } =
     calculateTotalAmounts(payment);
 
+  // Process next payment date information to display in a user-friendly format
+  const getNextPaymentInfo = () => {
+    // Return null if payment is completed or spot cash or no next_payment_date
+    if (
+      payment.payment_status === "COMPLETED" ||
+      payment.payment_type === "spot_cash" ||
+      !payment.next_payment_date
+    ) {
+      return null;
+    }
+
+    const nextPaymentDue = dayjs(payment.next_payment_date);
+    const startDate = dayjs(payment.start_date);
+    const nextPaymentNumber = payment.completed_payments + 1;
+    const isOverdue = dayjs().isAfter(nextPaymentDue);
+
+    return {
+      date: nextPaymentDue,
+      paymentNumber: nextPaymentNumber,
+      startMonth: startDate.format("MMMM YYYY"),
+      isOverdue: isOverdue,
+    };
+  };
+
+  const nextPaymentInfo = getNextPaymentInfo();
+
   // Transaction columns
   const transactionColumns = [
     {
@@ -262,27 +288,34 @@ const PaymentDetailsInfo = ({ payment, paymentStatus }) => {
                       </Text>
                     </div>
 
-                    {/* Show next payment due date */}
-                    {payment.next_payment_date &&
+                    {/* Show next payment due date using the database provided next_payment_date */}
+                    {nextPaymentInfo &&
                       paymentStatus?.status !== "COMPLETED" && (
                         <div style={{ marginTop: 16 }}>
                           <Text strong>Next Payment Due:</Text>{" "}
-                          <Text
-                            type={
-                              paymentStatus?.status === "LATE" ||
-                              paymentStatus?.status === "SUPER LATE"
-                                ? "danger"
-                                : undefined
-                            }
-                          >
-                            {dayjs(payment.next_payment_date).format(
-                              "MMMM D, YYYY"
-                            )}
-                            {(paymentStatus?.status === "LATE" ||
-                              paymentStatus?.status === "SUPER LATE") && (
-                              <Text type="danger"> (Overdue)</Text>
-                            )}
-                          </Text>
+                          <div>
+                            <Text
+                              type={
+                                nextPaymentInfo.isOverdue ? "danger" : undefined
+                              }
+                            >
+                              {nextPaymentInfo.date.format("MMMM D, YYYY")}
+                            </Text>
+                          </div>
+                          <div>
+                            <Text
+                              type={
+                                nextPaymentInfo.isOverdue
+                                  ? "danger"
+                                  : "secondary"
+                              }
+                              style={{ fontSize: "0.9em" }}
+                            >
+                              Payment #{nextPaymentInfo.paymentNumber} (from{" "}
+                              {nextPaymentInfo.startMonth})
+                              {nextPaymentInfo.isOverdue && " (Overdue)"}
+                            </Text>
+                          </div>
                         </div>
                       )}
                   </>

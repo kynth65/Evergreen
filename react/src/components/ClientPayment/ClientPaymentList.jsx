@@ -144,15 +144,21 @@ const ClientPaymentList = () => {
         payment.payment_type !== filterPaymentType
       )
         return false;
-      if (dateRange && dateRange[0] && dateRange[1] && payment.start_date) {
+      if (dateRange && dateRange[0] && dateRange[1]) {
         const startDate = dateRange[0].startOf("day");
         const endDate = dateRange[1].endOf("day");
-        const paymentStartDate = dayjs(payment.start_date);
-        if (
-          paymentStartDate.isValid() &&
-          !paymentStartDate.isBetween(startDate, endDate, "day", "[]")
-        )
-          return false;
+
+        // Use next_payment_date if available, otherwise fall back to start_date
+        const dateToCheck = payment.next_payment_date || payment.start_date;
+
+        if (dateToCheck) {
+          const paymentDate = dayjs(dateToCheck);
+          if (
+            paymentDate.isValid() &&
+            !paymentDate.isBetween(startDate, endDate, "day", "[]")
+          )
+            return false;
+        }
       }
       if (searchText) {
         const searchLower = searchText.toLowerCase();
@@ -320,18 +326,59 @@ const ClientPaymentList = () => {
         sortDirections: ["ascend", "descend"],
       },
       {
-        title: "Start Date",
-        dataIndex: "start_date",
-        key: "start_date",
-        responsive: ["lg"], // Hide below large breakpoint
-        render: (date) =>
-          date ? (
-            dayjs(date).format("MMM D, YYYY")
-          ) : (
-            <Text type="secondary">N/A</Text>
-          ),
-        sorter: (a, b) => dayjs(a.start_date).diff(dayjs(b.start_date)),
-        sortDirections: ["descend", "ascend"],
+        title: "Due Date", // Changed from "Start Date" to "Due Date"
+        dataIndex: "next_payment_date", // Changed from "start_date" to "next_payment_date"
+        key: "due_date", // Changed key name to match new purpose
+        responsive: ["lg"], // Keep the same responsive behavior
+        render: (date, record) => {
+          // For spot cash payments or completed payments, show N/A
+          if (
+            record.payment_type === "spot_cash" ||
+            record.payment_status === "COMPLETED"
+          ) {
+            return <Text type="secondary">N/A</Text>;
+          }
+
+          // If we have a next payment date
+          if (date) {
+            const dueDate = dayjs(date);
+            const isOverdue = dayjs().isAfter(dueDate);
+
+            // Show different styling for overdue payments
+            return (
+              <div>
+                <Text
+                  type={isOverdue ? "danger" : undefined}
+                  strong={isOverdue}
+                >
+                  {dueDate.format("MMM D, YYYY")}
+                </Text>
+                {isOverdue && (
+                  <div>
+                    <Tag color="error" style={{ marginTop: 4 }}>
+                      Overdue
+                    </Tag>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return <Text type="secondary">N/A</Text>;
+        },
+        sorter: (a, b) => {
+          // Updated sorter to work with next_payment_date
+          const dateA = a.next_payment_date ? dayjs(a.next_payment_date) : null;
+          const dateB = b.next_payment_date ? dayjs(b.next_payment_date) : null;
+
+          // Handle cases when one or both dates are null
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1; // Null dates go last
+          if (!dateB) return -1;
+
+          return dateA.diff(dateB);
+        },
+        sortDirections: ["ascend", "descend"],
       },
     ];
 
@@ -578,7 +625,7 @@ const ClientPaymentList = () => {
             <RangePicker
               style={{ width: "100%" }}
               onChange={setDateRange}
-              placeholder={["Start Date From", "Start Date To"]}
+              placeholder={["Due Date From", "Due Date To"]}
               value={dateRange}
             />
           </Col>
