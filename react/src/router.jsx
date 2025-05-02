@@ -3,6 +3,9 @@ import GuestLayout from "./layouts/GuestLayouts";
 import Homepage from "./pages/Homepage";
 import ContactUs from "./pages/ContactUs";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyCode from "./pages/VerifyCode";
+import ResetPassword from "./pages/ResetPassword";
 import About from "./pages/About";
 import AgentLayout from "./layouts/AgentLayout";
 import AgentDashboard from "./pages/Agent/AgentDashboard";
@@ -55,6 +58,18 @@ const router = createBrowserRouter([
       {
         path: "/login",
         element: <Login />,
+      },
+      {
+        path: "/forgot-password",
+        element: <ForgotPassword />,
+      },
+      {
+        path: "/verify-code",
+        element: <VerifyCode />,
+      },
+      {
+        path: "/reset-password",
+        element: <ResetPassword />,
       },
       {
         path: "/about",

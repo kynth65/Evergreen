@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axiosClient from "../axios.client";
 import { useStateContext } from "../context/ContextProvider";
 import Header from "../components/header";
@@ -172,14 +172,14 @@ export default function Login() {
                     </label>
                   </div>
 
-                  {/* <div className="text-sm">
-                    <a
-                      href="#"
+                  <div className="text-sm">
+                    <Link
+                      to="/forgot-password"
                       className="font-medium text-green-600 hover:text-green-500"
                     >
                       Forgot password?
-                    </a>
-                  </div> */}
+                    </Link>
+                  </div>
                 </div>
 
                 <button

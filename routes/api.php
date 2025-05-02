@@ -12,6 +12,9 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ClientPaymentController;
+use App\Http\Controllers\PasswordResetController;
+
+
 
 
 Route::get('/user', function (Request $request) {
@@ -32,8 +35,12 @@ Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
+Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+Route::post('/verify-code', [PasswordResetController::class, 'verifyCode']);
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+
 //Routes for Notifications
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
