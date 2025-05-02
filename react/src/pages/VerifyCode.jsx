@@ -1,19 +1,48 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axiosClient from "../axios.client";
-import { Mail, Key, ArrowLeft, AlertCircle } from "lucide-react";
+import { Mail, Key, ArrowLeft, AlertCircle, RefreshCw } from "lucide-react";
 import EvergreenLogo from "../assets/Logo/evergreen logo.png";
 import Header from "../components/header";
 
 const VerifyCode = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     email: "",
     code: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [message, setMessage] = useState("");
+  const [resendMessage, setResendMessage] = useState("");
   const [error, setError] = useState("");
   const [isVerified, setIsVerified] = useState(false);
+
+  // If email was passed from ForgotPassword component
+  useEffect(() => {
+    if (location.state?.email) {
+      setFormData((prev) => ({
+        ...prev,
+        email: location.state.email,
+      }));
+    }
+  }, [location]);
+
+  // Auto-redirect after successful verification
+  useEffect(() => {
+    if (isVerified) {
+      const timer = setTimeout(() => {
+        navigate("/reset-password", {
+          state: {
+            email: formData.email,
+            code: formData.code,
+          },
+        });
+      }, 2000); // 2 second delay to show the success message
+      return () => clearTimeout(timer);
+    }
+  }, [isVerified, navigate, formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,6 +66,35 @@ const VerifyCode = () => {
       );
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendCode = async (e) => {
+    e.preventDefault();
+
+    if (!formData.email) {
+      setError("Please enter your email address first");
+      return;
+    }
+
+    setIsResending(true);
+    setResendMessage("");
+    setError("");
+
+    try {
+      const response = await axiosClient.post("/forgot-password", {
+        email: formData.email,
+      });
+      setResendMessage(
+        response.data.message || "A new code has been sent to your email"
+      );
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to resend code. Please try again."
+      );
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -84,6 +142,26 @@ const VerifyCode = () => {
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
                   <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
                   <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              {resendMessage && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-green-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-sm text-green-700 ml-3">{resendMessage}</p>
                 </div>
               )}
 
@@ -183,12 +261,23 @@ const VerifyCode = () => {
                       <ArrowLeft className="h-4 w-4 mr-1" />
                       Back
                     </Link>
-                    <Link
-                      to="/forgot-password"
-                      className="text-sm font-medium text-green-600 hover:text-green-500"
+                    <button
+                      onClick={handleResendCode}
+                      disabled={isResending}
+                      className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500"
                     >
-                      Request new code
-                    </Link>
+                      {isResending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Request new code
+                        </>
+                      )}
+                    </button>
                   </div>
                 </form>
               ) : (
@@ -211,16 +300,12 @@ const VerifyCode = () => {
                       </div>
                       <div className="ml-3">
                         <p className="text-sm text-green-700">{message}</p>
+                        <p className="text-sm text-green-700 mt-1">
+                          Redirecting to reset password page...
+                        </p>
                       </div>
                     </div>
                   </div>
-
-                  <Link
-                    to="/reset-password"
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  >
-                    Proceed to Reset Password
-                  </Link>
 
                   <div className="mt-4 text-center">
                     <Link

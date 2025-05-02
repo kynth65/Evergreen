@@ -1,16 +1,27 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axiosClient from "../axios.client";
 import { Mail, ArrowLeft, AlertCircle } from "lucide-react";
 import EvergreenLogo from "../assets/Logo/evergreen logo.png";
 import Header from "../components/header";
 
 const ForgotPassword = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isCodeSent, setIsCodeSent] = useState(false);
+
+  // Auto-redirect after successful code sending
+  useEffect(() => {
+    if (isCodeSent) {
+      const timer = setTimeout(() => {
+        navigate("/verify-code", { state: { email } });
+      }, 2000); // 2 second delay to show the success message
+      return () => clearTimeout(timer);
+    }
+  }, [isCodeSent, navigate, email]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -171,16 +182,12 @@ const ForgotPassword = () => {
                       </div>
                       <div className="ml-3">
                         <p className="text-sm text-green-700">{message}</p>
+                        <p className="text-sm text-green-700 mt-1">
+                          Redirecting to verification page...
+                        </p>
                       </div>
                     </div>
                   </div>
-
-                  <Link
-                    to="/verify-code"
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  >
-                    Proceed to Verify Code
-                  </Link>
 
                   <div className="mt-4 text-center">
                     <Link
