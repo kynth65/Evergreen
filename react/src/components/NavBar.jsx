@@ -3,6 +3,7 @@ import { Bell, User, LogOut, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStateContext } from "../context/ContextProvider";
 import axiosClient from "../axios.client";
+import LogoutConfirmation from "../components/Confirmation/LogoutConfirmation"; // Import the LogoutConfirmation component
 
 export default function NavBar() {
   const { user, setToken, setUser: setContextUser } = useStateContext();
@@ -11,6 +12,7 @@ export default function NavBar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false); // State for logout confirmation
 
   // Fetch notifications on component mount and periodically
   useEffect(() => {
@@ -55,8 +57,14 @@ export default function NavBar() {
     }
   };
 
-  // Logout function
-  const handleLogout = async () => {
+  // Initiate logout - show confirmation dialog
+  const initiateLogout = () => {
+    setShowUserMenu(false); // Close the user menu
+    setShowLogoutConfirm(true); // Show the logout confirmation
+  };
+
+  // Confirm logout
+  const confirmLogout = async () => {
     try {
       await axiosClient.post("/logout");
     } catch (err) {
@@ -67,6 +75,11 @@ export default function NavBar() {
       setContextUser({});
       navigate("/login");
     }
+  };
+
+  // Cancel logout
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   // Close dropdowns when clicking outside
@@ -315,17 +328,11 @@ export default function NavBar() {
                     <User className="w-4 h-4 mr-3 text-gray-500" />
                     Profile
                   </Link>
-                  {/* <Link
-                    to="/settings"
-                    className="px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                  >
-                    <Settings className="w-4 h-4 mr-3 text-gray-500" />
-                    Settings
-                  </Link> */}
+
                   <hr className="my-1 border-gray-100" />
-                  {/* Changed from Link to button for logout */}
+                  {/* Changed to use initiateLogout to show the confirmation */}
                   <button
-                    onClick={handleLogout}
+                    onClick={initiateLogout}
                     className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center cursor-pointer transition-colors"
                   >
                     <LogOut className="w-4 h-4 mr-3" />
@@ -337,6 +344,13 @@ export default function NavBar() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Component */}
+      <LogoutConfirmation
+        isOpen={showLogoutConfirm}
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
     </div>
   );
 }

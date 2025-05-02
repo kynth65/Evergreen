@@ -2,12 +2,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../axios.client";
 import { useStateContext } from "../context/ContextProvider";
-import LogoutConfirmation from "../components/Confirmation/LogoutConfirmation";
 import PasswordChangeForm from "../components/Form/PasswordChangeForm"; // Import new component
 import {
   Mail,
   Calendar,
-  LogOut,
   Shield,
   UserCircle,
   Hash,
@@ -34,7 +32,6 @@ export default function Profile() {
 
   // Password change form states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [passwordFormError, setPasswordFormError] = useState(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -84,27 +81,6 @@ export default function Profile() {
         setLoading(false);
       }
     }
-  };
-
-  const initiateLogout = () => {
-    setShowLogoutConfirm(true);
-  };
-
-  const confirmLogout = async () => {
-    try {
-      await axiosClient.post("/logout");
-    } catch (err) {
-      console.error("Error during logout:", err);
-    } finally {
-      localStorage.removeItem("ACCESS_TOKEN");
-      setToken(null);
-      setContextUser({});
-      navigate("/login");
-    }
-  };
-
-  const cancelLogout = () => {
-    setShowLogoutConfirm(false);
   };
 
   // Open password change modal
@@ -257,13 +233,6 @@ export default function Profile() {
                     <Lock className="h-3.5 w-3.5 mr-1.5" />
                     Change Password
                   </button>
-                  <button
-                    onClick={initiateLogout}
-                    className="flex items-center px-3 py-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors shadow-sm text-sm cursor-pointer"
-                  >
-                    <LogOut className="h-3.5 w-3.5 mr-1.5" />
-                    Logout
-                  </button>
                 </div>
               </div>
             </div>
@@ -348,13 +317,6 @@ export default function Profile() {
         loading={passwordLoading}
         success={passwordSuccess}
         error={passwordFormError}
-      />
-
-      {/* Logout Confirmation Component */}
-      <LogoutConfirmation
-        isOpen={showLogoutConfirm}
-        onConfirm={confirmLogout}
-        onCancel={cancelLogout}
       />
     </div>
   );
