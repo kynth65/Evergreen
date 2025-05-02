@@ -812,6 +812,7 @@ const OCSCalculator = () => {
                       <option value="2">2 Years (24 months)</option>
                       <option value="3">3 Years (36 months)</option>
                       <option value="4">4 Years (48 months)</option>
+                      <option value="5">5 Years (60 months)</option>
                     </select>
                   </div>
                 )}
