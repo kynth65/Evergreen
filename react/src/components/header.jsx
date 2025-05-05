@@ -104,11 +104,11 @@ export default function Header() {
                 About
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link to="/lands" className="hover:text-gray-600 text-lg">
                 Land
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link to="/contact" className="hover:text-gray-600 text-lg">
                 Contact
