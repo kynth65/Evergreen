@@ -155,8 +155,8 @@ export default function Location() {
                 <p className="text-green-50/90 mb-4">
                   From SM Tungko, walk towards Petron gas station near Brigino
                   Hospital. Continue straight until you reach the first street
-                  on your left. Evergreen Farms is located in the white building
-                  on that corner.
+                  on your left. Evergreen Office is located in the white
+                  building on that corner.
                 </p>
                 <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-md font-medium transition-colors inline-flex items-center gap-2 shadow-lg backdrop-blur-sm bg-opacity-80 border border-green-500/30 hover:border-green-400/50">
                   <MapPin size={18} />
