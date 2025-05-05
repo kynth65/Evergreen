@@ -7,6 +7,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import VerifyCode from "./pages/VerifyCode";
 import ResetPassword from "./pages/ResetPassword";
 import About from "./pages/About";
+import SellYourLand from "./pages/SellYourLand";
 import AgentLayout from "./layouts/AgentLayout";
 import AgentDashboard from "./pages/Agent/AgentDashboard";
 import Profile from "./pages/Profile";
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
       {
         path: "/about",
         element: <About />,
+      },
+      {
+        path: "/sell-your-land",
+        element: <SellYourLand />,
       },
       {
         path: "/lands",
