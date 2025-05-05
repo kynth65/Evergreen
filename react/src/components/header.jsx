@@ -1,32 +1,58 @@
 import { Menu, X } from "lucide-react";
 import EvergreenLogo from "../assets/Evergreen Logo .png";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const location = useLocation();
 
+  // Detect if mobile and track scroll position
   useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
 
+    // Initial check
+    checkIfMobile();
+
+    // Add event listeners
+    window.addEventListener("resize", checkIfMobile);
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", checkIfMobile);
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
+
+  // Scroll to top when route changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <>
       {/* Invisible spacer div that matches header height */}
-      <div className="h-24"></div>{" "}
-      {/* This accounts for py-4 (2rem) + h-16 (4rem) */}
+      <div className="h-24"></div>
+
       <header
         className={`evergreen-header font-grotesk py-4 fixed w-full top-0 z-50 transition-all duration-300 ${
-          isScrolled ? "bg-white/70 backdrop-blur-md shadow-lg" : "bg-white/70"
+          isMobile
+            ? "bg-white shadow-lg"
+            : isScrolled
+            ? "bg-white/70 backdrop-blur-md shadow-lg"
+            : "bg-white/70"
         }`}
       >
-        <nav className="evergreen-nav max-w-7xl mx-auto flex justify-between items-center px-4">
+        <nav className="evergreen-nav max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link
             to="/"
@@ -43,6 +69,7 @@ export default function Header() {
           <button
             className="evergreen-menu-btn md:hidden z-50"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
           >
             {isMenuOpen ? (
               <X className="w-6 h-6" />
@@ -53,7 +80,7 @@ export default function Header() {
 
           {/* Mobile Menu */}
           {isMenuOpen && (
-            <div className="evergreen-mobile-menu fixed inset-0 bg-white/95 backdrop-blur-sm md:hidden z-40">
+            <div className="evergreen-mobile-menu fixed inset-0 bg-white md:hidden z-40">
               <div className="flex flex-col items-center justify-center h-full">
                 <ul className="flex flex-col gap-8 font-grotesk font-medium text-center">
                   <li>
@@ -67,11 +94,11 @@ export default function Header() {
                   </li>
                   <li>
                     <Link
-                      to="/services"
+                      to="/sell-your-land"
                       className="hover:text-gray-600 text-2xl"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Services
+                      Sell Your Land
                     </Link>
                   </li>
                   <li>
