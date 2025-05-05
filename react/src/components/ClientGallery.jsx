@@ -11,7 +11,7 @@ export default function ClientGallery() {
       image: ClientSold,
       name: "Client Name",
       location: "Norzagaray, Bulacan",
-      testimonial: "Proud Evergreen landowner since 2023",
+      testimonial: "Proud Evergreen landowner since 2024",
     },
     {
       id: 2,
@@ -68,7 +68,6 @@ export default function ClientGallery() {
                     <Star className="h-4 w-4 fill-current" />
                     <Star className="h-4 w-4 fill-current" />
                   </div>
-                  <h3 className="text-white font-bold">{client.name}</h3>
                   <p className="text-white/80 text-sm flex items-center">
                     <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-2"></span>
                     {client.location}
