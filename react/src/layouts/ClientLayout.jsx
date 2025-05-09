@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useStateContext } from "../context/ContextProvider";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -10,16 +10,29 @@ import {
   X,
   CreditCard,
   Home,
+  Bell,
+  User,
+  LogOut,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import NavBar from "../components/NavBar";
+import axiosClient from "../axios.client";
+import LogoutConfirmation from "../components/Confirmation/LogoutConfirmation";
 
 export default function ClientLayout() {
-  const { user, token } = useStateContext();
+  const { user, token, setToken, setUser: setContextUser } = useStateContext();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Added state for mobile notifications and profile menu
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Track screen width for responsive behavior
   useEffect(() => {
@@ -50,6 +63,169 @@ export default function ClientLayout() {
   useEffect(() => {
     setShowMobileSidebar(false);
   }, [location.pathname]);
+
+  // Added functions for notifications and user menu
+  // Fetch notifications on component mount and periodically when in mobile view
+  useEffect(() => {
+    if (isMobileView) {
+      fetchNotifications();
+
+      // Fetch notifications every 30 seconds
+      const interval = setInterval(() => {
+        fetchNotifications();
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isMobileView]);
+
+  const fetchNotifications = async () => {
+    try {
+      // Use axiosClient instead of fetch for proper auth handling
+      const response = await axiosClient.get("/notifications");
+      if (response.data) {
+        setNotifications(response.data.notifications || []);
+        setUnreadCount(response.data.unread_count || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      await axiosClient.put(`/notifications/${id}/read`);
+      fetchNotifications();
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await axiosClient.put("/notifications/read-all");
+      fetchNotifications();
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  // Initiate logout - show confirmation dialog
+  const initiateLogout = () => {
+    setShowUserMenu(false); // Close the user menu
+    setShowLogoutConfirm(true); // Show the logout confirmation
+  };
+
+  // Confirm logout
+  const confirmLogout = async () => {
+    try {
+      await axiosClient.post("/logout");
+    } catch (err) {
+      console.error("Error during logout:", err);
+    } finally {
+      localStorage.removeItem("ACCESS_TOKEN");
+      setToken(null);
+      setContextUser({});
+      navigate("/login");
+    }
+  };
+
+  // Cancel logout
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    if (isMobileView) {
+      const handleClickOutside = (event) => {
+        if (
+          showNotifications &&
+          !event.target.closest(".notification-dropdown-container")
+        ) {
+          setShowNotifications(false);
+        }
+
+        if (showUserMenu && !event.target.closest(".user-menu-container")) {
+          setShowUserMenu(false);
+        }
+      };
+
+      document.addEventListener("click", handleClickOutside);
+      return () => {
+        document.removeEventListener("click", handleClickOutside);
+      };
+    }
+  }, [showNotifications, showUserMenu, isMobileView]);
+
+  // Get profile route based on user role
+  const getProfileRoute = () => {
+    if (!user || !user.role) return "/profile";
+    return `/${user.role}/profile`;
+  };
+
+  // Safely parse JSON data
+  const parseNotificationData = (notification) => {
+    try {
+      if (typeof notification.data === "string") {
+        return JSON.parse(notification.data);
+      }
+      return notification.data; // If it's already an object
+    } catch (error) {
+      console.error("Error parsing notification data:", error);
+      return { message: "Notification", type: "info" }; // Fallback
+    }
+  };
+
+  // Format the notification date
+  const formatNotificationDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.round(diffMs / (1000 * 60));
+
+      if (diffMins < 1) return "Just now";
+      if (diffMins < 60) return `${diffMins} min ago`;
+
+      const diffHrs = Math.round(diffMins / 60);
+      if (diffHrs < 24) return `${diffHrs} hr ago`;
+
+      return (
+        date.toLocaleDateString() +
+        " " +
+        date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      );
+    } catch (e) {
+      return "Unknown date";
+    }
+  };
+
+  // Handle notification click and navigation
+  const handleNotificationClick = (notification) => {
+    // Mark the notification as read
+    markAsRead(notification.id);
+
+    // Parse the notification data
+    const notificationData = parseNotificationData(notification);
+
+    // Close the notification dropdown
+    setShowNotifications(false);
+
+    // Navigate based on notification content and user role
+    if (notificationData.payment_id) {
+      // If there's a payment involved, navigate to the payment list
+      navigate(`/client/payment-list?paymentId=${notificationData.payment_id}`);
+    } else if (notificationData.property_id) {
+      // If there's a property involved, navigate to available lands
+      navigate(
+        `/client/available-lands?propertyId=${notificationData.property_id}`
+      );
+    } else {
+      // Default fallback
+      navigate("/client");
+    }
+  };
 
   // Redirect to login if not authenticated
   if (!token) {
@@ -254,6 +430,164 @@ export default function ClientLayout() {
             </button>
             <h2 className="text-xl font-bold text-green-600">Evergreen</h2>
           </div>
+
+          {/* Added notification and profile icons for mobile */}
+          <div className="flex items-center space-x-2">
+            {/* Notification Bell */}
+            <div className="relative notification-dropdown-container">
+              <button
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors relative focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNotifications(!showNotifications);
+                  setShowUserMenu(false);
+                }}
+                aria-label={`${unreadCount} unread notifications`}
+              >
+                <Bell className="w-6 h-6 text-gray-600 cursor-pointer" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-sm animate-pulse">
+                    {unreadCount > 99
+                      ? "99+"
+                      : unreadCount > 9
+                      ? "9+"
+                      : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200 max-w-[calc(100vw-2rem)]">
+                  <div className="p-3 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+                    <h3 className="font-medium text-gray-800">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAllAsRead();
+                        }}
+                        className="text-sm text-green-600 hover:text-green-700 font-medium px-3 py-1 rounded hover:bg-green-50 transition-colors"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-96 overflow-y-auto overflow-x-hidden scrollbar-thin notification-list">
+                    {notifications && notifications.length > 0 ? (
+                      notifications.map((notification) => {
+                        const notificationData =
+                          parseNotificationData(notification);
+                        return (
+                          <div
+                            key={notification.id}
+                            onClick={() =>
+                              handleNotificationClick(notification)
+                            }
+                            className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                              !notification.read_at ? "bg-green-50" : ""
+                            }`}
+                          >
+                            <div className="flex items-start">
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-800 break-words">
+                                  {notificationData.message}
+                                </div>
+                                {notificationData.payment_info && (
+                                  <div className="text-xs text-gray-600 mt-1 flex items-center">
+                                    <span className="truncate">
+                                      Payment: {notificationData.payment_info}
+                                    </span>
+                                  </div>
+                                )}
+                                {notificationData.property_name && (
+                                  <div className="text-xs text-gray-600 mt-1 flex items-center">
+                                    <span className="truncate">
+                                      Property: {notificationData.property_name}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {formatNotificationDate(
+                                    notification.created_at
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="py-10 text-center text-gray-500">
+                        <div className="flex justify-center mb-3">
+                          <Bell className="w-10 h-10 text-gray-300" />
+                        </div>
+                        <p>No notifications</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* User Profile */}
+            <div className="relative user-menu-container">
+              <button
+                className="flex items-center cursor-pointer p-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowUserMenu(!showUserMenu);
+                  setShowNotifications(false);
+                }}
+                aria-label="User menu"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-sm">
+                  {user?.first_name?.[0]?.toUpperCase() ||
+                    user?.name?.[0]?.toUpperCase() ||
+                    "C"}
+                </div>
+              </button>
+
+              {/* User Menu Dropdown */}
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-200 max-w-[calc(100vw-2rem)]">
+                  <div className="p-4 border-b bg-gray-50">
+                    <p className="font-medium text-gray-800 truncate">
+                      {user?.first_name && user?.last_name
+                        ? `${user.first_name} ${user.last_name}`
+                        : user?.name || "Client"}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1 truncate">
+                      {user?.email || ""}
+                    </p>
+                    <div className="mt-2 text-xs inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                      {user?.role
+                        ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+                        : "Client"}
+                    </div>
+                  </div>
+                  <div className="py-1">
+                    <Link
+                      to={getProfileRoute()}
+                      className="px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                      <User className="w-4 h-4 mr-3 text-gray-500" />
+                      Profile
+                    </Link>
+
+                    <hr className="my-1 border-gray-100" />
+                    <button
+                      onClick={initiateLogout}
+                      className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center cursor-pointer transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 mr-3" />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -303,6 +637,13 @@ export default function ClientLayout() {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation Component */}
+      <LogoutConfirmation
+        isOpen={showLogoutConfirm}
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
 
       {/* Decorative element - clover */}
       <div className="hidden lg:block fixed bottom-0 left-0 opacity-10 z-0 pointer-events-none">
