@@ -41,10 +41,10 @@ export default function Header() {
   return (
     <>
       {/* Invisible spacer div that matches header height */}
-      <div className="h-24"></div>
+      <div className="h-16"></div>
 
       <header
-        className={`evergreen-header font-grotesk py-4 fixed w-full top-0 z-50 transition-all duration-300 ${
+        className={`evergreen-header font-grotesk py-2 fixed w-full top-0 z-50 transition-all duration-300 ${
           isMobile
             ? "bg-white shadow-lg"
             : isScrolled
