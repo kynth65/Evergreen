@@ -33,10 +33,4 @@
   .evergreen-desktop-menu li {
     display: block;
   }
-  
-  /* Force visibility for debugging */
-  .evergreen-desktop-menu {
-    /* Uncomment this to debug */
-    /* border: 2px solid red !important; */
-    
-  }
+
