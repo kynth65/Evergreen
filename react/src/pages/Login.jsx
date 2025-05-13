@@ -76,19 +76,20 @@ export default function Login() {
   return (
     <>
       <Header />
-      <div className="min-h-screen flex items-center justify-center bg-[#f7fdf7] py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl w-full relative">
+      <div className="min-h-screen flex justify-center bg-[#f7fdf7] px-4 sm:px-6 lg:px-8">
+        {/* Responsive container - smaller on mobile, larger on desktop */}
+        <div className="w-full max-w-md md:max-w-5xl mt-10 relative">
           {/* Login Card with Split Design */}
-          <div className="bg-white shadow-xl rounded-2xl overflow-hidden flex flex-col md:flex-row">
-            {/* Left Side - LoginSplitImage Component */}
-            <div className="md:w-1/2 ">
-              <div className="h-full ">
+          <div className="bg-white shadow-xl rounded-2xl overflow-hidden flex">
+            {/* Left Side - Image (Only visible on md screens and up) */}
+            <div className="w-0 md:w-1/2 flex-shrink-0 flex-grow-0">
+              <div className="h-full w-full">
                 <LoginSplitImage />
               </div>
             </div>
 
-            {/* Right Side - Login Form */}
-            <div className="md:w-1/2 flex flex-col">
+            {/* Right Side - Login Form (always visible, full width on mobile) */}
+            <div className="w-full md:w-1/2 flex flex-col">
               {/* Card header */}
               <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8">
                 <div className="flex justify-center mb-4">
@@ -105,7 +106,7 @@ export default function Login() {
               </div>
 
               {/* Form section */}
-              <div className="px-6 py-8 md:px-8 flex-grow">
+              <div className="px-6 py-8 lg:py-20 md:px-8 flex-grow">
                 {error && (
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start">
                     <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
