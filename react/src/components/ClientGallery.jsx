@@ -85,12 +85,12 @@ export default function ClientGallery() {
         <div className="mt-16 bg-green-700 text-white rounded-xl p-8 shadow-lg">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold mb-2">100+</div>
+              <div className="text-4xl font-bold mb-2">50+</div>
               <p>Happy Landowners</p>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">200+</div>
-              <p>Hectares Sold</p>
+              <div className="text-4xl font-bold mb-2">100+</div>
+              <p>lots & land Sold</p>
             </div>
             <div>
               <div className="text-4xl font-bold mb-2">5</div>
