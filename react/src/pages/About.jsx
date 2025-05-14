@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Recycle,
   Users,
+  ArrowUpRight,
 } from "lucide-react"; // Added more icons
 import Location from "../components/Location";
 
@@ -93,8 +94,7 @@ export default function About() {
       <Header />
       <main className="bg-gray-50 min-h-screen ">
         {/* Hero Section - Enhanced with decorative elements and improved layout */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-white to-green-50 relative overflow-hidden">
-          {/* Decorative elements */}
+        {/* <section className="py-16 md:py-24 bg-gradient-to-b from-white to-green-50 relative overflow-hidden">
           <div className="absolute top-0 pt-10 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
             <div className="absolute -top-12 -left-12 w-64 h-64 rounded-full bg-green-500"></div>
             <div className="absolute top-1/3 -right-12 w-48 h-48 rounded-full bg-green-400"></div>
@@ -133,65 +133,94 @@ export default function About() {
               </div>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Core Values Section - Adjusted to reflect both buying and selling */}
-        <section className="py-16 md:py-24 bg-white relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-5xl font-bold text-green-800 mb-4">
-                Our Core Values
+        <section className="py-16 md:py-20 bg-white relative overflow-hidden">
+          {/* Subtle background elements */}
+          <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-green-50 rounded-bl-[100px] opacity-70"></div>
+          <div className="absolute bottom-0 left-0 w-1/4 h-1/4 bg-green-50 rounded-tr-[80px] opacity-50"></div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center mb-20">
+              <div className="inline-block mb-3">
+                <span className="text-green-600 text-sm font-semibold tracking-wider uppercase">
+                  What Drives Us
+                </span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-5">
+                Our Core <span className="text-green-700">Values</span>
               </h2>
-              <div className="h-1 w-24 bg-green-500 mx-auto mb-6"></div>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                We are dedicated to providing exceptional service whether you
-                are buying or selling farmland. Our values ensure a smooth and
-                ethical process for all our clients.
+              <div className="h-1 w-16 bg-green-500 mx-auto mb-8 rounded-full"></div>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                We are dedicated to providing exceptional service for all your
+                real estate needs. Our values ensure a smooth and ethical
+                process for every client.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {/* Integrity */}
-              <div className="bg-green-50 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-8 h-8 text-green-700" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {/* Integrity Card */}
+              <div className="group relative bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-green-200">
+                <div className="absolute top-0 left-0 h-1 w-0 bg-gradient-to-r from-green-400 to-green-600 group-hover:w-full transition-all duration-500 rounded-t-2xl"></div>
+                <div className="mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                    <ShieldCheck className="w-7 h-7 text-green-600" />
+                  </div>
+                  <span className="text-xs font-semibold text-green-600 tracking-wider uppercase">
+                    01
+                  </span>
+                  <h3 className="text-2xl font-bold text-gray-800 mt-1 mb-3">
+                    Integrity
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Honest and transparent dealings are at the heart of our
+                    business. We ensure fair practices and build trust through
+                    every interaction.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold text-green-800 mb-2">
-                  Integrity
-                </h3>
-                <p className="text-gray-700">
-                  Honest and transparent dealings are at the heart of our
-                  business. We ensure fair practices for both buyers and
-                  sellers.
-                </p>
               </div>
 
-              {/* Sustainability */}
-              <div className="bg-green-50 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <Recycle className="w-8 h-8 text-green-700" />
+              {/* Sustainability Card */}
+              <div className="group relative bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-green-200">
+                <div className="absolute top-0 left-0 h-1 w-0 bg-gradient-to-r from-green-400 to-green-600 group-hover:w-full transition-all duration-500 rounded-t-2xl"></div>
+                <div className="mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                    <Recycle className="w-7 h-7 text-green-600" />
+                  </div>
+                  <span className="text-xs font-semibold text-green-600 tracking-wider uppercase">
+                    02
+                  </span>
+                  <h3 className="text-2xl font-bold text-gray-800 mt-1 mb-3">
+                    Sustainability
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    We promote sustainable development practices that protect
+                    the environment and ensure the long-term value of your
+                    investment.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold text-green-800 mb-2">
-                  Sustainability
-                </h3>
-                <p className="text-gray-700">
-                  We promote sustainable agricultural practices that protect the
-                  environment and ensure long-term land viability.
-                </p>
               </div>
 
-              {/* Community */}
-              <div className="bg-green-50 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <Users className="w-8 h-8 text-green-700" />
+              {/* Community Card */}
+              <div className="group relative bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-green-200">
+                <div className="absolute top-0 left-0 h-1 w-0 bg-gradient-to-r from-green-400 to-green-600 group-hover:w-full transition-all duration-500 rounded-t-2xl"></div>
+                <div className="mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                    <Users className="w-7 h-7 text-green-600" />
+                  </div>
+                  <span className="text-xs font-semibold text-green-600 tracking-wider uppercase">
+                    03
+                  </span>
+                  <h3 className="text-2xl font-bold text-gray-800 mt-1 mb-3">
+                    Community
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    We build strong relationships with our clients and support
+                    local communities through responsible land development and
+                    stewardship.
+                  </p>
                 </div>
-                <h3 className="text-2xl font-bold text-green-800 mb-2">
-                  Community
-                </h3>
-                <p className="text-gray-700">
-                  We build strong relationships with our clients and support
-                  local communities through responsible land stewardship.
-                </p>
               </div>
             </div>
           </div>
@@ -202,69 +231,69 @@ export default function About() {
           <Location />
         </section>
 
-        {/* Key Projects Section - Enhanced with better cards and visual interest */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-green-50 to-white relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-5xl font-bold text-green-800 mb-4">
-                Key Projects
+        {/* Key Projects Section - Modern Grid Layout with Updated Styling */}
+        <section className="py-20 md:py-32 bg-white relative overflow-hidden">
+          {/* Subtle background elements */}
+          <div className="absolute top-1/3 right-10 w-64 h-64 bg-green-50 rounded-full opacity-70 blur-3xl"></div>
+          <div className="absolute bottom-1/4 left-10 w-80 h-80 bg-green-50 rounded-full opacity-50 blur-3xl"></div>
+
+          <div className="max-w-screen-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Header styling like the image */}
+            <div className="text-center mb-16 md:mb-20">
+              <div className="inline-block mb-1">
+                <span className="text-green-600 text-sm font-semibold tracking-wider uppercase">
+                  OUR PORTFOLIO
+                </span>
+              </div>
+              <h2 className="text-4xl md:text-6xl font-bold mb-5">
+                <span className="text-gray-900">Featured</span>{" "}
+                <span className="text-green-600">Projects</span>
               </h2>
-              <div className="h-1 w-24 bg-green-500 mx-auto mb-6"></div>
+              {/* Green underline */}
+              <div className="h-1 w-24 bg-green-500 mx-auto mb-8"></div>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
                 Explore our premium land development projects, each designed
-                with sustainability and community in mind.
+                with sustainability and future growth in mind.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            {/* Simple Flex Layout - Even 2 per row on larger screens */}
+            <div className="flex flex-wrap -mx-3 mb-12">
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className={`bg-white rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl hover:scale-105 ${
-                    project.image ? "cursor-pointer group" : ""
-                  }`}
+                  className="w-full md:w-1/2 px-3 mb-6"
                   onClick={() => openLightbox(project.image, project.title)}
-                  role={project.image ? "button" : undefined}
-                  aria-label={
-                    project.image ? `View ${project.title} details` : undefined
-                  }
-                  tabIndex={project.image ? 0 : undefined}
                 >
-                  <div className="h-64 bg-green-100 overflow-hidden relative">
-                    {project.image ? (
-                      <>
-                        <img
-                          src={project.image}
-                          alt={`${project.title} layout`}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-green-900 bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                          <div className="bg-white rounded-full p-3">
-                            <Eye className="w-6 h-6 text-green-800" />
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-green-200">
-                        <span className="text-green-800 font-medium">
-                          Image Placeholder
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6 border-t border-green-100">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-2xl font-bold text-green-800">
-                        {project.title}
-                      </h3>
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <ArrowRight className="w-4 h-4 text-green-700" />
+                  <div className="relative overflow-hidden rounded-xl cursor-pointer h-[50vh]">
+                    <img
+                      src={project.image}
+                      alt={project.title}
+                      className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
+                          {project.title}
+                        </h3>
                       </div>
                     </div>
-                    <p className="text-gray-700">{project.description}</p>
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* View All Projects Button */}
+            <div className="text-center">
+              href="#" className="inline-flex items-center px-6 py-3
+              rounded-full bg-green-50 hover:bg-green-100 text-green-600
+              font-medium transition-colors group"
+              <a>
+                View All Projects
+                <span className="ml-2 bg-white w-6 h-6 rounded-full flex items-center justify-center">
+                  <ArrowRight className="w-3 h-3" />
+                </span>
+              </a>
             </div>
           </div>
         </section>
