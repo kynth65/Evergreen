@@ -322,11 +322,11 @@ export default function About() {
               Take The Next Step
             </div>
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 max-w-3xl mx-auto leading-tight">
-              Ready to find your perfect farmland?
+              Ready to invest in your future?
             </h2>
             <p className="text-xl text-green-100 mb-12 max-w-3xl mx-auto">
               Schedule a free tour and let us help you discover the ideal
-              property for your agricultural dreams.
+              property for your future development plans and investment goals.
             </p>
             <Link
               to="/contact"
