@@ -18,13 +18,16 @@ export default function Hero() {
           {/* Left Content */}
           <div className="relative">
             <div className="inline-block bg-green-100 text-green-800 px-4 py-1 rounded-full text-sm font-semibold mb-6">
-              Premium Farmland
+              Premium land
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight font-grotesk">
-              Be a Farm Land <span className="text-green-700">Owner.</span>
+              Find your Dream Land{" "}
+              <span className="text-green-700">
+                here in Evergreen Realty PH
+              </span>
             </h1>
             <p className="text-xl text-gray-700 mb-8 leading-relaxed max-w-xl">
-              We specialize in selling premium farmland properties. With a deep
+              We specialize in selling premium land properties. With a deep
               commitment to nature and our clients, we help you find the perfect
               piece of land while preserving our natural heritage.
             </p>
