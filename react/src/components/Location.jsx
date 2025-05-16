@@ -175,10 +175,14 @@ export default function Location() {
                   on the front. Evergreen Office is located in the white
                   building on that middle street.
                 </p>
-                <button className="bg-green-600 hover:bg-green-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-md font-medium transition-colors inline-flex items-center gap-2 shadow-lg backdrop-blur-sm bg-opacity-80 border border-green-500/30 hover:border-green-400/50 text-sm sm:text-base">
+                <a
+                  href="https://maps.app.goo.gl/Ukomqa5fgGyoa2mQ7"
+                  target="_blank"
+                  className="bg-green-600 hover:bg-green-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-md font-medium transition-colors inline-flex items-center gap-2 shadow-lg backdrop-blur-sm bg-opacity-80 border border-green-500/30 hover:border-green-400/50 text-sm sm:text-base"
+                >
                   <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                   Get Directions
-                </button>
+                </a>
               </div>
             </div>
           </div>
