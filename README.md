@@ -1,66 +1,185 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Evergreen
+### Real Estate & Land Management Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A comprehensive real estate management system designed for land development companies, featuring multi-role dashboards, payment tracking, and project management capabilities.
 
-## About Laravel
+## Overview
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Evergreen is a full-stack web application that streamlines real estate operations from land acquisition to client management. The platform serves multiple user types with role-specific dashboards and functionality, making it ideal for land development companies managing subdivision projects and client transactions.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Core Functionality
+- **Land Management**: Complete property portfolio management with detailed land records
+- **Lot Management**: Individual lot tracking within development projects
+- **Client Payment System**: Installment payment tracking with automated scheduling
+- **Task Management**: Project assignment and progress tracking for team members
+- **Document Management**: Centralized file storage and organization system
+- **User Role Management**: Multi-tiered access control for different team roles
 
-## Learning Laravel
+### Specialized Tools
+- **Residential Form System (RFS)**: Standardized forms for residential planning
+- **OCS Calculator**: Office of City Settlement calculation tools
+- **Payment Transaction History**: Complete financial audit trails
+- **Notification System**: Real-time updates and alerts
+- **Public Website**: Marketing showcase for available properties
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### User Roles & Access Levels
+- **Super Admin**: Complete system access and user management
+- **Admin**: Task management and operational oversight
+- **Agent**: Land and client management capabilities
+- **Intern**: Task execution and basic land operations
+- **Client**: Payment tracking and property browsing
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Technology Stack
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Backend
+- **Framework**: Laravel 11 (PHP 8.2+)
+- **Authentication**: Laravel Sanctum
+- **Database**: MySQL with Eloquent ORM
+- **Testing**: PHPUnit with Laravel testing suite
 
-## Laravel Sponsors
+### Frontend
+- **Framework**: React 18 with Vite
+- **UI Library**: Ant Design components
+- **Styling**: Tailwind CSS
+- **Routing**: React Router DOM
+- **Animations**: Framer Motion
+- **Icons**: Lucide React & Ant Design Icons
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Development Tools
+- **Code Quality**: Laravel Pint, ESLint
+- **Build System**: Vite for frontend, Laravel Mix integration
+- **Development**: Laravel Sail, Artisan commands
 
-### Premium Partners
+## Installation
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### Prerequisites
+- PHP 8.2 or higher
+- Composer
+- Node.js 18+ and npm
+- MySQL 5.7+ or MariaDB
+
+### Setup Instructions
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd evergreen
+   ```
+
+2. **Backend Setup**
+   ```bash
+   # Install PHP dependencies
+   composer install
+   
+   # Copy environment configuration
+   cp .env.example .env
+   
+   # Generate application key
+   php artisan key:generate
+   
+   # Configure database in .env file
+   # DB_DATABASE=evergreen
+   # DB_USERNAME=your_username
+   # DB_PASSWORD=your_password
+   
+   # Run migrations
+   php artisan migrate
+   
+   # Seed initial data (optional)
+   php artisan db:seed
+   ```
+
+3. **Frontend Setup**
+   ```bash
+   # Install Node dependencies
+   npm install
+   
+   # Setup React application
+   cd react
+   npm install
+   cd ..
+   ```
+
+4. **Development Server**
+   ```bash
+   # Start all services concurrently
+   composer run dev
+   
+   # Or run separately:
+   # Backend: php artisan serve
+   # Frontend: npm run dev (in react directory)
+   ```
+
+## Project Structure
+
+```
+evergreen/
+├── app/                    # Laravel application core
+│   ├── Http/Controllers/   # API controllers
+│   ├── Models/            # Database models
+│   └── ...
+├── react/                 # React frontend application
+│   ├── src/
+│   │   ├── components/    # Reusable React components
+│   │   ├── pages/         # Page components
+│   │   ├── layouts/       # Layout components
+│   │   └── ...
+├── routes/                # Laravel routes
+├── database/              # Migrations and seeders
+└── public/               # Public assets
+```
+
+## Key Components
+
+### Land Management
+- Property listing and detailed information
+- Geographic data and mapping integration
+- Status tracking (available, sold, reserved)
+- Image galleries and documentation
+
+### Payment System
+- Installment plan creation and management
+- Payment recording and verification
+- Transaction history and reporting
+- Client payment dashboards
+
+### Task Management
+- Assignment and delegation system
+- Progress tracking and status updates
+- File submission and review process
+- Role-based task visibility
+
+### File Management
+- Hierarchical folder organization
+- File upload and download capabilities
+- Preview functionality for common formats
+- Access control and permissions
+
+## API Documentation
+
+The application provides a RESTful API with the following main endpoints:
+
+- **Authentication**: `/api/login`, `/api/signup`, `/api/logout`
+- **Lands**: `/api/lands` (CRUD operations)
+- **Lots**: `/api/lots` (CRUD operations)
+- **Client Payments**: `/api/client-payments` (Payment management)
+- **Tasks**: `/api/admin/tasks` (Task management)
+- **Files**: `/api/files`, `/api/folders` (File operations)
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -m 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is proprietary software. All rights reserved.
+
+---
+
+**Built with Laravel & React** | **Professional Real Estate Management Solution**
