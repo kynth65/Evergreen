@@ -76,7 +76,7 @@ export default function Login() {
   return (
     <>
       <Header />
-      <div className="min-h-screen flex justify-center bg-[#f7fdf7] px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex justify-center bg-[#fdfaf1] px-4 sm:px-6 lg:px-8">
         {/* Responsive container - smaller on mobile, larger on desktop */}
         <div className="w-full max-w-md md:max-w-5xl mt-10 relative">
           {/* Login Card with Split Design */}
@@ -91,16 +91,16 @@ export default function Login() {
             {/* Right Side - Login Form (always visible, full width on mobile) */}
             <div className="w-full md:w-1/2 flex flex-col">
               {/* Card header */}
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8">
+              <div className="bg-[#081A0D] px-6 py-8">
                 <div className="flex justify-center mb-4">
-                  <div className="bg-white bg-opacity-20 rounded-full p-3">
+                  <div className="bg-[#fdfaf1] bg-opacity-20 rounded-full p-3">
                     <img src={EvergreenLogo} alt="" className="h-16" />
                   </div>
                 </div>
-                <h2 className="text-2xl font-bold text-white text-center">
+                <h2 className="text-2xl font-bold text-[#fdfaf1] text-center">
                   Sign in to your account
                 </h2>
-                <p className="mt-2 text-green-50 text-center">
+                <p className="mt-2 text-[#fdfaf1]/80 text-center">
                   Access your Evergreen properties dashboard
                 </p>
               </div>
@@ -142,7 +142,7 @@ export default function Login() {
                         ref={emailRef}
                         type="email"
                         id="email"
-                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-[#081A0D] focus:border-[#081A0D] sm:text-sm"
                         placeholder="you@example.com"
                         required
                       />
@@ -164,7 +164,7 @@ export default function Login() {
                         ref={passwordRef}
                         type="password"
                         id="password"
-                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-[#081A0D] focus:border-[#081A0D] sm:text-sm"
                         placeholder="Enter your password"
                         required
                       />
@@ -175,7 +175,7 @@ export default function Login() {
                     <div className="text-sm">
                       <Link
                         to="/forgot-password"
-                        className="font-medium text-green-600 hover:text-green-500"
+                        className="font-medium text-[#081A0D] hover:opacity-70 transition-opacity"
                       >
                         Forgot password?
                       </Link>
@@ -185,16 +185,16 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${
+                    className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-[#fdfaf1] ${
                       isLoading
-                        ? "bg-green-400 cursor-not-allowed"
-                        : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        ? "bg-[#081A0D]/60 cursor-not-allowed"
+                        : "bg-[#081A0D] hover:bg-[#081A0D]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#081A0D]"
                     } transition duration-150 ease-in-out`}
                   >
                     {isLoading ? (
                       <>
                         <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#fdfaf1]"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
