@@ -1,6 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap");
-
 @import "tailwindcss";
+
+@theme {
+    --font-sans: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-grotesk: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-playfair: "Playfair Display", serif;
+}
 
 /* latin-ext */
 @font-face {
