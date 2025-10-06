@@ -1,22 +1,21 @@
 import React from "react";
 import Header from "../components/header";
 import Hero from "../components/hero";
-import PropertyHighlight from "../components/PropertyHighlight";
-import CustomerFeedback from "../components/CustomerFeedback";
+import FeaturedProjects from "../components/FeaturedProjects";
+import LandGallery from "../components/LandGallery";
 import FeatureHighlights from "../components/FeatureHighlights";
-import ClientGallery from "../components/ClientGallery";
-
+import CTASection from "../components/CTASection";
 import Footer from "../components/footer";
 
 export default function Home() {
   return (
     <>
       <Header />
-
       <Hero />
+      <FeaturedProjects />
+      <LandGallery />
       <FeatureHighlights />
-      <ClientGallery />
-
+      <CTASection />
       <Footer />
     </>
   );
