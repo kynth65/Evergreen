@@ -4,11 +4,21 @@ export default {
     theme: {
         extend: {
             fontFamily: {
+                sans: [
+                    '"Host Grotesk"',
+                    "ui-sans-serif",
+                    "system-ui",
+                    "sans-serif",
+                ],
                 grotesk: [
                     '"Host Grotesk"',
                     "ui-sans-serif",
                     "system-ui",
                     "sans-serif",
+                ],
+                playfair: [
+                    '"Playfair Display"',
+                    "serif",
                 ],
             },
             keyframes: {
