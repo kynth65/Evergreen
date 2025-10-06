@@ -45,7 +45,7 @@ const ForgotPassword = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen flex items-center justify-center bg-[#f7fdf7] py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-[#fdfaf1] py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full relative">
           {/* Decorative element - top leaf */}
           <div className="hidden lg:block absolute -top-8 -right-8 opacity-60">
@@ -58,7 +58,8 @@ const ForgotPassword = () => {
             >
               <path
                 d="M60 0C60 33.1371 33.1371 60 0 60C33.1371 60 60 86.8629 60 120C60 86.8629 86.8629 60 120 60C86.8629 60 60 33.1371 60 0Z"
-                fill="#A7F3D0"
+                fill="#081A0D"
+                opacity="0.1"
               />
             </svg>
           </div>
@@ -66,16 +67,16 @@ const ForgotPassword = () => {
           {/* Card */}
           <div className="bg-white shadow-lg rounded-2xl overflow-hidden">
             {/* Card header */}
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-8">
+            <div className="bg-[#081A0D] px-6 py-8">
               <div className="flex justify-center mb-4">
-                <div className="bg-white bg-opacity-20 rounded-full p-3">
+                <div className="bg-[#fdfaf1] bg-opacity-20 rounded-full p-3">
                   <img src={EvergreenLogo} alt="" className="h-16" />
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-white text-center">
+              <h2 className="text-2xl font-bold text-[#fdfaf1] text-center">
                 Forgot Your Password?
               </h2>
-              <p className="mt-2 text-green-50 text-center">
+              <p className="mt-2 text-[#fdfaf1]/80 text-center">
                 Enter your email address and we'll send you a reset code
               </p>
             </div>
@@ -107,7 +108,7 @@ const ForgotPassword = () => {
                         id="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                        className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm focus:ring-[#081A0D] focus:border-[#081A0D] sm:text-sm"
                         placeholder="you@example.com"
                         required
                       />
@@ -117,16 +118,16 @@ const ForgotPassword = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white ${
+                    className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-[#fdfaf1] ${
                       isSubmitting
-                        ? "bg-green-400 cursor-not-allowed"
-                        : "bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        ? "bg-[#081A0D]/60 cursor-not-allowed"
+                        : "bg-[#081A0D] hover:bg-[#081A0D]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#081A0D]"
                     } transition duration-150 ease-in-out`}
                   >
                     {isSubmitting ? (
                       <>
                         <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-[#fdfaf1]"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
@@ -155,7 +156,7 @@ const ForgotPassword = () => {
                   <div className="mt-4 text-center">
                     <Link
                       to="/login"
-                      className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500"
+                      className="inline-flex items-center text-sm font-medium text-[#081A0D] hover:opacity-70 transition-opacity"
                     >
                       <ArrowLeft className="h-4 w-4 mr-1" />
                       Back to login
@@ -164,11 +165,11 @@ const ForgotPassword = () => {
                 </form>
               ) : (
                 <div className="space-y-6">
-                  <div className="bg-green-50 border-l-4 border-green-400 p-4">
+                  <div className="bg-[#fdfaf1] border-l-4 border-[#081A0D] p-4">
                     <div className="flex">
                       <div className="flex-shrink-0">
                         <svg
-                          className="h-5 w-5 text-green-400"
+                          className="h-5 w-5 text-[#081A0D]"
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 20 20"
                           fill="currentColor"
@@ -181,8 +182,8 @@ const ForgotPassword = () => {
                         </svg>
                       </div>
                       <div className="ml-3">
-                        <p className="text-sm text-green-700">{message}</p>
-                        <p className="text-sm text-green-700 mt-1">
+                        <p className="text-sm text-[#081A0D]">{message}</p>
+                        <p className="text-sm text-[#081A0D] mt-1">
                           Redirecting to verification page...
                         </p>
                       </div>
@@ -192,7 +193,7 @@ const ForgotPassword = () => {
                   <div className="mt-4 text-center">
                     <Link
                       to="/login"
-                      className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500"
+                      className="inline-flex items-center text-sm font-medium text-[#081A0D] hover:opacity-70 transition-opacity"
                     >
                       <ArrowLeft className="h-4 w-4 mr-1" />
                       Back to login
@@ -214,7 +215,8 @@ const ForgotPassword = () => {
             >
               <path
                 d="M60 0C60 33.1371 33.1371 60 0 60C33.1371 60 60 86.8629 60 120C60 86.8629 86.8629 60 120 60C86.8629 60 60 33.1371 60 0Z"
-                fill="#A7F3D0"
+                fill="#081A0D"
+                opacity="0.1"
               />
             </svg>
           </div>
