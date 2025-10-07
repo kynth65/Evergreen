@@ -8,7 +8,7 @@ import InsideHousePOV from "../assets/homepage/inside-house-pov.png";
 export default function LandGallery() {
     return (
         <section className="py-24 lg:py-32 bg-[#081A0D]">
-            <div className="px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-24">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="mb-20 max-w-5xl">
                     <h2 className="text-4xl md:text-5xl lg:text-6xl font-serif text-[#fdfaf1] mb-8">
