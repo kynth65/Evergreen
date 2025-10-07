@@ -6,6 +6,18 @@
     --font-playfair: "Playfair Display", serif;
 }
 
+/* Prevent horizontal overflow */
+html,
+body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
 /* latin-ext */
 @font-face {
     font-family: "Host Grotesk";
