@@ -139,7 +139,7 @@ export default function Header() {
                                 to="/sell-your-land"
                                 className="hover:opacity-70 transition-opacity"
                             >
-                                Lands for Sale
+                                Sell Your Land
                             </Link>
                         </li>
                         <li>
