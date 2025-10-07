@@ -71,7 +71,7 @@ export default function SellYourLand() {
             <main className="bg-[#fdfaf1] min-h-screen">
                 {/* Hero Section */}
                 <section className="py-20 md:py-28 lg:py-32 relative overflow-hidden">
-                    <div className="px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-24">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="text-center max-w-5xl mx-auto">
                             <div className="inline-block bg-[#081A0D] text-[#fdfaf1] px-6 py-2 rounded-full text-sm lg:text-base font-semibold mb-8 uppercase tracking-wider">
                                 Sell With Confidence
@@ -100,7 +100,7 @@ export default function SellYourLand() {
 
                 {/* Why Choose Us Section */}
                 <section className="py-20 lg:py-28 bg-[#081A0D]">
-                    <div className="px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-24">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="mb-16">
                             <div className="inline-block mb-4">
                                 <span className="text-[#fdfaf1]/70 text-sm lg:text-base font-semibold tracking-wider uppercase">
@@ -170,7 +170,7 @@ export default function SellYourLand() {
 
                 {/* How It Works Section */}
                 <section className="py-20 lg:py-28 bg-[#fdfaf1]">
-                    <div className="px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-24">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="mb-16">
                             <div className="inline-block mb-4">
                                 <span className="text-[#081A0D]/60 text-sm lg:text-base font-semibold tracking-wider uppercase">
@@ -219,7 +219,7 @@ export default function SellYourLand() {
                     <div className="absolute inset-0 bg-[#081A0D]/85" />
 
                     {/* Content */}
-                    <div className="px-6 sm:px-8 lg:px-12 xl:px-16 2xl:px-24 relative z-10">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                         <div className="text-center max-w-4xl mx-auto">
                             <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-serif text-[#fdfaf1] mb-6 leading-tight">
                                 Ready to{" "}
